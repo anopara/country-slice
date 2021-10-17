@@ -5,11 +5,15 @@
 // 4. DONE setup the camera with dolly
 // 5. draw a SOMETHING with the mouse
 
-use bevy::prelude::*;
-use bevy_mod_picking::{
-    DebugCursorPickingPlugin, DebugEventsPickingPlugin, PickableBundle, PickingCamera,
-    PickingCameraBundle, PickingPlugin,
+use bevy::{
+    prelude::*,
+    render::{
+        mesh::{shape, VertexAttributeValues},
+        pipeline::{PipelineDescriptor, RenderPipeline},
+        shader::{ShaderStage, ShaderStages},
+    },
 };
+use bevy_mod_picking::{PickableBundle, PickingCamera, PickingCameraBundle, PickingPlugin};
 
 use bevy_dolly::Transform2Bevy;
 
@@ -19,9 +23,6 @@ use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
 struct MainCamera;
 
 struct PreviewCube;
-
-// Mark our generic `RayCastMesh`s and `RayCastSource`s as part of the same group, or "RayCastSet".
-struct MyRaycastSet;
 
 fn main() {
     App::build()
@@ -40,19 +41,95 @@ fn setup(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
+    mut pipelines: ResMut<Assets<PipelineDescriptor>>,
+    mut shaders: ResMut<Assets<Shader>>,
+    asset_server: Res<AssetServer>,
 ) {
+    // Create a new shader pipeline
+    let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
+        vertex: shaders.add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
+        fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER))),
+    }));
+
+    //commands.spawn_scene(asset_server.load("floor.gltf#Scene0"));
+    //let floor_handle: Handle<Mesh> = asset_server.load("test.glb#Mesh0/Primitive0");
+
+    let mut bevy_mesh = Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
+    let (gltf, buffers, _) = gltf::import("assets/floor.glb").unwrap();
+    for mesh in gltf.meshes() {
+        println!("Mesh #{}", mesh.index());
+        for primitive in mesh.primitives() {
+            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+
+            if let Some(vertex_attribute) = reader.read_colors(0).map(|v| {
+                bevy::render::mesh::VertexAttributeValues::Float4(v.into_rgba_f32().collect())
+            }) {
+                println!("ATTRIBUTE_COLOR");
+                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_COLOR, vertex_attribute);
+            }
+
+            if let Some(vertex_attribute) = reader
+                .read_positions()
+                .map(|v| bevy::render::mesh::VertexAttributeValues::Float3(v.collect()))
+            {
+                println!("ATTRIBUTE_POSITION");
+                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vertex_attribute);
+            }
+
+            if let Some(vertex_attribute) = reader
+                .read_normals()
+                .map(|v| bevy::render::mesh::VertexAttributeValues::Float3(v.collect()))
+            {
+                println!("ATTRIBUTE_NORMAL");
+                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vertex_attribute);
+            }
+
+            if let Some(vertex_attribute) = reader
+                .read_tangents()
+                .map(|v| bevy::render::mesh::VertexAttributeValues::Float4(v.collect()))
+            {
+                println!("ATTRIBUTE_TANGENT");
+                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_TANGENT, vertex_attribute);
+            }
+
+            if let Some(vertex_attribute) = reader
+                .read_tex_coords(0)
+                .map(|v| bevy::render::mesh::VertexAttributeValues::Float2(v.into_f32().collect()))
+            {
+                println!("ATTRIBUTE_UV_0");
+                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vertex_attribute);
+            }
+
+            if let Some(indices) = reader.read_indices() {
+                bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(
+                    indices.into_u32().collect(),
+                )));
+            };
+
+            println!("- Primitive #{}", primitive.index());
+            for (semantic, _) in primitive.attributes() {
+                println!("-- {:?}", semantic);
+            }
+        }
+    }
+
     // plane
+
     commands
         .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
-            material: materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            mesh: meshes.add(bevy_mesh), //meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
+            material: asset_server.load("test.glb#Material0"), //materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+                pipeline_handle,
+            )]),
             ..Default::default()
         })
         .insert_bundle(PickableBundle::default());
+
     // cube
     commands
         .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 0.2 })),
+            mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
             material: materials.add(StandardMaterial {
                 base_color: Color::rgb(1.0, 1.0, 1.0),
                 base_color_texture: None,
@@ -71,6 +148,7 @@ fn setup(
             ..Default::default()
         })
         .insert(PreviewCube);
+
     // light
     commands.spawn_bundle(LightBundle {
         transform: Transform::from_xyz(4.0, 8.0, 4.0),
@@ -80,9 +158,9 @@ fn setup(
     // TODO: we can replace this with a resource and update camera ourselves?
     commands.spawn().insert(
         CameraRig::builder()
-            .with(YawPitch::new().yaw_degrees(45.0).pitch_degrees(-30.0))
+            .with(YawPitch::new().yaw_degrees(45.0).pitch_degrees(-35.0))
             .with(Smooth::new_rotation(1.5))
-            .with(Arm::new(dolly::glam::Vec3::Z * 5.0))
+            .with(Arm::new(dolly::glam::Vec3::Z * 9.0))
             .build(),
     );
     commands
@@ -113,7 +191,7 @@ fn query_intersection(
         println!("{:?}", camera.intersect_top());
 
         if let Some((_, intersection)) = camera.intersect_top() {
-            for (cube, mut transform) in cube_query.iter_mut() {
+            for (_, mut transform) in cube_query.iter_mut() {
                 transform.translation = intersection.position();
             }
         }
@@ -143,3 +221,29 @@ fn update_camera(
 
     cam.transform_2_bevy(transform);
 }
+
+const VERTEX_SHADER: &str = r#"
+#version 450
+layout(location = 0) in vec3 Vertex_Position;
+layout(location = 1) in vec3 Vertex_Color;
+layout(location = 0) out vec3 v_color;
+layout(set = 0, binding = 0) uniform CameraViewProj {
+    mat4 ViewProj;
+};
+layout(set = 1, binding = 0) uniform Transform {
+    mat4 Model;
+};
+void main() {
+    gl_Position = ViewProj * Model * vec4(Vertex_Position, 1.0);
+    v_color = Vertex_Color;
+}
+"#;
+
+const FRAGMENT_SHADER: &str = r#"
+#version 450
+layout(location = 0) out vec4 o_Target;
+layout(location = 0) in vec3 v_color;
+void main() {
+    o_Target = vec4(v_color, 1.0);
+}
+"#;

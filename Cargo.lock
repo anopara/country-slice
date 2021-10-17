@@ -186,6 +186,12 @@ checksum = "a4521f3e3d031370679b3b140beb36dfe4801b09ac77e30c61941f97df3ef28b"
 
 [[package]]
 name = "base64"
+version = "0.12.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3441f0f7b02788e948e47f457ca01f1d7e6d92c693bc132c22b087d3141c03ff"
+
+[[package]]
+name = "base64"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
@@ -380,7 +386,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9233bfb7e2cf053b51f01d2e57ea5a549438c0e5f08735d595b6a6504d00639e"
 dependencies = [
  "anyhow",
- "base64",
+ "base64 0.13.0",
  "bevy_app",
  "bevy_asset",
  "bevy_core",
@@ -391,7 +397,7 @@ dependencies = [
  "bevy_render",
  "bevy_scene",
  "bevy_transform",
- "gltf",
+ "gltf 0.15.2",
  "thiserror",
 ]
 
@@ -1099,6 +1105,7 @@ dependencies = [
  "bevy_dolly",
  "bevy_mod_picking",
  "dolly",
+ "gltf 0.16.0",
 ]
 
 [[package]]
@@ -1640,7 +1647,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d6fb0d1d772daf10ea74528c3aeb12215f6d5b820adf2ecfc93a6578d6779c3c"
 dependencies = [
  "byteorder",
- "gltf-json",
+ "gltf-json 0.15.2",
+ "lazy_static",
+]
+
+[[package]]
+name = "gltf"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ff38b75359a0096dd0a8599b6e4f37a6ee41d5df300cc7669e62aafa697f7a2"
+dependencies = [
+ "base64 0.12.3",
+ "byteorder",
+ "gltf-json 0.16.0",
+ "image",
  "lazy_static",
 ]
 
@@ -1657,12 +1677,36 @@ dependencies = [
 ]
 
 [[package]]
+name = "gltf-derive"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1f2a9333e0f9c7bca94dfc20bcf44fa12a61eeec662d6e007563ff748aa59c70"
+dependencies = [
+ "inflections",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "gltf-json"
 version = "0.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e3fc3deb81e6fa04bf808f6be7c3983229552a95b77f687ad96af00f6d3e7d6c"
 dependencies = [
- "gltf-derive",
+ "gltf-derive 0.15.2",
+ "serde",
+ "serde_derive",
+ "serde_json",
+]
+
+[[package]]
+name = "gltf-json"
+version = "0.16.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a1414d3a98cbaabdb2f134328b1f6036d14b282febc1df51952a435d2ca17fb6"
+dependencies = [
+ "gltf-derive 0.16.0",
  "serde",
  "serde_derive",
  "serde_json",
@@ -1794,6 +1838,7 @@ dependencies = [
  "bytemuck",
  "byteorder",
  "color_quant",
+ "jpeg-decoder",
  "num-iter",
  "num-rational",
  "num-traits",
@@ -1908,6 +1953,12 @@ checksum = "af25a77299a7f711a01975c35a6a424eb6862092cc2d6c72c4ed6cbc56dfc1fa"
 dependencies = [
  "libc",
 ]
+
+[[package]]
+name = "jpeg-decoder"
+version = "0.1.22"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "229d53d58899083193af11e15917b5640cd40b29ff475a1fe4ef725deb02d0f2"
 
 [[package]]
 name = "js-sys"
@@ -2736,7 +2787,7 @@ version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "45005aa836116903a49cf3461474da697cfe66221762c6e95871092009ec86d6"
 dependencies = [
- "base64",
+ "base64 0.13.0",
  "bitflags",
  "serde",
 ]
