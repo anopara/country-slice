@@ -3,12 +3,14 @@
 // 2. DONE import a mesh
 // 3. DONE render the mesh
 // 4. DONE setup the camera with dolly
-// 5. draw a SOMETHING with the mouse
+// 5. DONE draw a SOMETHING with the mouse
+
+mod utils;
 
 use bevy::{
     prelude::*,
     render::{
-        mesh::{shape, VertexAttributeValues},
+        mesh::shape,
         pipeline::{PipelineDescriptor, RenderPipeline},
         shader::{ShaderStage, ShaderStages},
     },
@@ -22,8 +24,10 @@ use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
 // Give camera a component so we can find it and update with Dolly rig
 struct MainCamera;
 
+// Mark the cube that is the preview of mouse raycast intersection
 struct PreviewCube;
 
+// TEMPORARY, needs proper mesh data structure for the wall base
 struct CustomMeshManager {
     pub point_positions: Vec<Vec3>,
     pub mesh_handle: Option<Handle<Mesh>>,
@@ -37,7 +41,7 @@ impl CustomMeshManager {
         }
     }
 
-    pub fn to_array(&self) -> Vec<[f32; 3]> {
+    fn to_vertices(&self) -> Vec<[f32; 3]> {
         let mut one_side: Vec<[f32; 3]> = self
             .point_positions
             .iter()
@@ -57,6 +61,17 @@ impl CustomMeshManager {
         //out
         one_side.extend(&other_side);
         one_side
+    }
+
+    pub fn populate_bevy_mesh(&self, bevy_mesh: &mut Mesh) {
+        let vert_pos = self.to_vertices();
+        let vert_count = vert_pos.len();
+        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vert_pos);
+        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[1.0, 0.0, 0.0]; vert_count]);
+        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; vert_count]);
+        bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(
+            (0..vert_count).map(|i| i as u32).collect(),
+        )));
     }
 }
 
@@ -90,74 +105,13 @@ fn setup(
         fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER))),
     }));
 
-    //commands.spawn_scene(asset_server.load("floor.gltf#Scene0"));
-    //let floor_handle: Handle<Mesh> = asset_server.load("test.glb#Mesh0/Primitive0");
-
-    let mut bevy_mesh = Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
-    let (gltf, buffers, _) = gltf::import("assets/floor.glb").unwrap();
-    for mesh in gltf.meshes() {
-        println!("Mesh #{}", mesh.index());
-        for primitive in mesh.primitives() {
-            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
-
-            if let Some(vertex_attribute) = reader.read_colors(0).map(|v| {
-                bevy::render::mesh::VertexAttributeValues::Float4(v.into_rgba_f32().collect())
-            }) {
-                println!("ATTRIBUTE_COLOR");
-                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_COLOR, vertex_attribute);
-            }
-
-            if let Some(vertex_attribute) = reader
-                .read_positions()
-                .map(|v| bevy::render::mesh::VertexAttributeValues::Float3(v.collect()))
-            {
-                println!("ATTRIBUTE_POSITION");
-                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vertex_attribute);
-            }
-
-            if let Some(vertex_attribute) = reader
-                .read_normals()
-                .map(|v| bevy::render::mesh::VertexAttributeValues::Float3(v.collect()))
-            {
-                println!("ATTRIBUTE_NORMAL");
-                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vertex_attribute);
-            }
-
-            if let Some(vertex_attribute) = reader
-                .read_tangents()
-                .map(|v| bevy::render::mesh::VertexAttributeValues::Float4(v.collect()))
-            {
-                println!("ATTRIBUTE_TANGENT");
-                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_TANGENT, vertex_attribute);
-            }
-
-            if let Some(vertex_attribute) = reader
-                .read_tex_coords(0)
-                .map(|v| bevy::render::mesh::VertexAttributeValues::Float2(v.into_f32().collect()))
-            {
-                println!("ATTRIBUTE_UV_0");
-                bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vertex_attribute);
-            }
-
-            if let Some(indices) = reader.read_indices() {
-                bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(
-                    indices.into_u32().collect(),
-                )));
-            };
-
-            println!("- Primitive #{}", primitive.index());
-            for (semantic, _) in primitive.attributes() {
-                println!("-- {:?}", semantic);
-            }
-        }
-    }
-
-    // plane
-
+    // floor
     commands
         .spawn_bundle(PbrBundle {
-            mesh: meshes.add(bevy_mesh), //meshes.add(Mesh::from(shape::Plane { size: 5.0 })),
-            material: asset_server.load("test.glb#Material0"), //materials.add(Color::rgb(0.3, 0.5, 0.3).into()),
+            mesh: meshes.add(utils::load_gltf_as_bevy_mesh_w_vertex_color(
+                "assets/floor.glb",
+            )),
+            material: asset_server.load("test.glb#Material0"),
             render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
                 pipeline_handle,
             )]),
@@ -165,7 +119,7 @@ fn setup(
         })
         .insert_bundle(PickableBundle::default());
 
-    // cube
+    // preview cube
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
@@ -248,8 +202,6 @@ fn query_intersection(
     if mouse_button_input.just_pressed(MouseButton::Left) {
         info!("left mouse just pressed");
         for camera in query.iter_mut() {
-            //println!("{:?}", camera.intersect_top());
-
             if let Some((_, intersection)) = camera.intersect_top() {
                 custom_mesh_manager
                     .point_positions
@@ -259,52 +211,20 @@ fn query_intersection(
                     let mut mesh =
                         Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleStrip);
 
-                    let pos = custom_mesh_manager.to_array();
-                    let vert_count = pos.len();
-
-                    mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, pos);
-                    mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[1.0, 0.0, 0.0]; vert_count]);
-                    mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; vert_count]);
-                    mesh.set_indices(Some(bevy::render::mesh::Indices::U32(
-                        (0..vert_count).map(|i| i as u32).collect(),
-                    )));
-
+                    custom_mesh_manager.populate_bevy_mesh(&mut mesh);
                     let handle = meshes.add(mesh);
                     custom_mesh_manager.mesh_handle = Some(handle.clone());
 
                     commands
                         .spawn_bundle(PbrBundle {
                             mesh: handle,
-                            material: materials.add(StandardMaterial {
-                                base_color: Color::rgb(1.0, 1.0, 1.0),
-                                base_color_texture: None,
-                                roughness: 1.0,
-                                metallic: 0.0,
-                                metallic_roughness_texture: None,
-                                reflectance: 0.0,
-                                normal_map: None,
-                                double_sided: true,
-                                occlusion_texture: None,
-                                emissive: Color::rgb(1.0, 1.0, 1.0),
-                                emissive_texture: None,
-                                unlit: false,
-                            }),
+                            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
                             ..Default::default()
                         })
                         .insert(CustomMesh);
                 } else if let Some(mesh_handle) = custom_mesh_manager.mesh_handle.as_ref() {
                     if let Some(mesh) = meshes.get_mut(mesh_handle) {
-                        let pos = custom_mesh_manager.to_array();
-                        let vert_count = pos.len();
-                        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, pos);
-                        mesh.set_attribute(
-                            Mesh::ATTRIBUTE_NORMAL,
-                            vec![[1.0, 0.0, 0.0]; vert_count],
-                        );
-                        mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; vert_count]);
-                        mesh.set_indices(Some(bevy::render::mesh::Indices::U32(
-                            (0..vert_count).map(|i| i as u32).collect(),
-                        )));
+                        custom_mesh_manager.populate_bevy_mesh(mesh);
                     }
                 }
             }
