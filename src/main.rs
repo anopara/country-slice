@@ -55,10 +55,6 @@ impl CustomMeshManager {
             .flatten()
             .collect();
         other_side.reverse();
-        //one_side.reverse();
-        //out.extend(&one_side);
-        //println!("{:?}", out);
-        //out
         one_side.extend(&other_side);
         one_side
     }
