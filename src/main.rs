@@ -1,6 +1,6 @@
 // TODO: Part 1. SETUP
 // 1. DONE setup Bevy renderer
-// 2. import a mesh
+// 2. DONE import a mesh
 // 3. DONE render the mesh
 // 4. DONE setup the camera with dolly
 // 5. draw a SOMETHING with the mouse
@@ -24,11 +24,50 @@ struct MainCamera;
 
 struct PreviewCube;
 
+struct CustomMeshManager {
+    pub point_positions: Vec<Vec3>,
+    pub mesh_handle: Option<Handle<Mesh>>,
+}
+
+impl CustomMeshManager {
+    pub fn new() -> Self {
+        Self {
+            point_positions: Vec::new(),
+            mesh_handle: None,
+        }
+    }
+
+    pub fn to_array(&self) -> Vec<[f32; 3]> {
+        let mut one_side: Vec<[f32; 3]> = self
+            .point_positions
+            .iter()
+            .map(|p| vec![[p[0], p[1] + 1.0, p[2]], [p[0], p[1], p[2]]])
+            .flatten()
+            .collect();
+        let mut other_side: Vec<[f32; 3]> = self
+            .point_positions
+            .iter()
+            .map(|p| vec![[p[0], p[1], p[2]], [p[0], p[1] + 1.0, p[2]]])
+            .flatten()
+            .collect();
+        other_side.reverse();
+        //one_side.reverse();
+        //out.extend(&one_side);
+        //println!("{:?}", out);
+        //out
+        one_side.extend(&other_side);
+        one_side
+    }
+}
+
+struct CustomMesh;
+
 fn main() {
     App::build()
         .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
         .add_plugin(PickingPlugin)
+        .insert_resource(CustomMeshManager::new())
         .add_startup_system(setup.system())
         .add_system(update_camera.system())
         .add_system(handle_mouse_clicks.system())
@@ -181,18 +220,93 @@ fn handle_mouse_clicks(mouse_input: Res<Input<MouseButton>>, windows: Res<Window
 }
 
 fn query_intersection(
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut custom_mesh_manager: ResMut<CustomMeshManager>,
+    mouse_button_input: Res<Input<MouseButton>>,
     mut query: Query<&mut PickingCamera>,
     mut cube_query: Query<(
         &mut PreviewCube,
         &mut bevy::transform::components::Transform,
     )>,
 ) {
+    // Update Preview Cube
     for camera in query.iter_mut() {
-        println!("{:?}", camera.intersect_top());
-
         if let Some((_, intersection)) = camera.intersect_top() {
             for (_, mut transform) in cube_query.iter_mut() {
                 transform.translation = intersection.position();
+            }
+        }
+    }
+
+    if mouse_button_input.just_pressed(MouseButton::Right) {
+        custom_mesh_manager.mesh_handle = None;
+        custom_mesh_manager.point_positions = Vec::new();
+    }
+
+    if mouse_button_input.just_pressed(MouseButton::Left) {
+        info!("left mouse just pressed");
+        for camera in query.iter_mut() {
+            //println!("{:?}", camera.intersect_top());
+
+            if let Some((_, intersection)) = camera.intersect_top() {
+                custom_mesh_manager
+                    .point_positions
+                    .push(intersection.position());
+
+                if custom_mesh_manager.point_positions.len() == 2 {
+                    let mut mesh =
+                        Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleStrip);
+
+                    let pos = custom_mesh_manager.to_array();
+                    let vert_count = pos.len();
+
+                    mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, pos);
+                    mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[1.0, 0.0, 0.0]; vert_count]);
+                    mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; vert_count]);
+                    mesh.set_indices(Some(bevy::render::mesh::Indices::U32(
+                        (0..vert_count).map(|i| i as u32).collect(),
+                    )));
+
+                    let handle = meshes.add(mesh);
+                    custom_mesh_manager.mesh_handle = Some(handle.clone());
+
+                    commands
+                        .spawn_bundle(PbrBundle {
+                            mesh: handle,
+                            material: materials.add(StandardMaterial {
+                                base_color: Color::rgb(1.0, 1.0, 1.0),
+                                base_color_texture: None,
+                                roughness: 1.0,
+                                metallic: 0.0,
+                                metallic_roughness_texture: None,
+                                reflectance: 0.0,
+                                normal_map: None,
+                                double_sided: true,
+                                occlusion_texture: None,
+                                emissive: Color::rgb(1.0, 1.0, 1.0),
+                                emissive_texture: None,
+                                unlit: false,
+                            }),
+                            ..Default::default()
+                        })
+                        .insert(CustomMesh);
+                } else if let Some(mesh_handle) = custom_mesh_manager.mesh_handle.as_ref() {
+                    if let Some(mesh) = meshes.get_mut(mesh_handle) {
+                        let pos = custom_mesh_manager.to_array();
+                        let vert_count = pos.len();
+                        mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, pos);
+                        mesh.set_attribute(
+                            Mesh::ATTRIBUTE_NORMAL,
+                            vec![[1.0, 0.0, 0.0]; vert_count],
+                        );
+                        mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; vert_count]);
+                        mesh.set_indices(Some(bevy::render::mesh::Indices::U32(
+                            (0..vert_count).map(|i| i as u32).collect(),
+                        )));
+                    }
+                }
             }
         }
     }
