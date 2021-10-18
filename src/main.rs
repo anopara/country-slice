@@ -94,7 +94,7 @@ impl CustomMeshManager {
             ]);
 
             indices.extend(
-                &([0, 1, 2, 1, 2, 3]
+                &([0, 1, 2, 1, 3, 2]
                     .iter()
                     .map(|i| i + vert_index_start)
                     .collect::<Vec<_>>()),
