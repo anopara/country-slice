@@ -62,6 +62,42 @@ impl CustomMeshManager {
     }
 
     fn to_trimesh(&self) -> tri_mesh::mesh::Mesh {
+        let mut indices: Vec<u32> = Vec::new();
+        let mut positions: Vec<f64> = Vec::new();
+        for quad_index in 0..(self.point_positions.len() - 1) {
+            let start_point = self.point_positions[quad_index];
+            let end_point = self.point_positions[quad_index + 1];
+
+            let vert_index_start = (positions.len() / 3) as u32;
+
+            positions.extend(&vec![
+                // start vertex
+                start_point[0] as f64,
+                start_point[1] as f64,
+                start_point[2] as f64,
+                // offset up
+                start_point[0] as f64,
+                start_point[1] as f64 + 1.0,
+                start_point[2] as f64,
+                // end vertex
+                end_point[0] as f64,
+                end_point[1] as f64,
+                end_point[2] as f64,
+                // offset up
+                end_point[0] as f64,
+                end_point[1] as f64 + 1.0,
+                end_point[2] as f64,
+            ]);
+
+            indices.extend(
+                &([0, 1, 2, 1, 2, 3]
+                    .iter()
+                    .map(|i| i + vert_index_start)
+                    .collect::<Vec<_>>()),
+            )
+        }
+
+        /*
         // Construct a mesh from indices and positions buffers.
         let mut indices: Vec<_> = (0..(self.point_positions.len() - 1) * 2)
             .map(|i| {
@@ -94,10 +130,11 @@ impl CustomMeshManager {
             })
             .flatten()
             .collect();
+            */
 
         println!("-----Building mesh: ");
         println!("indices: {:?}", indices);
-        println!("positions: {:?}", positions);
+        //println!("positions: {:?}", positions);
 
         let mesh = tri_mesh::MeshBuilder::new()
             .with_indices(indices)
@@ -132,7 +169,7 @@ impl CustomMeshManager {
         indices.extend(&other_side);
 
         //println!("indices {:?}", indices);
-        //println!("normals {:?}", normals);
+        println!("normals {:?}", normals);
         //println!("positions {:?}", positions);
 
         bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
