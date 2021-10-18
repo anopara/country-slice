@@ -20,6 +20,7 @@ use bevy_mod_picking::{PickableBundle, PickingCamera, PickingCameraBundle, Picki
 use bevy_dolly::Transform2Bevy;
 
 use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
+use itertools::Itertools;
 
 // Give camera a component so we can find it and update with Dolly rig
 struct MainCamera;
@@ -28,6 +29,7 @@ struct MainCamera;
 struct PreviewCube;
 
 // TEMPORARY, needs proper mesh data structure for the wall base
+// can be intersting? https://crates.io/crates/tri-mesh
 struct CustomMeshManager {
     pub point_positions: Vec<Vec3>,
     pub mesh_handle: Option<Handle<Mesh>>,
@@ -59,14 +61,85 @@ impl CustomMeshManager {
         one_side
     }
 
+    fn to_trimesh(&self) -> tri_mesh::mesh::Mesh {
+        // Construct a mesh from indices and positions buffers.
+        let mut indices: Vec<_> = (0..(self.point_positions.len() - 1) * 2)
+            .map(|i| {
+                let mut ind = vec![i as u32, (i + 1) as u32, (i + 2) as u32];
+                if i % 2 != 0 {
+                    ind.reverse()
+                };
+                ind
+            })
+            .flatten()
+            .collect();
+        let mut other_side = indices.clone();
+        other_side.reverse();
+        //indices.extend(&other_side);
+
+        let positions = self
+            .point_positions
+            .iter()
+            .map(|p| {
+                vec![
+                    // original vertex
+                    p[0] as f64,
+                    p[1] as f64,
+                    p[2] as f64,
+                    // offset up
+                    p[0] as f64,
+                    p[1] as f64 + 1.0,
+                    p[2] as f64,
+                ]
+            })
+            .flatten()
+            .collect();
+
+        println!("-----Building mesh: ");
+        println!("indices: {:?}", indices);
+        println!("positions: {:?}", positions);
+
+        let mesh = tri_mesh::MeshBuilder::new()
+            .with_indices(indices)
+            .with_positions(positions)
+            .build()
+            .unwrap();
+
+        println!("-----Done");
+
+        mesh
+    }
+
     pub fn populate_bevy_mesh(&self, bevy_mesh: &mut Mesh) {
-        let vert_pos = self.to_vertices();
-        let vert_count = vert_pos.len();
-        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vert_pos);
-        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[1.0, 0.0, 0.0]; vert_count]);
+        //let vert_pos = self.to_vertices();
+        //let vert_count = vert_pos.len();
+        let tri_mesh = self.to_trimesh();
+        let vert_count = tri_mesh.vertex_iter().count();
+
+        let positions: Vec<[f32; 3]> = tri_mesh
+            .positions_buffer_f32()
+            .chunks(3)
+            .map(|c| [c[0], c[1], c[2]])
+            .collect();
+        let normals: Vec<[f32; 3]> = tri_mesh
+            .normals_buffer_f32()
+            .chunks(3)
+            .map(|c| [c[0], c[1], c[2]])
+            .collect();
+        let mut indices = tri_mesh.indices_buffer();
+        let mut other_side = indices.clone();
+        other_side.reverse();
+        indices.extend(&other_side);
+
+        //println!("indices {:?}", indices);
+        //println!("normals {:?}", normals);
+        //println!("positions {:?}", positions);
+
+        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
+        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals); //vec![[1.0, 0.0, 0.0]; vert_count]);
         bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; vert_count]);
         bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(
-            (0..vert_count).map(|i| i as u32).collect(),
+            indices, //(0..vert_count).map(|i| i as u32).collect(),
         )));
     }
 }
@@ -127,7 +200,7 @@ fn setup(
                 metallic_roughness_texture: None,
                 reflectance: 0.0,
                 normal_map: None,
-                double_sided: false,
+                double_sided: true,
                 occlusion_texture: None,
                 emissive: Color::rgb(1.0, 1.0, 1.0),
                 emissive_texture: None,
@@ -205,7 +278,7 @@ fn query_intersection(
 
                 if custom_mesh_manager.point_positions.len() == 2 {
                     let mut mesh =
-                        Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleStrip);
+                        Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
 
                     custom_mesh_manager.populate_bevy_mesh(&mut mesh);
                     let handle = meshes.add(mesh);
