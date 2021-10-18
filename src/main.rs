@@ -5,6 +5,10 @@
 // 4. DONE setup the camera with dolly
 // 5. DONE draw a SOMETHING with the mouse
 
+//----
+// 1. for funs, fix normals (make a gif to record progress)
+// 2. make a prototype in Houdini of the wall setup - make an implementation plan
+
 mod utils;
 
 use bevy::{
