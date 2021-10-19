@@ -47,6 +47,45 @@ impl CustomMeshManager {
         }
     }
 
+    pub fn smooth_positions(&self) -> Vec<Vec3> {
+        let points_per_segment = 10;
+        let smoothing_steps = 50;
+
+        // resample curve
+        let mut resampled: Vec<Vec3> = Vec::new();
+        for (i, current_pos) in self.point_positions.iter().enumerate() {
+            if let Some(next_pos) = self.point_positions.get(i + 1) {
+                let dir = *next_pos - *current_pos;
+                resampled.extend(
+                    &(0..points_per_segment)
+                        .map(|s| *current_pos + dir * (s as f32 / points_per_segment as f32))
+                        .collect::<Vec<_>>(),
+                )
+            } else {
+                // if last point, just add
+                resampled.push(*current_pos);
+            }
+        }
+
+        // smooth
+        let mut total_smoothed = resampled.clone();
+        for _ in 0..smoothing_steps {
+            let mut current_iter_smooth = total_smoothed.clone();
+            for (i, current_pos) in total_smoothed.iter().enumerate() {
+                if let (Some(prev_pos), Some(next_pos)) =
+                    (total_smoothed.get(i - 1), total_smoothed.get(i + 1))
+                {
+                    let avg: Vec3 = (*prev_pos + *next_pos) / 2.0;
+                    current_iter_smooth[i] = *current_pos + (avg - *current_pos) * 0.5;
+                }
+            }
+            total_smoothed = current_iter_smooth;
+        }
+
+        total_smoothed
+    }
+
+    /*
     fn to_vertices(&self) -> Vec<[f32; 3]> {
         let mut one_side: Vec<[f32; 3]> = self
             .point_positions
@@ -64,13 +103,21 @@ impl CustomMeshManager {
         one_side.extend(&other_side);
         one_side
     }
+    */
 
     fn to_trimesh(&self) -> tri_mesh::mesh::Mesh {
+        let curve_positions = self.smooth_positions();
+        println!(
+            "Smoothed {} points to {}",
+            self.point_positions.len(),
+            curve_positions.len()
+        );
+
         let mut indices: Vec<u32> = Vec::new();
         let mut positions: Vec<f64> = Vec::new();
-        for quad_index in 0..(self.point_positions.len() - 1) {
-            let start_point = self.point_positions[quad_index];
-            let end_point = self.point_positions[quad_index + 1];
+        for quad_index in 0..(curve_positions.len() - 1) {
+            let start_point = curve_positions[quad_index];
+            let end_point = curve_positions[quad_index + 1];
 
             let vert_index_start = (positions.len() / 3) as u32;
 
@@ -137,7 +184,7 @@ impl CustomMeshManager {
             */
 
         println!("-----Building mesh: ");
-        println!("indices: {:?}", indices);
+        println!("indices: {}", indices.len());
         //println!("positions: {:?}", positions);
 
         let mesh = tri_mesh::MeshBuilder::new()
@@ -173,7 +220,7 @@ impl CustomMeshManager {
         indices.extend(&other_side);
 
         //println!("indices {:?}", indices);
-        println!("normals {:?}", normals);
+        //println!("normals {:?}", normals);
         //println!("positions {:?}", positions);
 
         bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
