@@ -347,6 +347,16 @@ fn query_intersection(
         if let Some((_, intersection)) = camera.intersect_top() {
             for (_, mut transform) in cube_query.iter_mut() {
                 transform.translation = intersection.position();
+
+                if let Some(mesh_handle) = custom_mesh_manager.mesh_handle.as_ref() {
+                    if let Some(mesh) = meshes.get_mut(mesh_handle) {
+                        custom_mesh_manager.populate_bevy_mesh(mesh);
+
+                        if let Some(last_point) = custom_mesh_manager.point_positions.last_mut() {
+                            *last_point = intersection.position();
+                        }
+                    }
+                }
             }
         }
     }
@@ -364,6 +374,7 @@ fn query_intersection(
                     .point_positions
                     .push(intersection.position());
 
+                // If we just made exactly 2 points, create a mesh
                 if custom_mesh_manager.point_positions.len() == 2 {
                     let mut mesh =
                         Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
@@ -379,10 +390,6 @@ fn query_intersection(
                             ..Default::default()
                         })
                         .insert(CustomMesh);
-                } else if let Some(mesh_handle) = custom_mesh_manager.mesh_handle.as_ref() {
-                    if let Some(mesh) = meshes.get_mut(mesh_handle) {
-                        custom_mesh_manager.populate_bevy_mesh(mesh);
-                    }
                 }
             }
         }
