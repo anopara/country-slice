@@ -1131,6 +1131,7 @@ dependencies = [
  "bevy_dolly",
  "bevy_mod_picking",
  "dolly",
+ "fastrand",
  "gltf 0.16.0",
  "itertools",
  "tri-mesh",
