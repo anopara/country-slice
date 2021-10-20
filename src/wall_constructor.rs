@@ -25,6 +25,12 @@ impl WallConstructor {
         let wall_length: f32 = curve.length();
 
         let wall_sizes = irregular_row(wall_length, BRICK_WIDTH, BRICK_WIDTH_VARIANCE, 0);
+
+        // TODO:
+        // 1. from wall sizes find pivots for the bricks
+        // 2. from pivots, convert them into curve_u position and sample WS position from curve
+        // 3. from pivots, convert them into curve_u position and construct Quat based on tangent
+        // 4. return transforms from which meshes can be placed
     }
 }
 
