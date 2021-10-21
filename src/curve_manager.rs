@@ -4,6 +4,7 @@ pub struct CurveManager {
     // points placed by the user
     pub point_positions: Vec<Vec3>,
     pub preview_mesh_handle: Option<Handle<Mesh>>,
+    pub brick_mesh_handle: Option<Handle<Mesh>>,
 }
 
 impl CurveManager {
@@ -11,6 +12,7 @@ impl CurveManager {
         Self {
             point_positions: Vec::new(),
             preview_mesh_handle: None,
+            brick_mesh_handle: None,
         }
     }
 

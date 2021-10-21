@@ -18,6 +18,7 @@ impl Curve {
             .sum()
     }
 
+    //TODO: THIS RELIES ON UNIFORM SAMPLING OF THE CURVE!!!!!!
     // Curve segment is defined by start_point_index and end_point_index
     fn get_curve_segment_from_u(&self, u: f32) -> (usize, usize) {
         let remaped_u = u * (self.points.len() as f32 - 1.0);

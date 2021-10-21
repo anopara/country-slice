@@ -29,7 +29,7 @@ use bevy_dolly::Transform2Bevy;
 use curve::Curve;
 use curve_manager::CurveManager;
 use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
-use itertools::Itertools;
+use wall_constructor::WallConstructor;
 
 // Give camera a component so we can find it and update with Dolly rig
 struct MainCamera;
@@ -39,19 +39,10 @@ struct PreviewCube;
 
 struct CustomMesh;
 
+// mark the bricks, so that can be deleted and recreated
+struct BrickEntity;
+
 fn main() {
-    let c = Curve {
-        points: vec![
-            Vec3::new(0.0, 0.0, 0.0),
-            Vec3::new(-1.0, 0.0, 0.0),
-            Vec3::new(2.0, 0.0, 0.0),
-        ],
-    };
-
-    println!("{:?}", c.get_pos_at_u(0.2));
-    println!("{:?}", c.get_tangent_at_u(0.25));
-
-    /*
     App::build()
         .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
@@ -60,20 +51,66 @@ fn main() {
         .add_startup_system(setup.system())
         .add_system(update_camera.system())
         .add_system(handle_mouse_clicks.system())
-        .add_system(query_intersection.system())
+        .add_system(query_intersection.system().label("intersection"))
+        .add_system(update_wall.system().after("intersection"))
         .run();
-        */
+}
+
+fn update_wall(
+    mut commands: Commands,
+    curve_manager: ResMut<CurveManager>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    bricks_query: Query<Entity, With<BrickEntity>>,
+) {
+    // delete old breaks if there are any
+    for entity in bricks_query.iter() {
+        commands.entity(entity).despawn()
+    }
+
+    if curve_manager.point_positions.len() > 1 {
+        // take the curve
+        let curve = Curve {
+            points: curve_manager.smooth_positions(),
+        };
+        let bricks = WallConstructor::from_curve(&curve);
+        for i in 0..5 {
+            // place bricks
+            for brick in &bricks {
+                let transform = Transform {
+                    translation: brick.position + Vec3::Y * ((i as f32) * 0.2),
+                    rotation: brick.rotation,
+                    scale: brick.scale,
+                };
+
+                commands
+                    .spawn_bundle(PbrBundle {
+                        mesh: curve_manager.brick_mesh_handle.clone().unwrap(),
+                        material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                        transform,
+                        ..Default::default()
+                    })
+                    .insert(BrickEntity);
+            }
+        }
+    }
 }
 
 /// set up a simple 3D scene
 fn setup(
     mut commands: Commands,
+    mut curve_manager: ResMut<CurveManager>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
     mut shaders: ResMut<Assets<Shader>>,
     asset_server: Res<AssetServer>,
 ) {
+    // load brick mesh
+    curve_manager.brick_mesh_handle = Some(meshes.add(
+        utils::load_gltf_as_bevy_mesh_w_vertex_color("assets/brick.glb"),
+    ));
+
     // Create a new shader pipeline
     let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
         vertex: shaders.add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
