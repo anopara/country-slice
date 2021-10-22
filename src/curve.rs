@@ -2,42 +2,59 @@ use bevy::prelude::*;
 
 pub struct Curve {
     pub points: Vec<Vec3>,
+    points_u: Vec<f32>,
+    pub length: f32,
 }
 
 impl Curve {
-    pub fn length(&self) -> f32 {
-        self.points
+    pub fn from(points: Vec<Vec3>) -> Self {
+        let length = points
             .iter()
             .enumerate()
             .map(|(idx, p)| {
-                self.points
+                points
                     .get(idx + 1)
                     .map(|next_p| (*next_p - *p).length())
                     .unwrap_or(0.0)
             })
-            .sum()
+            .sum();
+
+        let mut length_traveled = 0.0;
+        let mut points_u = Vec::new();
+
+        for (idx, pt) in points.iter().enumerate() {
+            points_u.push(length_traveled / length);
+            if let Some(next_pt) = points.get(idx + 1) {
+                length_traveled += (*next_pt - *pt).length();
+            }
+        }
+
+        println!("{:?}", length);
+        println!("{:?}", points);
+        println!("{:?}", points_u);
+
+        Self {
+            points,
+            points_u,
+            length,
+        }
     }
 
-    //TODO: THIS RELIES ON UNIFORM SAMPLING OF THE CURVE!!!!!!
     // Curve segment is defined by start_point_index and end_point_index
     fn get_curve_segment_from_u(&self, u: f32) -> (usize, usize) {
-        let remaped_u = u * (self.points.len() as f32 - 1.0);
-        let closest_index_1 = remaped_u.floor() as usize;
-        let closest_index_2 = remaped_u.ceil() as usize;
-
-        // If the u value is _exactly_ as the point location
-        if closest_index_1 == closest_index_2 {
-            // if it's the last point, return the previous point + last point
-            if u == 1.0 {
-                (closest_index_1 - 1, closest_index_1)
-            }
-            // otherwise, return this exact point and the next
-            else {
-                (closest_index_1, closest_index_1 + 1)
-            }
-        } else {
-            (closest_index_1, closest_index_2)
+        if u == 1.0 {
+            return (self.points.len() - 2, self.points.len() - 1);
+        } else if u == 0.0 {
+            return (0, 1);
         }
+
+        for (i, pt_u) in self.points_u.iter().enumerate() {
+            if u <= *pt_u {
+                return (i - 1, i);
+            }
+        }
+
+        unreachable!()
     }
 
     pub fn get_pos_at_u(&self, u: f32) -> Vec3 {
@@ -46,8 +63,9 @@ impl Curve {
         let (idx1, idx2) = self.get_curve_segment_from_u(u);
 
         let dir = self.points[idx2] - self.points[idx1];
-        let remaped_u = u * (self.points.len() as f32 - 1.0);
-        let mag = remaped_u - (idx1 as f32);
+        let u_range = (self.points_u[idx1], self.points_u[idx2]);
+
+        let mag = (u - u_range.0) / (u_range.1 - u_range.0);
 
         self.points[idx1] + dir * mag
     }

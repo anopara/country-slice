@@ -24,7 +24,7 @@ pub struct WallConstructor;
 
 impl WallConstructor {
     pub fn from_curve(curve: &Curve) -> Vec<Brick> {
-        let wall_length: f32 = curve.length();
+        let wall_length: f32 = curve.length;
         let bricks_count = (wall_length / BRICK_WIDTH).floor() as usize;
 
         // uniform points in curve_u

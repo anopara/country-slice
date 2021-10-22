@@ -43,6 +43,14 @@ struct CustomMesh;
 struct BrickEntity;
 
 fn main() {
+    /*
+    let mut points: Vec<_> = (0..=10).map(|i| Vec3::new(i as f32, 0.0, 0.0)).collect();
+    points.push(Vec3::new(0.0, 0.0, 0.0));
+    let c = Curve::from(points);
+
+    println!("{:?}", c.get_tangent_at_u(0.5));
+    */
+
     App::build()
         .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
@@ -70,15 +78,14 @@ fn update_wall(
 
     if curve_manager.point_positions.len() > 1 {
         // take the curve
-        let curve = Curve {
-            points: curve_manager.smooth_positions(),
-        };
+        let curve = Curve::from(curve_manager.smooth_positions());
         let bricks = WallConstructor::from_curve(&curve);
+
+        // place bricks
         for i in 0..5 {
-            // place bricks
             for brick in &bricks {
                 let transform = Transform {
-                    translation: brick.position + Vec3::Y * ((i as f32) * 0.2),
+                    translation: brick.position + Vec3::Y * 0.2 * (i as f32),
                     rotation: brick.rotation,
                     scale: brick.scale,
                 };
