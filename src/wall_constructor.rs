@@ -15,12 +15,12 @@ const BRICK_WIDTH: f32 = 0.2;
 const BRICK_WIDTH_VARIANCE: f32 = 0.14;
 
 const BRICK_HEIGHT: f32 = 0.2;
-const BRICK_HEIGHT_VARIANCE: f32 = 0.06;
+const BRICK_HEIGHT_VARIANCE: f32 = 0.09;
 
 const BRICK_DEPTH: f32 = 0.2;
 const BRICK_DEPTH_VARIANCE: f32 = 0.05;
 
-const WALL_HEIGHT: f32 = 2.0;
+const WALL_HEIGHT: f32 = 1.4;
 
 pub struct WallConstructor;
 
@@ -35,17 +35,24 @@ impl WallConstructor {
         let bricks_per_row = (wall_length / BRICK_WIDTH).floor() as usize;
         
         let mut bricks = Vec::new();
-        for row_u in rows.iter(){
+        for (i, row_u) in rows.iter().enumerate() {
+
+            let brick_height = if let Some(next_row_u) = rows.get(i+1) {
+                (next_row_u - row_u) * WALL_HEIGHT
+            } else {
+                BRICK_HEIGHT
+            };
 
             let brick_widths = random_splits(bricks_per_row, BRICK_WIDTH_VARIANCE / wall_length, &rng);
              // Bricks in curve space
             let mut brick_row: Vec<Brick> = brick_widths.iter().enumerate().filter_map(|(i, this_u)| if let Some(next_u) = brick_widths.get(i+1) {
+                let brick_depth = BRICK_DEPTH + (rng.f32()-0.5) * BRICK_DEPTH_VARIANCE;
                 let pivot_u = (next_u + this_u) / 2.0;
                 let width_u = next_u - this_u;
                 let width_ws = width_u * wall_length;
                 Some(Brick {
                     pivot_u,
-                    scale: Vec3::new(width_ws, BRICK_HEIGHT, BRICK_DEPTH + (rng.f32()-0.5) * BRICK_DEPTH_VARIANCE),
+                    scale: Vec3::new(width_ws, brick_height, brick_depth),
                     position: Vec3::new(pivot_u*wall_length, 0.0, 0.0),
                     rotation: Quat::IDENTITY
                 })
@@ -56,7 +63,7 @@ impl WallConstructor {
             // Transform bricks into world space
             for brick in &mut brick_row {
                 brick.position = curve.get_pos_at_u(brick.pivot_u);
-                brick.position.y = row_u * WALL_HEIGHT + BRICK_HEIGHT / 2.0;
+                brick.position.y = row_u * WALL_HEIGHT + brick_height / 2.0;
 
                 let curve_tangent = curve.get_tangent_at_u(brick.pivot_u);
                 let normal = curve_tangent.cross(Vec3::Y);

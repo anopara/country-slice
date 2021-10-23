@@ -1,3 +1,8 @@
+// Would like to have a different UX: hold mouse to draw the wall
+// I dont' want the wall to jitter, so the splits need to be length invariant, as if you are revealing the splits as you draw
+// RMB -> adds Ivy (if not near wall, adds a plant?)
+// Still need to jump into shaders and figure out how to write them, maybe tomorrow?
+
 mod curve;
 mod curve_manager;
 mod shaders;
