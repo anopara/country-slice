@@ -67,7 +67,6 @@ fn main() {
 fn update_wall(
     mut commands: Commands,
     curve_manager: ResMut<CurveManager>,
-    mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     bricks_query: Query<Entity, With<BrickEntity>>,
 ) {
@@ -81,25 +80,24 @@ fn update_wall(
         let curve = Curve::from(curve_manager.smooth_positions());
         let bricks = WallConstructor::from_curve(&curve);
 
-        // place bricks
-        for i in 0..5 {
-            for brick in &bricks {
-                let transform = Transform {
-                    translation: brick.position + Vec3::Y * 0.2 * (i as f32),
-                    rotation: brick.rotation,
-                    scale: brick.scale,
-                };
+    
+        for brick in &bricks {
+            let transform = Transform {
+                translation: brick.position,
+                rotation: brick.rotation,
+                scale: brick.scale,
+            };
 
-                commands
-                    .spawn_bundle(PbrBundle {
-                        mesh: curve_manager.brick_mesh_handle.clone().unwrap(),
-                        material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                        transform,
-                        ..Default::default()
-                    })
-                    .insert(BrickEntity);
-            }
+            commands
+                .spawn_bundle(PbrBundle {
+                    mesh: curve_manager.brick_mesh_handle.clone().unwrap(),
+                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                    transform,
+                    ..Default::default()
+                })
+                .insert(BrickEntity);
         }
+    
     }
 }
 
