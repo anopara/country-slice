@@ -1,16 +1,6 @@
-// TODO: Part 1. SETUP
-// 1. DONE setup Bevy renderer
-// 2. DONE import a mesh
-// 3. DONE render the mesh
-// 4. DONE setup the camera with dolly
-// 5. DONE draw a SOMETHING with the mouse
-
-//----
-// 1. for funs, fix normals (make a gif to record progress)
-// 2. make a prototype in Houdini of the wall setup - make an implementation plan
-
 mod curve;
 mod curve_manager;
+mod shaders;
 mod utils;
 mod wall_constructor;
 
@@ -22,13 +12,13 @@ use bevy::{
         shader::{ShaderStage, ShaderStages},
     },
 };
-use bevy_mod_picking::{PickableBundle, PickingCamera, PickingCameraBundle, PickingPlugin};
-
 use bevy_dolly::Transform2Bevy;
+use bevy_mod_picking::{PickableBundle, PickingCamera, PickingCameraBundle, PickingPlugin};
+use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
 
 use curve::Curve;
 use curve_manager::CurveManager;
-use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
+use shaders::*;
 use wall_constructor::WallConstructor;
 
 // Give camera a component so we can find it and update with Dolly rig
@@ -58,9 +48,10 @@ fn main() {
         .insert_resource(CurveManager::new())
         .add_startup_system(setup.system())
         .add_system(update_camera.system())
-        .add_system(handle_mouse_clicks.system())
-        .add_system(query_intersection.system().label("intersection"))
-        .add_system(update_wall.system().after("intersection"))
+        //.add_system(handle_mouse_clicks.system())
+        .add_system(mouse_preview.system())
+        .add_system(update_curve_manager.system().label("curve manager"))
+        .add_system(update_wall.system().after("curve manager"))
         .run();
 }
 
@@ -80,7 +71,6 @@ fn update_wall(
         let curve = Curve::from(curve_manager.smooth_positions());
         let bricks = WallConstructor::from_curve(&curve);
 
-    
         for brick in &bricks {
             let transform = Transform {
                 translation: brick.position,
@@ -97,7 +87,6 @@ fn update_wall(
                 })
                 .insert(BrickEntity);
         }
-    
     }
 }
 
@@ -183,38 +172,47 @@ fn setup(
         .insert_bundle(PickingCameraBundle::default());
 }
 
+/*
 fn handle_mouse_clicks(mouse_input: Res<Input<MouseButton>>, windows: Res<Windows>) {
     let win = windows.get_primary().expect("no primary window");
     if mouse_input.just_pressed(MouseButton::Left) {
-        println!("click at {:?}", win.cursor_position());
+        //println!("click at {:?}", win.cursor_position());
     }
 }
+*/
 
-fn query_intersection(
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut curve_manager: ResMut<CurveManager>,
-    mouse_button_input: Res<Input<MouseButton>>,
+fn mouse_preview(
     mut query: Query<&mut PickingCamera>,
     mut cube_query: Query<(
         &mut PreviewCube,
         &mut bevy::transform::components::Transform,
     )>,
 ) {
-    // Update Preview Cube
     for camera in query.iter_mut() {
         if let Some((_, intersection)) = camera.intersect_top() {
             for (_, mut transform) in cube_query.iter_mut() {
                 transform.translation = intersection.position();
+            }
+        }
+    }
+}
 
-                if let Some(mesh_handle) = curve_manager.preview_mesh_handle.as_ref() {
-                    if let Some(mesh) = meshes.get_mut(mesh_handle) {
-                        curve_manager.populate_bevy_mesh(mesh);
+fn update_curve_manager(
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut commands: Commands,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut curve_manager: ResMut<CurveManager>,
+    mouse_button_input: Res<Input<MouseButton>>,
+    mut query: Query<&mut PickingCamera>,
+) {
+    for camera in query.iter_mut() {
+        if let Some((_, intersection)) = camera.intersect_top() {
+            if let Some(mesh_handle) = curve_manager.preview_mesh_handle.as_ref() {
+                if let Some(mesh) = meshes.get_mut(mesh_handle) {
+                    curve_manager.debug(mesh);
 
-                        if let Some(last_point) = curve_manager.point_positions.last_mut() {
-                            *last_point = intersection.position();
-                        }
+                    if let Some(last_point) = curve_manager.point_positions.last_mut() {
+                        *last_point = intersection.position();
                     }
                 }
             }
@@ -237,7 +235,7 @@ fn query_intersection(
                     let mut mesh =
                         Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
 
-                    curve_manager.populate_bevy_mesh(&mut mesh);
+                    curve_manager.debug(&mut mesh);
                     let handle = meshes.add(mesh);
                     curve_manager.preview_mesh_handle = Some(handle.clone());
 
@@ -277,29 +275,3 @@ fn update_camera(
 
     cam.transform_2_bevy(transform);
 }
-
-const VERTEX_SHADER: &str = r#"
-#version 450
-layout(location = 0) in vec3 Vertex_Position;
-layout(location = 1) in vec3 Vertex_Color;
-layout(location = 0) out vec3 v_color;
-layout(set = 0, binding = 0) uniform CameraViewProj {
-    mat4 ViewProj;
-};
-layout(set = 1, binding = 0) uniform Transform {
-    mat4 Model;
-};
-void main() {
-    gl_Position = ViewProj * Model * vec4(Vertex_Position, 1.0);
-    v_color = Vertex_Color;
-}
-"#;
-
-const FRAGMENT_SHADER: &str = r#"
-#version 450
-layout(location = 0) out vec4 o_Target;
-layout(location = 0) in vec3 v_color;
-void main() {
-    o_Target = vec4(v_color, 1.0);
-}
-"#;

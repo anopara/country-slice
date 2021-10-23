@@ -18,7 +18,7 @@ const BRICK_HEIGHT: f32 = 0.2;
 const BRICK_HEIGHT_VARIANCE: f32 = 0.06;
 
 const BRICK_DEPTH: f32 = 0.2;
-const BRICK_DEPTH_VARIANCE: f32 = 0.03;
+const BRICK_DEPTH_VARIANCE: f32 = 0.05;
 
 const WALL_HEIGHT: f32 = 2.0;
 

@@ -29,10 +29,6 @@ impl Curve {
             }
         }
 
-        println!("{:?}", length);
-        println!("{:?}", points);
-        println!("{:?}", points_u);
-
         Self {
             points,
             points_u,
