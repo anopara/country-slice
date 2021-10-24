@@ -14,6 +14,7 @@ use bevy::{
     render::{
         mesh::shape,
         pipeline::{PipelineDescriptor, RenderPipeline},
+        render_graph::{base, RenderGraph, RenderResourcesNode},
         shader::{ShaderStage, ShaderStages},
     },
 };
@@ -58,8 +59,18 @@ fn main() {
         //.add_system(handle_mouse_clicks.system())
         .add_system(mouse_preview.system())
         .add_system(update_curve_manager.system().label("curve manager"))
-        .add_system(update_wall.system().after("curve manager"))
+        .add_system(update_wall.system().after("curve manager").label("wall"))
+        .add_system(animate_shader.system().after("wall"))
         .run();
+}
+
+/// In this system we query for the `TimeComponent` and global `Time` resource, and set
+/// `time.seconds_since_startup()` as the `value` of the `TimeComponent`. This value will be
+/// accessed by the fragment shader and used to animate the shader.
+fn animate_shader(time: Res<Time>, mut query: Query<&mut TimeUniform>) {
+    for mut time_uniform in query.iter_mut() {
+        time_uniform.value = time.seconds_since_startup() as f32;
+    }
 }
 
 fn update_wall(
@@ -67,6 +78,7 @@ fn update_wall(
     curve_manager: ResMut<CurveManager>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     bricks_query: Query<Entity, With<BrickEntity>>,
+    time: Res<Time>,
 ) {
     // delete old breaks if there are any
     for entity in bricks_query.iter() {
@@ -95,7 +107,10 @@ fn update_wall(
                     )]),
                     ..Default::default()
                 })
-                .insert(BrickEntity);
+                .insert(BrickEntity)
+                .insert(TimeUniform {
+                    value: time.seconds_since_startup() as f32,
+                });
         }
     }
 }
@@ -109,6 +124,7 @@ fn setup(
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
     mut shaders: ResMut<Assets<Shader>>,
     asset_server: Res<AssetServer>,
+    mut render_graph: ResMut<RenderGraph>,
 ) {
     // load brick mesh
     curve_manager.brick_mesh_handle = Some(meshes.add(
@@ -120,7 +136,10 @@ fn setup(
                 ShaderStage::Vertex,
                 POSITION_TO_VERTEX_SHADER,
             )),
-            fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER))),
+            fragment: Some(shaders.add(Shader::from_glsl(
+                ShaderStage::Fragment,
+                FRAGMENT_SHADER_ANIMATED,
+            ))),
         },
     )));
 
@@ -129,6 +148,19 @@ fn setup(
         vertex: shaders.add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
         fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER))),
     }));
+
+    // Add a `RenderResourcesNode` to our `RenderGraph`. This will bind `TimeComponent` to our
+    // shader.
+    render_graph.add_system_node(
+        "time_uniform",
+        RenderResourcesNode::<TimeUniform>::new(true),
+    );
+
+    // Add a `RenderGraph` edge connecting our new "time_component" node to the main pass node. This
+    // ensures that "time_component" runs before the main pass.
+    render_graph
+        .add_node_edge("time_uniform", base::node::MAIN_PASS)
+        .unwrap();
 
     // floor
     commands
