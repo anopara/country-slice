@@ -5,7 +5,6 @@
 
 mod curve;
 mod curve_manager;
-mod shaders;
 mod utils;
 mod wall_constructor;
 
@@ -15,7 +14,7 @@ use bevy::{
         mesh::shape,
         pipeline::{PipelineDescriptor, RenderPipeline},
         render_graph::{base, RenderGraph, RenderResourcesNode},
-        shader::{ShaderStage, ShaderStages},
+        shader::ShaderStages,
     },
 };
 use bevy_dolly::Transform2Bevy;
@@ -24,8 +23,15 @@ use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
 
 use curve::Curve;
 use curve_manager::CurveManager;
-use shaders::*;
 use wall_constructor::WallConstructor;
+
+use bevy::{reflect::TypeUuid, render::renderer::RenderResources};
+
+#[derive(RenderResources, Default, TypeUuid)]
+#[uuid = "93fb26fc-6c05-489b-9029-601edf703b6b"]
+pub struct TimeUniform {
+    pub value: f32,
+}
 
 const CURVE_SHOW_DEBUG: bool = false;
 
@@ -122,31 +128,27 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
-    mut shaders: ResMut<Assets<Shader>>,
     asset_server: Res<AssetServer>,
     mut render_graph: ResMut<RenderGraph>,
 ) {
+    // Watch for changes
+    asset_server.watch_for_changes().unwrap();
+
     // load brick mesh
     curve_manager.brick_mesh_handle = Some(meshes.add(
         utils::load_gltf_as_bevy_mesh_w_vertex_color("assets/brick.glb"),
     ));
     curve_manager.brick_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
         ShaderStages {
-            vertex: shaders.add(Shader::from_glsl(
-                ShaderStage::Vertex,
-                POSITION_TO_VERTEX_SHADER,
-            )),
-            fragment: Some(shaders.add(Shader::from_glsl(
-                ShaderStage::Fragment,
-                FRAGMENT_SHADER_ANIMATED,
-            ))),
+            vertex: asset_server.load::<Shader, _>("shaders/brick_test.vert"),
+            fragment: Some(asset_server.load::<Shader, _>("shaders/brick_test.frag")),
         },
     )));
 
     // Create a new shader pipeline
     let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
-        vertex: shaders.add(Shader::from_glsl(ShaderStage::Vertex, VERTEX_SHADER)),
-        fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER))),
+        vertex: asset_server.load::<Shader, _>("shaders/vertex_color.vert"),
+        fragment: Some(asset_server.load::<Shader, _>("shaders/vertex_color.frag")),
     }));
 
     // Add a `RenderResourcesNode` to our `RenderGraph`. This will bind `TimeComponent` to our
