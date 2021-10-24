@@ -1,10 +1,11 @@
-use bevy::prelude::*;
+use bevy::{prelude::*, render::pipeline::PipelineDescriptor};
 
 pub struct CurveManager {
     // points placed by the user
     pub point_positions: Vec<Vec3>,
     pub preview_mesh_handle: Option<Handle<Mesh>>,
     pub brick_mesh_handle: Option<Handle<Mesh>>,
+    pub brick_pipeline_handle: Option<Handle<PipelineDescriptor>>,
 }
 
 impl CurveManager {
@@ -13,6 +14,7 @@ impl CurveManager {
             point_positions: Vec::new(),
             preview_mesh_handle: None,
             brick_mesh_handle: None,
+            brick_pipeline_handle: None,
         }
     }
 

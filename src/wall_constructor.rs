@@ -11,6 +11,8 @@ use fastrand::Rng;
 
 // NEXT STEP: split the trasnforms into two randomly
 
+// could be interesting for the bricks offset https://www.iquilezles.org/www/articles/voronoise/voronoise.htm
+
 const BRICK_WIDTH: f32 = 0.2;
 const BRICK_WIDTH_VARIANCE: f32 = 0.14;
 
@@ -40,7 +42,7 @@ impl WallConstructor {
             let brick_height = if let Some(next_row_u) = rows.get(i+1) {
                 (next_row_u - row_u) * WALL_HEIGHT
             } else {
-                BRICK_HEIGHT
+                BRICK_HEIGHT + (rng.f32()-0.5) * BRICK_HEIGHT_VARIANCE
             };
 
             let brick_widths = random_splits(bricks_per_row, BRICK_WIDTH_VARIANCE / wall_length, &rng);

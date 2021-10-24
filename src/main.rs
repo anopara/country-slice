@@ -26,6 +26,8 @@ use curve_manager::CurveManager;
 use shaders::*;
 use wall_constructor::WallConstructor;
 
+const CURVE_SHOW_DEBUG: bool = false;
+
 // Give camera a component so we can find it and update with Dolly rig
 struct MainCamera;
 
@@ -88,6 +90,9 @@ fn update_wall(
                     mesh: curve_manager.brick_mesh_handle.clone().unwrap(),
                     material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
                     transform,
+                    render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+                        curve_manager.brick_pipeline_handle.clone().unwrap(),
+                    )]),
                     ..Default::default()
                 })
                 .insert(BrickEntity);
@@ -109,6 +114,15 @@ fn setup(
     curve_manager.brick_mesh_handle = Some(meshes.add(
         utils::load_gltf_as_bevy_mesh_w_vertex_color("assets/brick.glb"),
     ));
+    curve_manager.brick_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
+        ShaderStages {
+            vertex: shaders.add(Shader::from_glsl(
+                ShaderStage::Vertex,
+                POSITION_TO_VERTEX_SHADER,
+            )),
+            fragment: Some(shaders.add(Shader::from_glsl(ShaderStage::Fragment, FRAGMENT_SHADER))),
+        },
+    )));
 
     // Create a new shader pipeline
     let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
@@ -212,14 +226,16 @@ fn update_curve_manager(
 ) {
     for camera in query.iter_mut() {
         if let Some((_, intersection)) = camera.intersect_top() {
-            if let Some(mesh_handle) = curve_manager.preview_mesh_handle.as_ref() {
-                if let Some(mesh) = meshes.get_mut(mesh_handle) {
-                    curve_manager.debug(mesh);
-
-                    if let Some(last_point) = curve_manager.point_positions.last_mut() {
-                        *last_point = intersection.position();
+            if CURVE_SHOW_DEBUG {
+                if let Some(mesh_handle) = curve_manager.preview_mesh_handle.as_ref() {
+                    if let Some(mesh) = meshes.get_mut(mesh_handle) {
+                        curve_manager.debug(mesh);
                     }
                 }
+            }
+
+            if let Some(last_point) = curve_manager.point_positions.last_mut() {
+                *last_point = intersection.position();
             }
         }
     }
@@ -235,22 +251,24 @@ fn update_curve_manager(
             if let Some((_, intersection)) = camera.intersect_top() {
                 curve_manager.point_positions.push(intersection.position());
 
-                // If we just made exactly 2 points, create a mesh
-                if curve_manager.point_positions.len() == 2 {
-                    let mut mesh =
-                        Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
+                if CURVE_SHOW_DEBUG {
+                    // If we just made exactly 2 points, init the preview mesh
+                    if curve_manager.point_positions.len() == 2 {
+                        let mut mesh =
+                            Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
 
-                    curve_manager.debug(&mut mesh);
-                    let handle = meshes.add(mesh);
-                    curve_manager.preview_mesh_handle = Some(handle.clone());
+                        curve_manager.debug(&mut mesh);
+                        let handle = meshes.add(mesh);
+                        curve_manager.preview_mesh_handle = Some(handle.clone());
 
-                    commands
-                        .spawn_bundle(PbrBundle {
-                            mesh: handle,
-                            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                            ..Default::default()
-                        })
-                        .insert(CustomMesh);
+                        commands
+                            .spawn_bundle(PbrBundle {
+                                mesh: handle,
+                                material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                                ..Default::default()
+                            })
+                            .insert(CustomMesh);
+                    }
                 }
             }
         }
