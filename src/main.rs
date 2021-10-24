@@ -136,7 +136,7 @@ fn setup(
 
     // load brick mesh
     curve_manager.brick_mesh_handle = Some(meshes.add(
-        utils::load_gltf_as_bevy_mesh_w_vertex_color("assets/brick.glb"),
+        utils::load_gltf_as_bevy_mesh_w_vertex_color("assets/meshes/brick.glb"),
     ));
     curve_manager.brick_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
         ShaderStages {
@@ -168,9 +168,9 @@ fn setup(
     commands
         .spawn_bundle(PbrBundle {
             mesh: meshes.add(utils::load_gltf_as_bevy_mesh_w_vertex_color(
-                "assets/floor.glb",
+                "assets/meshes/floor.glb",
             )),
-            material: asset_server.load("test.glb#Material0"),
+            material: asset_server.load("meshes/test.glb#Material0"),
             render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
                 pipeline_handle,
             )]),
