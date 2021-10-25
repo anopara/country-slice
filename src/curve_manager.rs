@@ -1,6 +1,5 @@
 use crate::{utils, CustomMesh};
 use bevy::{prelude::*, render::pipeline::PipelineDescriptor};
-use std::collections::HashMap;
 
 pub struct UserDrawnCurve {
     pub points: Vec<Vec3>,

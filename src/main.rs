@@ -145,17 +145,6 @@ fn update_wall(
             curve_manager.walls.push(Vec::new());
         }
     }
-
-    /*
-    // delete old breaks if there are any
-    for entity in bricks_query.iter() {
-        commands.entity(entity).despawn()
-    }
-
-    if curve_manager.point_positions.len() > 1 {
-
-    }
-    */
 }
 
 /// set up a simple 3D scene
