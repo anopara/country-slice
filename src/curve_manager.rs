@@ -1,9 +1,70 @@
+use crate::{utils, CustomMesh};
 use bevy::{prelude::*, render::pipeline::PipelineDescriptor};
 
+pub struct UserDrawnCurve {
+    pub points: Vec<Vec3>,
+    pub debug_mesh_handle: Option<Handle<Mesh>>,
+}
+
+impl UserDrawnCurve {
+    pub fn new() -> Self {
+        Self {
+            points: Vec::new(),
+            debug_mesh_handle: None,
+        }
+    }
+
+    pub fn update_debug_mesh(
+        &mut self,
+        mut mesh_assets: ResMut<Assets<Mesh>>,
+        materials: ResMut<Assets<StandardMaterial>>,
+        commands: Commands,
+    ) {
+        if let Some(mesh_handle) = self.debug_mesh_handle.as_ref() {
+            if let Some(bevy_mesh) = mesh_assets.get_mut(mesh_handle) {
+                let smoothed = utils::smooth_points(&self.points, 50);
+                let tri_mesh = utils::curve_to_trimesh(&smoothed);
+                utils::bevy_mesh_from_trimesh(tri_mesh, bevy_mesh);
+            } else {
+                warn!("UserDrawnCurve: bevy mesh doesn't exist");
+            }
+        } else {
+            self.create_debug_mesh(mesh_assets, materials, commands);
+        }
+    }
+
+    fn create_debug_mesh(
+        &mut self,
+        mut mesh_assets: ResMut<Assets<Mesh>>,
+        mut materials: ResMut<Assets<StandardMaterial>>,
+        mut commands: Commands,
+    ) {
+        let mut mesh = Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
+
+        // Create a single triangle somewhere under the level, the data will be overwritten next tick anyway
+        mesh.set_attribute(
+            Mesh::ATTRIBUTE_POSITION,
+            vec![[0.0, -100.0, 0.0], [1.0, -100.0, 0.0], [0.0, -101.0, 0.0]],
+        );
+        mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, -1.0]; 3]);
+        mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; 3]);
+        mesh.set_indices(Some(bevy::render::mesh::Indices::U32(vec![0, 1, 2])));
+
+        let handle = mesh_assets.add(mesh);
+        self.debug_mesh_handle = Some(handle.clone());
+
+        commands
+            .spawn_bundle(PbrBundle {
+                mesh: handle,
+                material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                ..Default::default()
+            })
+            .insert(CustomMesh);
+    }
+}
+
 pub struct CurveManager {
-    // points placed by the user
-    pub point_positions: Vec<Vec3>,
-    pub preview_mesh_handle: Option<Handle<Mesh>>,
+    pub user_curves: Vec<UserDrawnCurve>,
     pub brick_mesh_handle: Option<Handle<Mesh>>,
     pub brick_pipeline_handle: Option<Handle<PipelineDescriptor>>,
 }
@@ -11,51 +72,37 @@ pub struct CurveManager {
 impl CurveManager {
     pub fn new() -> Self {
         Self {
-            point_positions: Vec::new(),
-            preview_mesh_handle: None,
+            user_curves: Vec::new(),
             brick_mesh_handle: None,
             brick_pipeline_handle: None,
         }
     }
 
-    pub fn smooth_positions(&self) -> Vec<Vec3> {
-        let points_per_segment = 10;
-        let smoothing_steps = 50;
+    /*
+        pub fn smooth_positions(&self) -> Vec<Vec3> {
+            let points_per_segment = 10;
+            let smoothing_steps = 50;
 
-        // resample curve
-        let mut resampled: Vec<Vec3> = Vec::new();
-        for (i, current_pos) in self.point_positions.iter().enumerate() {
-            if let Some(next_pos) = self.point_positions.get(i + 1) {
-                let dir = *next_pos - *current_pos;
-                resampled.extend(
-                    &(0..points_per_segment)
-                        .map(|s| *current_pos + dir * (s as f32 / points_per_segment as f32))
-                        .collect::<Vec<_>>(),
-                )
-            } else {
-                // if last point, just add
-                resampled.push(*current_pos);
-            }
-        }
-
-        // smooth
-        let mut total_smoothed = resampled.clone();
-        for _ in 0..smoothing_steps {
-            let mut current_iter_smooth = total_smoothed.clone();
-            for (i, current_pos) in total_smoothed.iter().enumerate() {
-                if let (Some(prev_pos), Some(next_pos)) =
-                    (total_smoothed.get(i - 1), total_smoothed.get(i + 1))
-                {
-                    let avg: Vec3 = (*prev_pos + *next_pos) / 2.0;
-                    current_iter_smooth[i] = *current_pos + (avg - *current_pos) * 0.5;
+            // resample curve
+            let mut resampled: Vec<Vec3> = Vec::new();
+            for (i, current_pos) in self.point_positions.iter().enumerate() {
+                if let Some(next_pos) = self.point_positions.get(i + 1) {
+                    let dir = *next_pos - *current_pos;
+                    resampled.extend(
+                        &(0..points_per_segment)
+                            .map(|s| *current_pos + dir * (s as f32 / points_per_segment as f32))
+                            .collect::<Vec<_>>(),
+                    )
+                } else {
+                    // if last point, just add
+                    resampled.push(*current_pos);
                 }
             }
-            total_smoothed = current_iter_smooth;
+
+            // smooth
+            utils::smooth_points(resampled, smoothing_steps)
         }
-
-        total_smoothed
-    }
-
+    */
     /*
     fn to_vertices(&self) -> Vec<[f32; 3]> {
         let mut one_side: Vec<[f32; 3]> = self
@@ -75,77 +122,4 @@ impl CurveManager {
         one_side
     }
     */
-
-    fn to_trimesh(&self) -> tri_mesh::mesh::Mesh {
-        let curve_positions = self.smooth_positions();
-
-        let mut indices: Vec<u32> = Vec::new();
-        let mut positions: Vec<f64> = Vec::new();
-        for quad_index in 0..(curve_positions.len() - 1) {
-            let start_point = curve_positions[quad_index];
-            let end_point = curve_positions[quad_index + 1];
-
-            let vert_index_start = (positions.len() / 3) as u32;
-
-            positions.extend(&vec![
-                // start vertex
-                start_point[0] as f64,
-                start_point[1] as f64,
-                start_point[2] as f64,
-                // offset up
-                start_point[0] as f64,
-                start_point[1] as f64 + 1.0,
-                start_point[2] as f64,
-                // end vertex
-                end_point[0] as f64,
-                end_point[1] as f64,
-                end_point[2] as f64,
-                // offset up
-                end_point[0] as f64,
-                end_point[1] as f64 + 1.0,
-                end_point[2] as f64,
-            ]);
-
-            indices.extend(
-                &([0, 1, 2, 1, 3, 2]
-                    .iter()
-                    .map(|i| i + vert_index_start)
-                    .collect::<Vec<_>>()),
-            )
-        }
-
-        let mesh = tri_mesh::MeshBuilder::new()
-            .with_indices(indices)
-            .with_positions(positions)
-            .build()
-            .unwrap();
-
-        mesh
-    }
-
-    // Show the curve as a mesh
-    pub fn debug(&self, bevy_mesh: &mut Mesh) {
-        let tri_mesh = self.to_trimesh();
-        let vert_count = tri_mesh.vertex_iter().count();
-
-        let positions: Vec<[f32; 3]> = tri_mesh
-            .positions_buffer_f32()
-            .chunks(3)
-            .map(|c| [c[0], c[1], c[2]])
-            .collect();
-        let normals: Vec<[f32; 3]> = tri_mesh
-            .normals_buffer_f32()
-            .chunks(3)
-            .map(|c| [c[0], c[1], c[2]])
-            .collect();
-        let mut indices = tri_mesh.indices_buffer();
-        let mut other_side = indices.clone();
-        other_side.reverse();
-        indices.extend(&other_side);
-
-        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
-        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals); //vec![[1.0, 0.0, 0.0]; vert_count]);
-        bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; vert_count]);
-        bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(indices)));
-    }
 }

@@ -1,7 +1,14 @@
 // Would like to have a different UX: hold mouse to draw the wall
 // I dont' want the wall to jitter, so the splits need to be length invariant, as if you are revealing the splits as you draw
-// RMB -> adds Ivy (if not near wall, adds a plant?)
+// RMB -> adds Ivy (if not near wall, adds a plant?) - or maybe ivy grows together with the wall, but you can also add more? (with a vegetation brush?)
 // Still need to jump into shaders and figure out how to write them, maybe tomorrow?
+
+// Maybe its a small story about a knight who ventured into the ruins (you make walls and setdressing)
+// then he saw a house (you make an outline an its a house)
+// he entered the houset to kill a witch
+// everything soaks red from the house, the knight leaves
+// dark creatures gather
+// the girl comes out of the house and she turns the knight into one of the creatures (you can draw the creatures?)
 
 mod curve;
 mod curve_manager;
@@ -22,7 +29,7 @@ use bevy_mod_picking::{PickableBundle, PickingCamera, PickingCameraBundle, Picki
 use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
 
 use curve::Curve;
-use curve_manager::CurveManager;
+use curve_manager::{CurveManager, UserDrawnCurve};
 use wall_constructor::WallConstructor;
 
 use bevy::{reflect::TypeUuid, render::renderer::RenderResources};
@@ -33,7 +40,7 @@ pub struct TimeUniform {
     pub value: f32,
 }
 
-const CURVE_SHOW_DEBUG: bool = false;
+const CURVE_SHOW_DEBUG: bool = true;
 
 // Give camera a component so we can find it and update with Dolly rig
 struct MainCamera;
@@ -65,7 +72,7 @@ fn main() {
         //.add_system(handle_mouse_clicks.system())
         .add_system(mouse_preview.system())
         .add_system(update_curve_manager.system().label("curve manager"))
-        .add_system(update_wall.system().after("curve manager").label("wall"))
+        //.add_system(update_wall.system().after("curve manager").label("wall"))
         .add_system(animate_shader.system().after("wall"))
         .run();
 }
@@ -79,6 +86,7 @@ fn animate_shader(time: Res<Time>, mut query: Query<&mut TimeUniform>) {
     }
 }
 
+/*
 fn update_wall(
     mut commands: Commands,
     curve_manager: ResMut<CurveManager>,
@@ -120,6 +128,7 @@ fn update_wall(
         }
     }
 }
+*/
 
 /// set up a simple 3D scene
 fn setup(
@@ -251,60 +260,43 @@ fn mouse_preview(
 }
 
 fn update_curve_manager(
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut commands: Commands,
-    mut meshes: ResMut<Assets<Mesh>>,
+    materials: ResMut<Assets<StandardMaterial>>,
+    commands: Commands,
+    meshes: ResMut<Assets<Mesh>>,
     mut curve_manager: ResMut<CurveManager>,
     mouse_button_input: Res<Input<MouseButton>>,
     mut query: Query<&mut PickingCamera>,
 ) {
-    for camera in query.iter_mut() {
-        if let Some((_, intersection)) = camera.intersect_top() {
-            if CURVE_SHOW_DEBUG {
-                if let Some(mesh_handle) = curve_manager.preview_mesh_handle.as_ref() {
-                    if let Some(mesh) = meshes.get_mut(mesh_handle) {
-                        curve_manager.debug(mesh);
-                    }
-                }
-            }
+    // If LMB was just pressed, start a new curve
+    if mouse_button_input.just_pressed(MouseButton::Left) {
+        curve_manager.user_curves.push(UserDrawnCurve::new());
+    }
 
-            if let Some(last_point) = curve_manager.point_positions.last_mut() {
-                *last_point = intersection.position();
+    // If there is a curve being drawn
+    if let Some(curve) = curve_manager.user_curves.last_mut() {
+        // Add points to it
+        if mouse_button_input.pressed(MouseButton::Left) {
+            if let Ok(Some((_, intersection))) =
+                query.single_mut().map(|camera| camera.intersect_top())
+            {
+                const DIST_THRESHOLD: f32 = 0.001;
+
+                if curve
+                    .points
+                    .last()
+                    // if curve  had points, only add if the distance is larger than X
+                    .map(|last| intersection.position().distance(*last) > DIST_THRESHOLD)
+                    // if curve  has no points, add this point
+                    .unwrap_or(true)
+                {
+                    curve.points.push(intersection.position())
+                }
             }
         }
-    }
 
-    if mouse_button_input.just_pressed(MouseButton::Right) {
-        curve_manager.preview_mesh_handle = None;
-        curve_manager.point_positions = Vec::new();
-    }
-
-    if mouse_button_input.just_pressed(MouseButton::Left) {
-        info!("left mouse just pressed");
-        for camera in query.iter_mut() {
-            if let Some((_, intersection)) = camera.intersect_top() {
-                curve_manager.point_positions.push(intersection.position());
-
-                if CURVE_SHOW_DEBUG {
-                    // If we just made exactly 2 points, init the preview mesh
-                    if curve_manager.point_positions.len() == 2 {
-                        let mut mesh =
-                            Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
-
-                        curve_manager.debug(&mut mesh);
-                        let handle = meshes.add(mesh);
-                        curve_manager.preview_mesh_handle = Some(handle.clone());
-
-                        commands
-                            .spawn_bundle(PbrBundle {
-                                mesh: handle,
-                                material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                                ..Default::default()
-                            })
-                            .insert(CustomMesh);
-                    }
-                }
-            }
+        // Update its debug mesh
+        if CURVE_SHOW_DEBUG {
+            curve.update_debug_mesh(meshes, materials, commands);
         }
     }
 }
