@@ -1,5 +1,6 @@
 use crate::{utils, CustomMesh};
 use bevy::{prelude::*, render::pipeline::PipelineDescriptor};
+use std::collections::HashMap;
 
 pub struct UserDrawnCurve {
     pub points: Vec<Vec3>,
@@ -65,6 +66,7 @@ impl UserDrawnCurve {
 
 pub struct CurveManager {
     pub user_curves: Vec<UserDrawnCurve>,
+    pub walls: Vec<Vec<Entity>>,
     pub brick_mesh_handle: Option<Handle<Mesh>>,
     pub brick_pipeline_handle: Option<Handle<PipelineDescriptor>>,
 }
@@ -73,6 +75,7 @@ impl CurveManager {
     pub fn new() -> Self {
         Self {
             user_curves: Vec::new(),
+            walls: Vec::new(),
             brick_mesh_handle: None,
             brick_pipeline_handle: None,
         }

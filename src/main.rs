@@ -1,7 +1,5 @@
-// Would like to have a different UX: hold mouse to draw the wall
 // I dont' want the wall to jitter, so the splits need to be length invariant, as if you are revealing the splits as you draw
 // RMB -> adds Ivy (if not near wall, adds a plant?) - or maybe ivy grows together with the wall, but you can also add more? (with a vegetation brush?)
-// Still need to jump into shaders and figure out how to write them, maybe tomorrow?
 
 // Maybe its a small story about a knight who ventured into the ruins (you make walls and setdressing)
 // then he saw a house (you make an outline an its a house)
@@ -72,7 +70,7 @@ fn main() {
         //.add_system(handle_mouse_clicks.system())
         .add_system(mouse_preview.system())
         .add_system(update_curve_manager.system().label("curve manager"))
-        //.add_system(update_wall.system().after("curve manager").label("wall"))
+        .add_system(update_wall.system().after("curve manager").label("wall"))
         .add_system(animate_shader.system().after("wall"))
         .run();
 }
@@ -86,49 +84,79 @@ fn animate_shader(time: Res<Time>, mut query: Query<&mut TimeUniform>) {
     }
 }
 
-/*
 fn update_wall(
     mut commands: Commands,
-    curve_manager: ResMut<CurveManager>,
+    mut curve_manager: ResMut<CurveManager>,
     mut materials: ResMut<Assets<StandardMaterial>>,
-    bricks_query: Query<Entity, With<BrickEntity>>,
     time: Res<Time>,
 ) {
+    let curve_manager = &mut *curve_manager;
+
+    // If there is a curve being drawn
+    if let Some(curve) = curve_manager.user_curves.last() {
+        let mut brick_entities = Vec::new();
+
+        // Check if there is already wall constructed
+        if let Some(wall) = curve_manager
+            .walls
+            .get_mut(curve_manager.user_curves.len() - 1)
+        {
+            // delete old breaks if there are any
+            for entity in wall.iter() {
+                commands.entity(*entity).despawn()
+            }
+
+            if curve.points.len() > 1 {
+                // take the curve
+                let curve = Curve::from(utils::smooth_points(&curve.points, 50));
+                let bricks = WallConstructor::from_curve(&curve);
+
+                for brick in &bricks {
+                    let transform = Transform {
+                        translation: brick.position,
+                        rotation: brick.rotation,
+                        scale: brick.scale,
+                    };
+
+                    let new_entity = commands
+                        .spawn_bundle(PbrBundle {
+                            mesh: curve_manager.brick_mesh_handle.clone().unwrap(),
+                            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                            transform,
+                            render_pipelines: RenderPipelines::from_pipelines(vec![
+                                RenderPipeline::new(
+                                    curve_manager.brick_pipeline_handle.clone().unwrap(),
+                                ),
+                            ]),
+                            ..Default::default()
+                        })
+                        .insert(BrickEntity)
+                        .insert(TimeUniform {
+                            value: time.seconds_since_startup() as f32,
+                        })
+                        .id();
+
+                    brick_entities.push(new_entity);
+                }
+
+                *wall = brick_entities;
+            }
+        } else {
+            curve_manager.walls.push(Vec::new());
+        }
+    }
+
+    /*
     // delete old breaks if there are any
     for entity in bricks_query.iter() {
         commands.entity(entity).despawn()
     }
 
     if curve_manager.point_positions.len() > 1 {
-        // take the curve
-        let curve = Curve::from(curve_manager.smooth_positions());
-        let bricks = WallConstructor::from_curve(&curve);
 
-        for brick in &bricks {
-            let transform = Transform {
-                translation: brick.position,
-                rotation: brick.rotation,
-                scale: brick.scale,
-            };
-
-            commands
-                .spawn_bundle(PbrBundle {
-                    mesh: curve_manager.brick_mesh_handle.clone().unwrap(),
-                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                    transform,
-                    render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-                        curve_manager.brick_pipeline_handle.clone().unwrap(),
-                    )]),
-                    ..Default::default()
-                })
-                .insert(BrickEntity)
-                .insert(TimeUniform {
-                    value: time.seconds_since_startup() as f32,
-                });
-        }
     }
+    */
 }
-*/
 
 /// set up a simple 3D scene
 fn setup(
