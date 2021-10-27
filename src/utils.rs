@@ -1,6 +1,11 @@
+use crate::curve::Curve;
 use bevy::{prelude::*, render::mesh::VertexAttributeValues};
 
-pub fn bevy_mesh_from_trimesh(tri_mesh: tri_mesh::mesh::Mesh, bevy_mesh: &mut Mesh) {
+pub fn bevy_mesh_from_trimesh(
+    tri_mesh: tri_mesh::mesh::Mesh,
+    uvs: Vec<[f32; 2]>,
+    bevy_mesh: &mut Mesh,
+) {
     let vert_count = tri_mesh.vertex_iter().count();
 
     let positions: Vec<[f32; 3]> = tri_mesh
@@ -14,23 +19,27 @@ pub fn bevy_mesh_from_trimesh(tri_mesh: tri_mesh::mesh::Mesh, bevy_mesh: &mut Me
         .map(|c| [c[0], c[1], c[2]])
         .collect();
     let mut indices = tri_mesh.indices_buffer();
-    let mut other_side = indices.clone();
-    other_side.reverse();
-    indices.extend(&other_side);
+    //let mut other_side = indices.clone();
+    //other_side.reverse();
+    //indices.extend(&other_side);
 
     //TODO: reverse normals on the other side (might need double vertices then)
 
     bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals); //vec![[1.0, 0.0, 0.0]; vert_count]);
-    bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; vert_count]);
+    bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
     bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(indices)));
 }
 
-pub fn curve_to_trimesh(points: &[Vec3]) -> tri_mesh::mesh::Mesh {
+pub fn curve_to_trimesh(points: &[Vec3]) -> (tri_mesh::mesh::Mesh, Vec<[f32; 2]>) {
     let curve_positions = points;
 
     let mut indices: Vec<u32> = Vec::new();
     let mut positions: Vec<f64> = Vec::new();
+
+    let curve_u = Curve::from(points.to_vec()).points_u;
+    let mut uvs: Vec<[f32; 2]> = Vec::new();
+
     for quad_index in 0..(curve_positions.len() - 1) {
         let start_point = curve_positions[quad_index];
         let end_point = curve_positions[quad_index + 1];
@@ -56,6 +65,17 @@ pub fn curve_to_trimesh(points: &[Vec3]) -> tri_mesh::mesh::Mesh {
             end_point[2] as f64,
         ]);
 
+        uvs.extend(&vec![
+            // start vertex
+            [curve_u[quad_index], 0.0],
+            // offset up
+            [curve_u[quad_index], 1.0],
+            // end vertex
+            [curve_u[quad_index + 1], 0.0],
+            // offset up
+            [curve_u[quad_index + 1], 1.0],
+        ]);
+
         indices.extend(
             &([0, 1, 2, 1, 3, 2]
                 .iter()
@@ -70,7 +90,7 @@ pub fn curve_to_trimesh(points: &[Vec3]) -> tri_mesh::mesh::Mesh {
         .build()
         .unwrap();
 
-    mesh
+    (mesh, uvs)
 }
 
 pub fn smooth_points(points: &Vec<Vec3>, smoothing_steps: usize) -> Vec<Vec3> {

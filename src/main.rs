@@ -70,7 +70,7 @@ fn main() {
         //.add_system(handle_mouse_clicks.system())
         .add_system(mouse_preview.system())
         .add_system(update_curve_manager.system().label("curve manager"))
-        .add_system(update_wall.system().after("curve manager").label("wall"))
+        //.add_system(update_wall.system().after("curve manager").label("wall"))
         .add_system(animate_shader.system().after("wall"))
         .run();
 }
@@ -168,6 +168,12 @@ fn setup(
         ShaderStages {
             vertex: asset_server.load::<Shader, _>("shaders/brick_test.vert"),
             fragment: Some(asset_server.load::<Shader, _>("shaders/brick_test.frag")),
+        },
+    )));
+    curve_manager.curve_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
+        ShaderStages {
+            vertex: asset_server.load::<Shader, _>("shaders/curve_test.vert"),
+            fragment: Some(asset_server.load::<Shader, _>("shaders/curve_test.frag")),
         },
     )));
 
@@ -278,15 +284,31 @@ fn mouse_preview(
 
 fn update_curve_manager(
     materials: ResMut<Assets<StandardMaterial>>,
-    commands: Commands,
+    mut commands: Commands,
     meshes: ResMut<Assets<Mesh>>,
     mut curve_manager: ResMut<CurveManager>,
     mouse_button_input: Res<Input<MouseButton>>,
+    keys: Res<Input<KeyCode>>,
     mut query: Query<&mut PickingCamera>,
 ) {
+    // NUKE ALL DATA
+    if keys.just_pressed(KeyCode::Escape) {
+        for curve in &curve_manager.user_curves {
+            if let Some(curve_entity) = curve.entity_id {
+                commands.entity(curve_entity).despawn()
+            }
+        }
+
+        curve_manager.user_curves = Vec::new();
+        // TODO: nuke the bricks too
+    }
+
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
-        curve_manager.user_curves.push(UserDrawnCurve::new());
+        let pipeline = curve_manager.curve_pipeline_handle.clone().unwrap();
+        curve_manager
+            .user_curves
+            .push(UserDrawnCurve::new(pipeline));
     }
 
     // If there is a curve being drawn

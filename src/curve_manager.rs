@@ -1,16 +1,23 @@
 use crate::{utils, CustomMesh};
-use bevy::{prelude::*, render::pipeline::PipelineDescriptor};
+use bevy::{
+    prelude::*,
+    render::pipeline::{PipelineDescriptor, RenderPipeline},
+};
 
 pub struct UserDrawnCurve {
     pub points: Vec<Vec3>,
     pub debug_mesh_handle: Option<Handle<Mesh>>,
+    pub debug_mesh_pipeline: Handle<PipelineDescriptor>, // shader stuff
+    pub entity_id: Option<Entity>,
 }
 
 impl UserDrawnCurve {
-    pub fn new() -> Self {
+    pub fn new(debug_mesh_pipeline: Handle<PipelineDescriptor>) -> Self {
         Self {
             points: Vec::new(),
             debug_mesh_handle: None,
+            debug_mesh_pipeline,
+            entity_id: None,
         }
     }
 
@@ -23,8 +30,8 @@ impl UserDrawnCurve {
         if let Some(mesh_handle) = self.debug_mesh_handle.as_ref() {
             if let Some(bevy_mesh) = mesh_assets.get_mut(mesh_handle) {
                 let smoothed = utils::smooth_points(&self.points, 50);
-                let tri_mesh = utils::curve_to_trimesh(&smoothed);
-                utils::bevy_mesh_from_trimesh(tri_mesh, bevy_mesh);
+                let (tri_mesh, uvs) = utils::curve_to_trimesh(&smoothed);
+                utils::bevy_mesh_from_trimesh(tri_mesh, uvs, bevy_mesh);
             } else {
                 warn!("UserDrawnCurve: bevy mesh doesn't exist");
             }
@@ -53,13 +60,19 @@ impl UserDrawnCurve {
         let handle = mesh_assets.add(mesh);
         self.debug_mesh_handle = Some(handle.clone());
 
-        commands
-            .spawn_bundle(PbrBundle {
-                mesh: handle,
-                material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                ..Default::default()
-            })
-            .insert(CustomMesh);
+        self.entity_id = Some(
+            commands
+                .spawn_bundle(PbrBundle {
+                    mesh: handle,
+                    material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                    render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+                        self.debug_mesh_pipeline.clone(),
+                    )]),
+                    ..Default::default()
+                })
+                .insert(CustomMesh)
+                .id(),
+        );
     }
 }
 
@@ -68,6 +81,7 @@ pub struct CurveManager {
     pub walls: Vec<Vec<Entity>>,
     pub brick_mesh_handle: Option<Handle<Mesh>>,
     pub brick_pipeline_handle: Option<Handle<PipelineDescriptor>>,
+    pub curve_pipeline_handle: Option<Handle<PipelineDescriptor>>,
 }
 
 impl CurveManager {
@@ -77,6 +91,7 @@ impl CurveManager {
             walls: Vec::new(),
             brick_mesh_handle: None,
             brick_pipeline_handle: None,
+            curve_pipeline_handle: None,
         }
     }
 

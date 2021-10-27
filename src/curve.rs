@@ -2,7 +2,7 @@ use bevy::prelude::*;
 
 pub struct Curve {
     pub points: Vec<Vec3>,
-    points_u: Vec<f32>,
+    pub points_u: Vec<f32>,
     pub length: f32,
 }
 
