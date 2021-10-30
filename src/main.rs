@@ -189,9 +189,9 @@ fn setup(
             "assets/meshes/floor.glb",
         )),
         material: materials.add(Color::WHITE.into()),
-        render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-            pipeline_handle,
-        )]),
+        //render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+        //    pipeline_handle,
+        //)]),
         ..Default::default()
     };
     commands
@@ -243,29 +243,6 @@ fn setup(
         })
         .insert(MainCamera)
         .insert_bundle(PickingCameraBundle::default());
-
-    // TEST
-    let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
-        vertex: asset_server.load::<Shader, _>("shaders/instancing_test.vert"),
-        fragment: Some(asset_server.load::<Shader, _>("shaders/instancing_test.frag")),
-    }));
-    let mut pbr_bundle = PbrBundle {
-        mesh: meshes.add(Mesh::from(shape::Cube { size: 0.5 })),
-        material: materials.add(Color::rgb(0.1, 0.1, 0.5).into()),
-        render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-            pipeline_handle,
-        )]),
-        transform: Transform::from_xyz(0.0, 0.25, 0.0),
-        ..Default::default()
-    };
-
-    // Doesnt work T_T (even though it looks like the shaders do understand gl_InstanceIndex)
-    pbr_bundle.draw.render_command(RenderCommand::Draw {
-        vertices: 0..2,
-        instances: 0..1,
-    });
-
-    commands.spawn_bundle(pbr_bundle);
 }
 
 /*

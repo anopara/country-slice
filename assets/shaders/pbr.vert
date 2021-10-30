@@ -45,7 +45,6 @@ void main() {
 
     float WALL_HEIGHT = 1.4;
     float SEED = 112.0;
-    float STRENGTH = 0.075;
 
     // Add wavery pattern
 
@@ -59,7 +58,9 @@ void main() {
         float freq = fit01(random_f(bby*1000.0+SEED), 0.5, 1.5) * 10.0;
         float rand_offset = random_f(bby+SEED*1234.0)*100.0;
 
-        float sin_wave = sin(bbx*freq + rand_offset)/2.0 * STRENGTH;
+        float str = fit01(random_f(Sin_Offset_Per_Row*100.0+SEED/2.0), 0.025, 0.075);
+
+        float sin_wave = sin(bbx*freq + rand_offset)/2.0 * str;
 
         final_p = vec3(p.x, p.y + sin_wave, p.z);
     } 

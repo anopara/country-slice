@@ -142,13 +142,13 @@ impl InstancedWall {
                             // if its a top of the brick, it should have same offset as the bottom fo the row ID + 1
                             let bbx_pos = Vec3::from_slice_unaligned(p) + Vec3::splat(0.5);
                             if bbx_pos.y < 0.5 {
-                                brick.row_id as f32 / (brick.row_count as f32)
+                                brick.row_id_bottom as f32 / (brick.row_count as f32)
                             } else {
                                 // if it's the last row, than brick deformation can be random on the upper part of the brick
-                                if brick.row_id == brick.row_count {
+                                if brick.row_id_bottom == brick.row_count {
                                     fastrand::Rng::with_seed(i as u64).f32()
                                 } else {
-                                    (brick.row_id as f32 + 1.0) / (brick.row_count as f32)
+                                    (brick.row_id_top as f32) / (brick.row_count as f32)
                                 }
                             }
                         })
