@@ -188,7 +188,7 @@ fn setup(
         mesh: meshes.add(utils::load_gltf_as_bevy_mesh_w_vertex_color(
             "assets/meshes/floor.glb",
         )),
-        material: asset_server.load("meshes/test.glb#Material0"),
+        material: materials.add(Color::WHITE.into()),
         render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
             pipeline_handle,
         )]),

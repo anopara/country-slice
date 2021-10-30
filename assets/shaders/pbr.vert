@@ -56,7 +56,7 @@ void main() {
 
     if (bby > 0.1) {
         
-        float freq = fit01(random_f(bby*1000.0+SEED), 0.5, 2.5) * 10.0;
+        float freq = fit01(random_f(bby*1000.0+SEED), 0.5, 1.5) * 10.0;
         float rand_offset = random_f(bby+SEED*1234.0)*100.0;
 
         float sin_wave = sin(bbx*freq + rand_offset)/2.0 * STRENGTH;
