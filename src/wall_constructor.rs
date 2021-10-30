@@ -53,7 +53,8 @@ impl WallConstructor {
                 let width_u = next_u - this_u;
                 let width_ws = width_u * wall_length;
                 Some(Brick {
-                    pivot_u,
+                    pivot_uv: Vec2::new(pivot_u, row_u + brick_height / WALL_HEIGHT / 2.0),
+                    bounds_uv: Vec2::new(width_u, brick_height / WALL_HEIGHT), // v component is always the same, because we are not varying the height of bricks, only widths
                     scale: Vec3::new(width_ws, brick_height, brick_depth),
                     position: Vec3::new(pivot_u*wall_length, 0.0, 0.0),
                     rotation: Quat::IDENTITY
@@ -64,10 +65,10 @@ impl WallConstructor {
 
             // Transform bricks into world space
             for brick in &mut brick_row {
-                brick.position = curve.get_pos_at_u(brick.pivot_u);
+                brick.position = curve.get_pos_at_u(brick.pivot_uv.x);
                 brick.position.y = row_u * WALL_HEIGHT + brick_height / 2.0;
 
-                let curve_tangent = curve.get_tangent_at_u(brick.pivot_u);
+                let curve_tangent = curve.get_tangent_at_u(brick.pivot_uv.x);
                 let normal = curve_tangent.cross(Vec3::Y);
                 brick.rotation = Quat::from_rotation_mat3(&Mat3::from_cols(curve_tangent, Vec3::Y, normal));
             }
@@ -80,7 +81,8 @@ impl WallConstructor {
 }
 
 pub struct Brick {
-    pub pivot_u: f32,
+    pub bounds_uv: Vec2,
+    pub pivot_uv: Vec2,
     pub scale: Vec3,
     pub position: Vec3,
     pub rotation: Quat,

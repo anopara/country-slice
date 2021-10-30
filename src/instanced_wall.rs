@@ -33,9 +33,9 @@ impl InstancedWall {
             .spawn_bundle(PbrBundle {
                 mesh: out.bevy_mesh_handle.clone(),
                 material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                //render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-                //    render_pipeline,
-                //)]),
+                render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+                    render_pipeline,
+                )]),
                 ..Default::default()
             })
             .insert(CustomMesh)
@@ -51,6 +51,7 @@ impl InstancedWall {
             let mut uvs: Vec<[f32; 2]> = Vec::new();
             let mut indices: Vec<u32> = Vec::new();
             let mut instance_ids: Vec<u32> = Vec::new();
+            let mut curve_uv: Vec<[f32; 2]> = Vec::new();
 
             let mesh_vert_count = self.mesh_buffer.indices.len();
 
@@ -103,6 +104,19 @@ impl InstancedWall {
                 );
 
                 instance_ids.extend(&vec![i as u32; mesh_vert_count]);
+
+                curve_uv.extend(
+                    self.mesh_buffer
+                        .positions
+                        .iter()
+                        .map(|p| {
+                            let bbx_pos = Vec3::from_slice_unaligned(p) + Vec3::splat(0.5);
+                            let curve_uv_pos =
+                                brick.pivot_uv + Vec2::new(bbx_pos.x, bbx_pos.y) * brick.bounds_uv;
+                            [curve_uv_pos.x, curve_uv_pos.y]
+                        })
+                        .collect::<Vec<_>>(),
+                )
             }
 
             // populate bevy mesh
@@ -110,6 +124,7 @@ impl InstancedWall {
             bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals);
             bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
             bevy_mesh.set_attribute("Instance_Id", instance_ids);
+            bevy_mesh.set_attribute("Curve_Uv_Pos", curve_uv);
             bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(indices)));
         }
     }
