@@ -47,7 +47,16 @@ impl WallConstructor {
 
             let brick_widths = random_splits(bricks_per_row, BRICK_WIDTH_VARIANCE / wall_length, &rng);
              // Bricks in curve space
-            let mut brick_row: Vec<Brick> = brick_widths.iter().enumerate().filter_map(|(i, this_u)| if let Some(next_u) = brick_widths.get(i+1) {
+            let mut brick_row: Vec<Brick> = brick_widths.iter().enumerate().filter_map(|(j, this_u)| if let Some(next_u) = brick_widths.get(j+1) {
+
+                // if its the last row, randomly skip some bricks!
+                if i == rows.len()-1 {
+                    if rng.f32() < 0.35 {
+                        return None;
+                    }
+                }
+
+
                 let brick_depth = BRICK_DEPTH + (rng.f32()-0.5) * BRICK_DEPTH_VARIANCE;
                 let pivot_u = (next_u + this_u) / 2.0;
                 let width_u = next_u - this_u;

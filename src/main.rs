@@ -16,6 +16,13 @@
 // [+] 4. in the shader, arrange vertices to form a wall
 // [+] 5. for visual parsing, in frag, make each brick slightly different color
 
+// Blob shadows!
+// and bulging out terrain where you create walls
+
+// IDEA!!!!
+// you can double click on the brick, and it will fall off (physically). This way you can create half-destroyed walls!
+// from a tech perspective, I can detect where you clicked, and make that brick into its own mesh & entity and enable physics sim. (and if I will have ivy and plants, that will destoy plants!)
+
 mod curve;
 mod curve_manager;
 mod instanced_wall;
@@ -51,7 +58,7 @@ pub struct TimeUniform {
     pub value: f32,
 }
 
-const CURVE_SHOW_DEBUG: bool = true;
+const CURVE_SHOW_DEBUG: bool = false;
 
 // Give camera a component so we can find it and update with Dolly rig
 struct MainCamera;
@@ -138,10 +145,11 @@ fn setup(
             fragment: Some(asset_server.load::<Shader, _>("shaders/curve_test.frag")),
         },
     )));
+
     curve_manager.wall_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
         ShaderStages {
-            vertex: asset_server.load::<Shader, _>("shaders/wall_test.vert"),
-            fragment: Some(asset_server.load::<Shader, _>("shaders/wall_test.frag")),
+            vertex: asset_server.load::<Shader, _>("shaders/pbr.vert"),
+            fragment: Some(asset_server.load::<Shader, _>("shaders/pbr.frag")),
         },
     )));
 
@@ -150,6 +158,17 @@ fn setup(
         vertex: asset_server.load::<Shader, _>("shaders/vertex_color.vert"),
         fragment: Some(asset_server.load::<Shader, _>("shaders/vertex_color.frag")),
     }));
+
+    /*
+    commands.spawn_bundle(LightBundle {
+        transform: Transform::from_xyz(0.0, 0.0, 0.0),
+        light: Light {
+            color: Color::rgb(1.0, 0.0, 0.0),
+            ..Default::default()
+        },
+        global_transform: Default::default(),
+    });
+    */
 
     // Add a `RenderResourcesNode` to our `RenderGraph`. This will bind `TimeComponent` to our
     // shader.

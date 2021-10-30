@@ -24,26 +24,36 @@ float fit01(float x, float min, float max) {
 
 void main() {
 
-    //const float WALL_HEIGHT = 1.4;
-    //const float SEED = 12312.0;
+    vec3 p = Vertex_Position;
+
+    float WALL_HEIGHT = 1.4;
+    float SEED = 112.0;
+    float STRENGTH = 0.075;
 
     // Add wavery pattern
 
-    //float bby = Vertex_Position.y / WALL_HEIGHT; 
-//
-    //float amp = fit01(random_f(bby*1000.0+SEED), 0.5, 1.5);
-//
-    //float sin_wave = sin()
-//
-    //vec3 pos = vec3(Vertex_Position.x,   , Vertex_Position.z);
+    float bby = Curve_Uv_Pos.y; 
+    float bbx = Curve_Uv_Pos.x;
 
+    vec3 final_p = p;
 
+    if (bby > 0.1) {
+        
+        float freq = fit01(random_f(bby*1000.0+SEED), 0.5, 3.5) * 10.0;
+        float rand_offset = bby*100.0*SEED;
+
+        float sin_wave = sin(bbx*freq + rand_offset)/2.0 * STRENGTH;
+
+        final_p = vec3(p.x, p.y + sin_wave, p.z);
+    } 
+    
 
     // OUT-------------
 
-    //float v = fit01(random_f(float(Instance_Id)), 0.3, 0.65);
-    v_color = vec3(Curve_Uv_Pos, 0.0); //vec3(v,v,v);
+    float v = fit01(random_f(float(Instance_Id)), 0.15, 0.35);
+    v_color = vec3(v,v,v);
 
-    gl_Position = ViewProj * Model * vec4(Vertex_Position, 1.0);
+    gl_Position = ViewProj * Model * vec4(final_p, 1.0);
 }
+
 
