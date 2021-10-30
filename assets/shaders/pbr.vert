@@ -49,7 +49,7 @@ void main() {
     // Add wavery pattern
 
     float bby = Sin_Offset_Per_Row;
-    float bbx = Curve_Uv_Pos.x;
+    float bbx = Curve_Uv_Pos.x; // TODO: Should be based on curve length! not on relative u position
 
     vec3 final_p = p;
 
@@ -58,7 +58,7 @@ void main() {
         float freq = fit01(random_f(bby*1000.0+SEED), 0.5, 1.5) * 10.0;
         float rand_offset = random_f(bby+SEED*1234.0)*100.0;
 
-        float str = fit01(random_f(Sin_Offset_Per_Row*100.0+SEED/2.0), 0.025, 0.075);
+        float str = fit01(random_f(Sin_Offset_Per_Row*100.0+SEED/2.0), 0.025, 0.065);
 
         float sin_wave = sin(bbx*freq + rand_offset)/2.0 * str;
 
@@ -67,7 +67,7 @@ void main() {
 
     //
 
-    float v = fit01(random_f(float(Instance_Id)), 0.15, 0.25);
+    float v = fit01(random_f(float(Instance_Id)), 0.2, 0.25);
     v_color = vec4(v,v,v, 1.0);
 
     //

@@ -339,18 +339,18 @@ fn update_camera(
     let mut rig = query.q1_mut().single_mut().unwrap();
     let camera_driver = rig.driver_mut::<YawPitch>();
 
-    if keys.just_pressed(KeyCode::Z) {
-        camera_driver.rotate_yaw_pitch(-90.0, 0.0);
+    if keys.pressed(KeyCode::Left) {
+        camera_driver.rotate_yaw_pitch(-2.0, 0.0);
     }
-    if keys.just_pressed(KeyCode::X) {
-        camera_driver.rotate_yaw_pitch(90.0, 0.0);
+    if keys.pressed(KeyCode::Right) {
+        camera_driver.rotate_yaw_pitch(2.0, 0.0);
     }
 
-    if keys.pressed(KeyCode::C) {
-        camera_driver.rotate_yaw_pitch(0.0, 1.0);
-    }
-    if keys.pressed(KeyCode::V) {
+    if keys.pressed(KeyCode::Up) {
         camera_driver.rotate_yaw_pitch(0.0, -1.0);
+    }
+    if keys.pressed(KeyCode::Down) {
+        camera_driver.rotate_yaw_pitch(0.0, 1.0);
     }
 
     let transform = rig.update(time.delta_seconds());
