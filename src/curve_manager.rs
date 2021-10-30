@@ -79,10 +79,7 @@ impl UserDrawnCurve {
 
 pub struct CurveManager {
     pub user_curves: Vec<UserDrawnCurve>,
-    pub walls: Vec<Vec<Entity>>, //OLD (where we do an entity per brick)
     pub instanced_walls: Vec<InstancedWall>,
-    pub brick_mesh_handle: Option<Handle<Mesh>>,
-    pub brick_pipeline_handle: Option<Handle<PipelineDescriptor>>,
     pub curve_pipeline_handle: Option<Handle<PipelineDescriptor>>,
     pub wall_pipeline_handle: Option<Handle<PipelineDescriptor>>,
 }
@@ -91,57 +88,9 @@ impl CurveManager {
     pub fn new() -> Self {
         Self {
             user_curves: Vec::new(),
-            walls: Vec::new(),
             instanced_walls: Vec::new(),
-            brick_mesh_handle: None,
-            brick_pipeline_handle: None,
             curve_pipeline_handle: None,
             wall_pipeline_handle: None,
         }
     }
-
-    /*
-        pub fn smooth_positions(&self) -> Vec<Vec3> {
-            let points_per_segment = 10;
-            let smoothing_steps = 50;
-
-            // resample curve
-            let mut resampled: Vec<Vec3> = Vec::new();
-            for (i, current_pos) in self.point_positions.iter().enumerate() {
-                if let Some(next_pos) = self.point_positions.get(i + 1) {
-                    let dir = *next_pos - *current_pos;
-                    resampled.extend(
-                        &(0..points_per_segment)
-                            .map(|s| *current_pos + dir * (s as f32 / points_per_segment as f32))
-                            .collect::<Vec<_>>(),
-                    )
-                } else {
-                    // if last point, just add
-                    resampled.push(*current_pos);
-                }
-            }
-
-            // smooth
-            utils::smooth_points(resampled, smoothing_steps)
-        }
-    */
-    /*
-    fn to_vertices(&self) -> Vec<[f32; 3]> {
-        let mut one_side: Vec<[f32; 3]> = self
-            .point_positions
-            .iter()
-            .map(|p| vec![[p[0], p[1] + 1.0, p[2]], [p[0], p[1], p[2]]])
-            .flatten()
-            .collect();
-        let mut other_side: Vec<[f32; 3]> = self
-            .point_positions
-            .iter()
-            .map(|p| vec![[p[0], p[1], p[2]], [p[0], p[1] + 1.0, p[2]]])
-            .flatten()
-            .collect();
-        other_side.reverse();
-        one_side.extend(&other_side);
-        one_side
-    }
-    */
 }

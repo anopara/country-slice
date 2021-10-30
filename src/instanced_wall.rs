@@ -55,15 +55,6 @@ impl InstancedWall {
             let mesh_vert_count = self.mesh_buffer.indices.len();
 
             for (i, brick) in bricks.iter().enumerate() {
-                /*
-                let mut from_os_to_ws = Transform {
-                    translation: brick.position,
-                    rotation: brick.rotation,
-                    scale: Vec3::ONE,
-                };
-                from_os_to_ws.apply_non_uniform_scale(brick.scale);
-                */
-
                 let from_os_to_ws = Mat4::from_scale_rotation_translation(
                     brick.scale,
                     brick.rotation,

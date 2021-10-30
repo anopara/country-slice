@@ -61,9 +61,6 @@ struct PreviewCube;
 
 struct CustomMesh;
 
-// mark the bricks, so that can be deleted and recreated
-struct BrickEntity;
-
 fn main() {
     App::build()
         .insert_resource(Msaa { samples: 4 })
@@ -122,69 +119,6 @@ fn update_wall_2(
     }
 }
 
-fn update_wall(
-    mut commands: Commands,
-    mut curve_manager: ResMut<CurveManager>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    time: Res<Time>,
-) {
-    let curve_manager = &mut *curve_manager;
-
-    // If there is a curve being drawn
-    if let Some(curve) = curve_manager.user_curves.last() {
-        let mut brick_entities = Vec::new();
-
-        // Check if there is already wall constructed
-        if let Some(wall) = curve_manager
-            .walls
-            .get_mut(curve_manager.user_curves.len() - 1)
-        {
-            // delete old breaks if there are any
-            for entity in wall.iter() {
-                commands.entity(*entity).despawn()
-            }
-
-            if curve.points.len() > 1 {
-                // take the curve
-                let curve = Curve::from(utils::smooth_points(&curve.points, 50));
-                let bricks = WallConstructor::from_curve(&curve);
-
-                for brick in &bricks {
-                    let transform = Transform {
-                        translation: brick.position,
-                        rotation: brick.rotation,
-                        scale: brick.scale,
-                    };
-
-                    let new_entity = commands
-                        .spawn_bundle(PbrBundle {
-                            mesh: curve_manager.brick_mesh_handle.clone().unwrap(),
-                            material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
-                            transform,
-                            render_pipelines: RenderPipelines::from_pipelines(vec![
-                                RenderPipeline::new(
-                                    curve_manager.brick_pipeline_handle.clone().unwrap(),
-                                ),
-                            ]),
-                            ..Default::default()
-                        })
-                        .insert(BrickEntity)
-                        .insert(TimeUniform {
-                            value: time.seconds_since_startup() as f32,
-                        })
-                        .id();
-
-                    brick_entities.push(new_entity);
-                }
-
-                *wall = brick_entities;
-            }
-        } else {
-            curve_manager.walls.push(Vec::new());
-        }
-    }
-}
-
 /// set up a simple 3D scene
 fn setup(
     mut commands: Commands,
@@ -198,16 +132,6 @@ fn setup(
     // Watch for changes
     asset_server.watch_for_changes().unwrap();
 
-    // load brick mesh
-    curve_manager.brick_mesh_handle = Some(meshes.add(
-        utils::load_gltf_as_bevy_mesh_w_vertex_color("assets/meshes/brick.glb"),
-    ));
-    curve_manager.brick_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
-        ShaderStages {
-            vertex: asset_server.load::<Shader, _>("shaders/brick_test.vert"),
-            fragment: Some(asset_server.load::<Shader, _>("shaders/brick_test.frag")),
-        },
-    )));
     curve_manager.curve_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
         ShaderStages {
             vertex: asset_server.load::<Shader, _>("shaders/curve_test.vert"),
