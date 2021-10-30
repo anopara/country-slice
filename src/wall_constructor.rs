@@ -62,6 +62,8 @@ impl WallConstructor {
                 let width_u = next_u - this_u;
                 let width_ws = width_u * wall_length;
                 Some(Brick {
+                    row_count,
+                    row_id: i,
                     pivot_uv: Vec2::new(pivot_u, row_u + brick_height / WALL_HEIGHT / 2.0),
                     bounds_uv: Vec2::new(width_u, brick_height / WALL_HEIGHT), // v component is always the same, because we are not varying the height of bricks, only widths
                     scale: Vec3::new(width_ws, brick_height, brick_depth),
@@ -90,6 +92,8 @@ impl WallConstructor {
 }
 
 pub struct Brick {
+    pub row_count: usize, // of the whole wall TODO: redundant information, move it out of Brick
+    pub row_id: usize,
     pub bounds_uv: Vec2,
     pub pivot_uv: Vec2,
     pub scale: Vec3,

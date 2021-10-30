@@ -28,6 +28,7 @@ layout(set = 2, binding = 0) uniform Transform {
 
 layout(location = 4) in vec2 Curve_Uv_Pos;
 layout(location = 5) in int Instance_Id;
+layout(location = 6) in float Sin_Offset_Per_Row;
 
 layout(location = 5) out vec4 v_color;
 
@@ -48,15 +49,15 @@ void main() {
 
     // Add wavery pattern
 
-    float bby = Curve_Uv_Pos.y;  // TODO: FIX THIS! bevels don't share the same Y position, thus the geometry ends up being broken :P
+    float bby = Sin_Offset_Per_Row;
     float bbx = Curve_Uv_Pos.x;
 
     vec3 final_p = p;
 
     if (bby > 0.1) {
         
-        float freq = fit01(random_f(bby*1000.0+SEED), 0.5, 3.5) * 10.0;
-        float rand_offset = bby*100.0*SEED;
+        float freq = fit01(random_f(bby*1000.0+SEED), 0.5, 2.5) * 10.0;
+        float rand_offset = random_f(bby+SEED*1234.0)*100.0;
 
         float sin_wave = sin(bbx*freq + rand_offset)/2.0 * STRENGTH;
 

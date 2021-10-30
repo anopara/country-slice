@@ -65,6 +65,7 @@ impl InstancedWall {
             let mut indices: Vec<u32> = Vec::new();
             let mut instance_ids: Vec<u32> = Vec::new();
             let mut curve_uv: Vec<[f32; 2]> = Vec::new();
+            let mut sin_offset_per_row: Vec<f32> = Vec::new();
 
             let mesh_vert_count = self.mesh_buffer.indices.len();
 
@@ -123,16 +124,36 @@ impl InstancedWall {
                         .positions
                         .iter()
                         .map(|p| {
-                            let mut bbx_pos = Vec3::from_slice_unaligned(p) + Vec3::splat(0.5);
-                            // HACK! TODO: do a separate attribute which bind each vertex to a sin-wave-row index (for wave offset)
-                            // TODO: top row can be compeltely random :P
-                            bbx_pos.y = if bbx_pos.y > 0.5 { 1.0 } else { 0.0 };
+                            let bbx_pos = Vec3::from_slice_unaligned(p) + Vec3::splat(0.5);
                             let curve_uv_pos =
                                 brick.pivot_uv + Vec2::new(bbx_pos.x, bbx_pos.y) * brick.bounds_uv;
                             [curve_uv_pos.x, curve_uv_pos.y]
                         })
                         .collect::<Vec<_>>(),
-                )
+                );
+
+                // TODO: needs better name.. its like, in-between brock rows
+                sin_offset_per_row.extend(
+                    self.mesh_buffer
+                        .positions
+                        .iter()
+                        .map(|p| {
+                            // if it's a bottom of the brick, the bottom should have ID = row ID
+                            // if its a top of the brick, it should have same offset as the bottom fo the row ID + 1
+                            let bbx_pos = Vec3::from_slice_unaligned(p) + Vec3::splat(0.5);
+                            if bbx_pos.y < 0.5 {
+                                brick.row_id as f32 / (brick.row_count as f32)
+                            } else {
+                                // if it's the last row, than brick deformation can be random on the upper part of the brick
+                                if brick.row_id == brick.row_count {
+                                    fastrand::Rng::with_seed(i as u64).f32()
+                                } else {
+                                    (brick.row_id as f32 + 1.0) / (brick.row_count as f32)
+                                }
+                            }
+                        })
+                        .collect::<Vec<_>>(),
+                );
             }
 
             // populate bevy mesh
@@ -141,6 +162,7 @@ impl InstancedWall {
             bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
             bevy_mesh.set_attribute("Instance_Id", instance_ids);
             bevy_mesh.set_attribute("Curve_Uv_Pos", curve_uv);
+            bevy_mesh.set_attribute("Sin_Offset_Per_Row", sin_offset_per_row);
             bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(indices)));
         }
     }
