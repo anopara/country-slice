@@ -369,6 +369,13 @@ fn update_camera(
         camera_driver.rotate_yaw_pitch(90.0, 0.0);
     }
 
+    if keys.pressed(KeyCode::C) {
+        camera_driver.rotate_yaw_pitch(0.0, 1.0);
+    }
+    if keys.pressed(KeyCode::V) {
+        camera_driver.rotate_yaw_pitch(0.0, -1.0);
+    }
+
     let transform = rig.update(time.delta_seconds());
     let (mut cam, _) = query.q0_mut().single_mut().unwrap();
 

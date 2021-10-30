@@ -32,7 +32,20 @@ impl InstancedWall {
         out.entity_id = commands
             .spawn_bundle(PbrBundle {
                 mesh: out.bevy_mesh_handle.clone(),
-                material: materials.add(Color::rgb(1.0, 1.0, 1.0).into()),
+                material: materials.add(StandardMaterial {
+                    base_color: Color::WHITE,
+                    base_color_texture: None,
+                    roughness: 0.9,
+                    metallic: 0.0,
+                    metallic_roughness_texture: None,
+                    reflectance: 0.1,
+                    normal_map: None,
+                    double_sided: false,
+                    occlusion_texture: None,
+                    emissive: Color::BLACK,
+                    emissive_texture: None,
+                    unlit: false,
+                }),
                 render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
                     render_pipeline,
                 )]),
@@ -110,7 +123,10 @@ impl InstancedWall {
                         .positions
                         .iter()
                         .map(|p| {
-                            let bbx_pos = Vec3::from_slice_unaligned(p) + Vec3::splat(0.5);
+                            let mut bbx_pos = Vec3::from_slice_unaligned(p) + Vec3::splat(0.5);
+                            // HACK! TODO: do a separate attribute which bind each vertex to a sin-wave-row index (for wave offset)
+                            // TODO: top row can be compeltely random :P
+                            bbx_pos.y = if bbx_pos.y > 0.5 { 1.0 } else { 0.0 };
                             let curve_uv_pos =
                                 brick.pivot_uv + Vec2::new(bbx_pos.x, bbx_pos.y) * brick.bounds_uv;
                             [curve_uv_pos.x, curve_uv_pos.y]

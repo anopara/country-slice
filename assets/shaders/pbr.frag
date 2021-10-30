@@ -282,11 +282,13 @@ vec3 reinhard_extended_luminance(vec3 color, float max_white_l) {
 
 void main() {
     vec4 output_color = v_color;
+    /*
 #ifdef STANDARDMATERIAL_BASE_COLOR_TEXTURE
-    //output_color *= texture(sampler2D(StandardMaterial_base_color_texture,
-    //                                  StandardMaterial_base_color_texture_sampler),
-    //                        v_Uv);
+    output_color *= texture(sampler2D(StandardMaterial_base_color_texture,
+                                      StandardMaterial_base_color_texture_sampler),
+                            v_Uv);
 #endif
+    */
 
 #ifndef STANDARDMATERIAL_UNLIT
     // calculate non-linear roughness from linear perceptualRoughness
