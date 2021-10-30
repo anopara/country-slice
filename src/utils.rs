@@ -4,6 +4,7 @@ use bevy::{prelude::*, render::mesh::VertexAttributeValues};
 pub fn bevy_mesh_from_trimesh(
     tri_mesh: tri_mesh::mesh::Mesh,
     uvs: Vec<[f32; 2]>,
+    curve_length: f32,
     bevy_mesh: &mut Mesh,
 ) {
     let vert_count = tri_mesh.vertex_iter().count();
@@ -18,26 +19,29 @@ pub fn bevy_mesh_from_trimesh(
         .chunks(3)
         .map(|c| [c[0], c[1], c[2]])
         .collect();
-    let mut indices = tri_mesh.indices_buffer();
+    let indices = tri_mesh.indices_buffer();
     //let mut other_side = indices.clone();
     //other_side.reverse();
     //indices.extend(&other_side);
 
     //TODO: reverse normals on the other side (might need double vertices then)
 
+    // MAKE SURE THE ATTRIBUTES ARE THE SAME WHEN DEBUG MESH IS INIT IN `UserDrawnCurve`
     bevy_mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, positions);
     bevy_mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, normals); //vec![[1.0, 0.0, 0.0]; vert_count]);
-    bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs);
+    bevy_mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, uvs.clone());
+    bevy_mesh.set_attribute("Vertex_Curve_Length", vec![curve_length; vert_count]);
     bevy_mesh.set_indices(Some(bevy::render::mesh::Indices::U32(indices)));
 }
 
-pub fn curve_to_trimesh(points: &[Vec3]) -> (tri_mesh::mesh::Mesh, Vec<[f32; 2]>) {
+pub fn curve_to_trimesh(points: &[Vec3]) -> (tri_mesh::mesh::Mesh, Vec<[f32; 2]>, f32) {
     let curve_positions = points;
 
     let mut indices: Vec<u32> = Vec::new();
     let mut positions: Vec<f64> = Vec::new();
 
-    let curve_u = Curve::from(points.to_vec()).points_u;
+    let temp_curve = Curve::from(points.to_vec());
+    let curve_u = temp_curve.points_u;
     let mut uvs: Vec<[f32; 2]> = Vec::new();
 
     for quad_index in 0..(curve_positions.len() - 1) {
@@ -90,7 +94,7 @@ pub fn curve_to_trimesh(points: &[Vec3]) -> (tri_mesh::mesh::Mesh, Vec<[f32; 2]>
         .build()
         .unwrap();
 
-    (mesh, uvs)
+    (mesh, uvs, temp_curve.length)
 }
 
 pub fn smooth_points(points: &Vec<Vec3>, smoothing_steps: usize) -> Vec<Vec3> {
@@ -109,6 +113,61 @@ pub fn smooth_points(points: &Vec<Vec3>, smoothing_steps: usize) -> Vec<Vec3> {
     }
 
     total_smoothed.to_vec()
+}
+
+pub struct MeshBuffer {
+    pub indices: Vec<u32>,
+    pub positions: Vec<[f32; 3]>,
+    pub normals: Vec<[f32; 3]>,
+    pub tangents: Vec<[f32; 4]>,
+    pub colors: Vec<[f32; 4]>,
+    pub tex_coord: Vec<[f32; 2]>,
+}
+
+pub fn load_gltf_as_mesh_buffer(path: &str) -> MeshBuffer {
+    let mut out = MeshBuffer {
+        indices: Vec::new(),
+        positions: Vec::new(),
+        normals: Vec::new(),
+        tangents: Vec::new(),
+        colors: Vec::new(),
+        tex_coord: Vec::new(),
+    };
+    let (gltf, buffers, _) = gltf::import(path).unwrap();
+    for mesh in gltf.meshes() {
+        for primitive in mesh.primitives() {
+            let reader = primitive.reader(|buffer| Some(&buffers[buffer.index()]));
+
+            if let Some(vertex_attribute) =
+                reader.read_colors(0).map(|v| v.into_rgba_f32().collect())
+            {
+                out.colors = vertex_attribute;
+            }
+
+            if let Some(vertex_attribute) = reader.read_positions().map(|v| v.collect()) {
+                out.positions = vertex_attribute;
+            }
+
+            if let Some(vertex_attribute) = reader.read_normals().map(|v| v.collect()) {
+                out.normals = vertex_attribute;
+            }
+
+            if let Some(vertex_attribute) = reader.read_tangents().map(|v| v.collect()) {
+                out.tangents = vertex_attribute;
+            }
+
+            if let Some(vertex_attribute) =
+                reader.read_tex_coords(0).map(|v| v.into_f32().collect())
+            {
+                out.tex_coord = vertex_attribute;
+            }
+
+            if let Some(indices) = reader.read_indices().map(|v| v.into_u32().collect()) {
+                out.indices = indices;
+            };
+        }
+    }
+    out
 }
 
 pub fn load_gltf_as_bevy_mesh_w_vertex_color(path: &str) -> Mesh {

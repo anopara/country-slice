@@ -1,4 +1,4 @@
-use crate::{utils, CustomMesh};
+use crate::{instanced_wall::InstancedWall, utils, CustomMesh};
 use bevy::{
     prelude::*,
     render::pipeline::{PipelineDescriptor, RenderPipeline},
@@ -30,8 +30,8 @@ impl UserDrawnCurve {
         if let Some(mesh_handle) = self.debug_mesh_handle.as_ref() {
             if let Some(bevy_mesh) = mesh_assets.get_mut(mesh_handle) {
                 let smoothed = utils::smooth_points(&self.points, 50);
-                let (tri_mesh, uvs) = utils::curve_to_trimesh(&smoothed);
-                utils::bevy_mesh_from_trimesh(tri_mesh, uvs, bevy_mesh);
+                let (tri_mesh, uvs, length) = utils::curve_to_trimesh(&smoothed);
+                utils::bevy_mesh_from_trimesh(tri_mesh, uvs, length, bevy_mesh);
             } else {
                 warn!("UserDrawnCurve: bevy mesh doesn't exist");
             }
@@ -55,6 +55,7 @@ impl UserDrawnCurve {
         );
         mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, vec![[0.0, 0.0, -1.0]; 3]);
         mesh.set_attribute(Mesh::ATTRIBUTE_UV_0, vec![[1.0, 0.0]; 3]);
+        mesh.set_attribute("Vertex_Curve_Length", vec![0.0; 3]);
         mesh.set_indices(Some(bevy::render::mesh::Indices::U32(vec![0, 1, 2])));
 
         let handle = mesh_assets.add(mesh);
@@ -78,10 +79,12 @@ impl UserDrawnCurve {
 
 pub struct CurveManager {
     pub user_curves: Vec<UserDrawnCurve>,
-    pub walls: Vec<Vec<Entity>>,
+    pub walls: Vec<Vec<Entity>>, //OLD (where we do an entity per brick)
+    pub instanced_walls: Vec<InstancedWall>,
     pub brick_mesh_handle: Option<Handle<Mesh>>,
     pub brick_pipeline_handle: Option<Handle<PipelineDescriptor>>,
     pub curve_pipeline_handle: Option<Handle<PipelineDescriptor>>,
+    pub wall_pipeline_handle: Option<Handle<PipelineDescriptor>>,
 }
 
 impl CurveManager {
@@ -89,9 +92,11 @@ impl CurveManager {
         Self {
             user_curves: Vec::new(),
             walls: Vec::new(),
+            instanced_walls: Vec::new(),
             brick_mesh_handle: None,
             brick_pipeline_handle: None,
             curve_pipeline_handle: None,
+            wall_pipeline_handle: None,
         }
     }
 

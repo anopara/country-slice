@@ -8,8 +8,17 @@
 // dark creatures gather
 // the girl comes out of the house and she turns the knight into one of the creatures (you can draw the creatures?)
 
+// Hacky instancing
+// [+] 1. Record the vertex positions of a brick (can just put it into the shader)
+// 2. Spawn a single mesh and pre-populate it with a bunch of vertices (guesstimate how many bricks should be initially spawned, and x8 for number of vertices) todo: would be nice to tell the renderer to only render N vertices, but it doesnt seem to work atm?
+// (someone needs to manage the above, so I can make a WallMesh struct that manages the mesh state and let CurveManager store it, since there is UserDrawnCurve<->WallMesh correlation)
+// 3. For every vertex, set attribute of its InstanceId, VertexId, and its InstanceTransform (a bit wasteful to have it this way instead of an Instanced Array but oh well)
+// [+] 4. in the shader, arrange vertices to form a wall
+// [+] 5. for visual parsing, in frag, make each brick slightly different color
+
 mod curve;
 mod curve_manager;
+mod instanced_wall;
 mod utils;
 mod wall_constructor;
 
@@ -30,7 +39,11 @@ use curve::Curve;
 use curve_manager::{CurveManager, UserDrawnCurve};
 use wall_constructor::WallConstructor;
 
-use bevy::{reflect::TypeUuid, render::renderer::RenderResources};
+use bevy::{
+    reflect::TypeUuid,
+    render::{draw::RenderCommand, renderer::RenderResources},
+};
+use instanced_wall::InstancedWall;
 
 #[derive(RenderResources, Default, TypeUuid)]
 #[uuid = "93fb26fc-6c05-489b-9029-601edf703b6b"]
@@ -52,14 +65,6 @@ struct CustomMesh;
 struct BrickEntity;
 
 fn main() {
-    /*
-    let mut points: Vec<_> = (0..=10).map(|i| Vec3::new(i as f32, 0.0, 0.0)).collect();
-    points.push(Vec3::new(0.0, 0.0, 0.0));
-    let c = Curve::from(points);
-
-    println!("{:?}", c.get_tangent_at_u(0.5));
-    */
-
     App::build()
         .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
@@ -70,8 +75,8 @@ fn main() {
         //.add_system(handle_mouse_clicks.system())
         .add_system(mouse_preview.system())
         .add_system(update_curve_manager.system().label("curve manager"))
-        //.add_system(update_wall.system().after("curve manager").label("wall"))
-        .add_system(animate_shader.system().after("wall"))
+        .add_system(update_wall_2.system().after("curve manager").label("wall"))
+        //.add_system(animate_shader.system()) //.after("wall"))
         .run();
 }
 
@@ -81,6 +86,39 @@ fn main() {
 fn animate_shader(time: Res<Time>, mut query: Query<&mut TimeUniform>) {
     for mut time_uniform in query.iter_mut() {
         time_uniform.value = time.seconds_since_startup() as f32;
+    }
+}
+
+fn update_wall_2(
+    commands: Commands,
+    mut curve_manager: ResMut<CurveManager>,
+    materials: ResMut<Assets<StandardMaterial>>,
+    meshes: ResMut<Assets<Mesh>>,
+) {
+    let user_curves_count = curve_manager.user_curves.len();
+    let pipeline_handle = curve_manager.wall_pipeline_handle.clone().unwrap();
+    // If there is a curve being drawn
+    if let Some(curve) = curve_manager.user_curves.last() {
+        if curve.points.len() < 2 {
+            return;
+        }
+
+        // Calculate brick transforms
+        let curve = Curve::from(utils::smooth_points(&curve.points, 50));
+        let bricks = WallConstructor::from_curve(&curve);
+
+        // Check if there is already wall constructed
+        if let Some(wall) = curve_manager.instanced_walls.get_mut(user_curves_count - 1) {
+            wall.update(bricks, meshes);
+        } else {
+            curve_manager.instanced_walls.push(InstancedWall::new(
+                bricks,
+                meshes,
+                materials,
+                pipeline_handle,
+                commands,
+            ));
+        }
     }
 }
 
@@ -176,6 +214,12 @@ fn setup(
             fragment: Some(asset_server.load::<Shader, _>("shaders/curve_test.frag")),
         },
     )));
+    curve_manager.wall_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
+        ShaderStages {
+            vertex: asset_server.load::<Shader, _>("shaders/wall_test.vert"),
+            fragment: Some(asset_server.load::<Shader, _>("shaders/wall_test.frag")),
+        },
+    )));
 
     // Create a new shader pipeline
     let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
@@ -197,17 +241,18 @@ fn setup(
         .unwrap();
 
     // floor
+    let floor_bundle = PbrBundle {
+        mesh: meshes.add(utils::load_gltf_as_bevy_mesh_w_vertex_color(
+            "assets/meshes/floor.glb",
+        )),
+        material: asset_server.load("meshes/test.glb#Material0"),
+        render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+            pipeline_handle,
+        )]),
+        ..Default::default()
+    };
     commands
-        .spawn_bundle(PbrBundle {
-            mesh: meshes.add(utils::load_gltf_as_bevy_mesh_w_vertex_color(
-                "assets/meshes/floor.glb",
-            )),
-            material: asset_server.load("meshes/test.glb#Material0"),
-            render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-                pipeline_handle,
-            )]),
-            ..Default::default()
-        })
+        .spawn_bundle(floor_bundle)
         .insert_bundle(PickableBundle::default());
 
     // preview cube
@@ -255,6 +300,29 @@ fn setup(
         })
         .insert(MainCamera)
         .insert_bundle(PickingCameraBundle::default());
+
+    // TEST
+    let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
+        vertex: asset_server.load::<Shader, _>("shaders/instancing_test.vert"),
+        fragment: Some(asset_server.load::<Shader, _>("shaders/instancing_test.frag")),
+    }));
+    let mut pbr_bundle = PbrBundle {
+        mesh: meshes.add(Mesh::from(shape::Cube { size: 0.5 })),
+        material: materials.add(Color::rgb(0.1, 0.1, 0.5).into()),
+        render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+            pipeline_handle,
+        )]),
+        transform: Transform::from_xyz(0.0, 0.25, 0.0),
+        ..Default::default()
+    };
+
+    // Doesnt work T_T (even though it looks like the shaders do understand gl_InstanceIndex)
+    pbr_bundle.draw.render_command(RenderCommand::Draw {
+        vertices: 0..2,
+        instances: 0..1,
+    });
+
+    commands.spawn_bundle(pbr_bundle);
 }
 
 /*
