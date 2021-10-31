@@ -12,5 +12,5 @@ void main() {
     float v = 1.0 - max(fit01(v_Uv.y, -0.6, 1.0), 0.0);
 
     float alpha = pow(v, 2.0);
-    o_Target = vec4(v_Uv, 0.0, 1.0);//alpha * 0.6);
+    o_Target = vec4(0.0, 0.0, 0.0, alpha * 0.6);
 }
