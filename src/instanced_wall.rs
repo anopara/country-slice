@@ -8,7 +8,7 @@ use utils::MeshBuffer;
 pub struct InstancedWall {
     bevy_mesh_handle: Handle<Mesh>, // mesh of the whole wall
     mesh_buffer: MeshBuffer,        // pre-loaded mesh of a single brick
-    entity_id: Entity,
+    pub entity_id: Entity,
 }
 
 impl InstancedWall {

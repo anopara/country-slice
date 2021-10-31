@@ -97,4 +97,24 @@ impl CurveManager {
             shadow_pipeline_handle: None,
         }
     }
+
+    pub fn clear_all(&mut self, commands: &mut Commands) {
+        for curve in &self.user_curves {
+            if let Some(curve_entity) = curve.entity_id {
+                commands.entity(curve_entity).despawn()
+            }
+        }
+
+        for shadow in &self.shadow_decals {
+            commands.entity(shadow.entity_id).despawn()
+        }
+
+        for wall in &self.instanced_walls {
+            commands.entity(wall.entity_id).despawn()
+        }
+
+        self.user_curves = Vec::new();
+        self.shadow_decals = Vec::new();
+        self.instanced_walls = Vec::new();
+    }
 }

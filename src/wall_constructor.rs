@@ -2,15 +2,6 @@ use crate::curve::Curve;
 use bevy::prelude::*;
 use fastrand::Rng;
 
-// 1. measure the smoothed curve
-// 2. construct a grid based on measurements
-// 3. randomly determine the width of the grid elements (split equally, and then randomly perturb the U value)
-// 4. construct transforms
-// 5. project the transforms back on the curve
-// 6. place meshes
-
-// NEXT STEP: split the trasnforms into two randomly
-
 // could be interesting for the bricks offset https://www.iquilezles.org/www/articles/voronoise/voronoise.htm
 
 const BRICK_WIDTH: f32 = 0.2;
@@ -81,7 +72,7 @@ impl WallConstructor {
                         let width_ws = width_u * wall_length;
                         for (height, pivot_v, idx) in vec![(height_u_1, pivot_v_1, i*2), (height_u_2, pivot_v_2, i*2+1)] {
                             brick_row.push(Brick {
-                                row_count: row_count * 2,
+                                row_count: row_count * 2, // HACK: multiple it by two, to account for random splits that create in-between rows
                                 row_id_bottom: idx,
                                 row_id_top: idx+1,
                                 pivot_uv: Vec2::new(pivot_u, pivot_v),

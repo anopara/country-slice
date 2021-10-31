@@ -4,17 +4,13 @@ use bevy::{
     render::pipeline::{PipelineDescriptor, RenderPipeline},
 };
 
-// TODO:
-// another side
-// caps
-
 const OFFSET_FROM_GROUND: f32 = 0.001;
 const SHADOW_WIDTH: f32 = 0.3;
 const SHADOW_CAP_STEPS: usize = 10;
 
 pub struct ShadowDecal {
     mesh_handle: Handle<Mesh>,
-    entity_id: Entity,
+    pub entity_id: Entity,
 }
 
 impl ShadowDecal {
@@ -24,7 +20,6 @@ impl ShadowDecal {
         render_pipeline: Handle<PipelineDescriptor>,
         commands: &mut Commands,
     ) -> Self {
-        // create a mesh
         let mesh = Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
         let mut out = Self {
             mesh_handle: mesh_assets.add(mesh),
@@ -158,7 +153,7 @@ impl ShadowDecal {
 }
 
 // TODO: make it a beveled square, like a brick, and not a circle
-// pre-build mesh in DSS
+// can pre-build the mesh in DSS
 fn add_a_cap(
     position: Vec3,
     tangent: Vec3,

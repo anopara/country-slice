@@ -8,34 +8,12 @@
 // dark creatures gather
 // the girl comes out of the house and she turns the knight into one of the creatures (you can draw the creatures?)
 
-// Hacky instancing
-// [+] 1. Record the vertex positions of a brick (can just put it into the shader)
-// 2. Spawn a single mesh and pre-populate it with a bunch of vertices (guesstimate how many bricks should be initially spawned, and x8 for number of vertices) todo: would be nice to tell the renderer to only render N vertices, but it doesnt seem to work atm?
-// (someone needs to manage the above, so I can make a WallMesh struct that manages the mesh state and let CurveManager store it, since there is UserDrawnCurve<->WallMesh correlation)
-// 3. For every vertex, set attribute of its InstanceId, VertexId, and its InstanceTransform (a bit wasteful to have it this way instead of an Instanced Array but oh well)
-// [+] 4. in the shader, arrange vertices to form a wall
-// [+] 5. for visual parsing, in frag, make each brick slightly different color
-
 // Blob shadows!
 // and bulging out terrain where you create walls
 
-// IDEA!!!!
+// IDEA:
 // you can double click on the brick, and it will fall off (physically). This way you can create half-destroyed walls!
 // from a tech perspective, I can detect where you clicked, and make that brick into its own mesh & entity and enable physics sim. (and if I will have ivy and plants, that will destoy plants!)
-
-// TODO:
-// [+] fix roughness
-// [+] fix gaps
-// [+] add resolution to bricks
-// [+] BONUS: split some bricks into 2 horizontal
-// [+] change keybindings :P
-//
-// TMRW:
-// - add blob shadows
-// - better colors (just vertex color from Houdini is fine!) inverted sphere trick :hackerman:
-// - BONUS: randomly split some TOP bricks into 2 vertical (or just do more splits for the last row? :P)
-//
-// - make a tweet! opensource rightaway and continue working on it~
 
 mod curve;
 mod curve_manager;
@@ -62,7 +40,7 @@ use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
 
 use bevy::render::{
     pipeline::{BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite},
-    shader::{Shader, ShaderStage},
+    shader::Shader,
     texture::TextureFormat,
 };
 
@@ -80,7 +58,7 @@ pub struct TimeUniform {
     pub value: f32,
 }
 
-const CURVE_SHOW_DEBUG: bool = true;
+const CURVE_SHOW_DEBUG: bool = false;
 
 // Give camera a component so we can find it and update with Dolly rig
 struct MainCamera;
@@ -106,6 +84,7 @@ fn main() {
         .run();
 }
 
+/*
 /// In this system we query for the `TimeComponent` and global `Time` resource, and set
 /// `time.seconds_since_startup()` as the `value` of the `TimeComponent`. This value will be
 /// accessed by the fragment shader and used to animate the shader.
@@ -114,6 +93,7 @@ fn animate_shader(time: Res<Time>, mut query: Query<&mut TimeUniform>) {
         time_uniform.value = time.seconds_since_startup() as f32;
     }
 }
+*/
 
 fn update_wall_2(
     mut commands: Commands,
@@ -303,7 +283,7 @@ fn setup(
         ..Default::default()
     });
     // camera
-    // TODO: we can replace this with a resource and update camera ourselves?
+    // TODO: can replace this with a resource and update camera
     commands.spawn().insert(
         CameraRig::builder()
             .with(YawPitch::new().yaw_degrees(45.0).pitch_degrees(-35.0))
@@ -355,16 +335,8 @@ fn update_curve_manager(
     keys: Res<Input<KeyCode>>,
     mut query: Query<&mut PickingCamera>,
 ) {
-    // NUKE ALL DATA
     if keys.just_pressed(KeyCode::Escape) {
-        for curve in &curve_manager.user_curves {
-            if let Some(curve_entity) = curve.entity_id {
-                commands.entity(curve_entity).despawn()
-            }
-        }
-
-        curve_manager.user_curves = Vec::new();
-        // TODO: nuke the bricks too
+        curve_manager.clear_all(&mut commands);
     }
 
     // If LMB was just pressed, start a new curve
