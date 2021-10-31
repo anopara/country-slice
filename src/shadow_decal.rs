@@ -8,7 +8,8 @@ use bevy::{
 // another side
 // caps
 
-const SHADOW_WIDTH: f32 = 1.0; //0.3;
+const SHADOW_WIDTH: f32 = 0.3;
+const SHADOW_CAP_STEPS: usize = 10;
 
 pub struct ShadowDecal {
     mesh_handle: Handle<Mesh>,
@@ -55,7 +56,7 @@ impl ShadowDecal {
         let bevy_mesh = mesh_assets.get_mut(self.mesh_handle.clone())?;
 
         let curve_pts = &curve.points;
-        let offset_pts: Vec<(Vec3, Vec3)> = curve_pts
+        let offset_pts: Vec<Vec3> = curve_pts
             .iter()
             .enumerate()
             .map(|(idx, p)| {
@@ -72,10 +73,7 @@ impl ShadowDecal {
 
                 let tangent = (*next - *this).normalize();
 
-                (
-                    tangent.cross(-Vec3::Y) * SHADOW_WIDTH,
-                    tangent.cross(Vec3::Y) * SHADOW_WIDTH,
-                )
+                tangent.cross(Vec3::Y) * SHADOW_WIDTH
             })
             .collect();
 
@@ -86,48 +84,90 @@ impl ShadowDecal {
 
         for quad_index in 0..(curve_pts.len() - 1) {
             let start = curve_pts[quad_index];
-            let l_start = start + offset_pts[quad_index].0;
-            let r_start = start + offset_pts[quad_index].1;
+            let l_start = start - offset_pts[quad_index];
+            let r_start = start + offset_pts[quad_index];
             let end = curve_pts[quad_index + 1];
-            let l_end = end + offset_pts[quad_index + 1].0;
-            let r_end = end + offset_pts[quad_index + 1].1;
+            let l_end = end - offset_pts[quad_index + 1];
+            let r_end = end + offset_pts[quad_index + 1];
 
-            indices.extend(
-                &([0, 1, 2, 1, 3, 2, 0, 4, 1, 4, 5, 1]
-                    .iter()
-                    .map(|i| i + positions.len() as u32)
-                    .collect::<Vec<_>>()),
-            );
+            // create a cap
+            if quad_index == 0 {
+                let cap_pos: Vec<[f32; 3]> = (0..SHADOW_CAP_STEPS)
+                    .map(|s| {
+                        let t = (s as f32) / (SHADOW_CAP_STEPS as f32 - 1.0);
+                        let rot = Quat::from_rotation_y(
+                            -3.14 * t,
+                        );
+                        let p = end + rot.mul_vec3(offset_pts[quad_index+1]);
+                        [p[0], p[1], p[2]]
+                    })
+                    .collect();
 
-            positions.extend(&[
-                //start vertex
-                [start[0], start[1] + offset_from_ground, start[2]],
-                // end vertex
-                [end[0], end[1] + offset_from_ground, end[2]],
-                // start vertex + left offset
-                [l_start[0], l_start[1] + offset_from_ground, l_start[2]],
-                // end vertex + left offset
-                [l_end[0], l_end[1] + offset_from_ground, l_end[2]],
-                // start vertex + right offset
-                [r_start[0], r_start[1] + offset_from_ground, r_start[2]],
-                // end vertex + right offset
-                [r_end[0], r_end[1] + offset_from_ground, r_end[2]],
-            ]);
+                let new_indices: Vec<u32> = (0..SHADOW_CAP_STEPS).filter_map(|s| 
+                    // if its not the last point
+                if s != SHADOW_CAP_STEPS-1 {
+                    Some([(s+1) as u32, 0, (s+2) as u32])
+                } else {
+                    None
+                }).flatten().collect();
 
-            uvs.extend(&vec![
-                // start vertex
-                [0.0, 0.0],
-                // end vertex
-                [1.0, 0.0],
-                // left offset
-                [0.0, 1.0],
-                // left offset
-                [1.0, 1.0],
-                // right offset
-                [0.0, 1.0],
-                // right offset
-                [1.0, 1.0],
-            ]);
+                let cap_uvs: Vec<[f32;2]> = (0..SHADOW_CAP_STEPS)
+                .map(|s| {
+                    [(s as f32) / (SHADOW_CAP_STEPS as f32 - 1.0), 1.0]
+                })
+                .collect();
+
+                // Add indices
+                indices.extend(&new_indices);
+
+                // Add starting point
+                positions.push([end[0], end[1] + offset_from_ground, end[2]]);
+                uvs.push([0.0, 0.0]);
+
+                // Add the cap
+                positions.extend(&cap_pos);
+                uvs.extend(&cap_uvs);
+                
+            } else {
+                
+                indices.extend(
+                    &([0, 1, 2, 1, 3, 2, 0, 4, 1, 4, 5, 1]
+                        .iter()
+                        .map(|i| i + positions.len() as u32)
+                        .collect::<Vec<_>>()),
+                );
+
+                positions.extend(&[
+                    //start vertex
+                    [start[0], start[1] + offset_from_ground, start[2]],
+                    // end vertex
+                    [end[0], end[1] + offset_from_ground, end[2]],
+                    // start vertex + left offset
+                    [l_start[0], l_start[1] + offset_from_ground, l_start[2]],
+                    // end vertex + left offset
+                    [l_end[0], l_end[1] + offset_from_ground, l_end[2]],
+                    // start vertex + right offset
+                    [r_start[0], r_start[1] + offset_from_ground, r_start[2]],
+                    // end vertex + right offset
+                    [r_end[0], r_end[1] + offset_from_ground, r_end[2]],
+                ]);
+
+                uvs.extend(&vec![
+                    // start vertex
+                    [0.0, 0.0],
+                    // end vertex
+                    [1.0, 0.0],
+                    // left offset
+                    [0.0, 1.0],
+                    // left offset
+                    [1.0, 1.0],
+                    // right offset
+                    [0.0, 1.0],
+                    // right offset
+                    [1.0, 1.0],
+                ]);
+            }
+
         }
 
         let normals = vec![[0.0, 1.0, 0.0]; positions.len()];
