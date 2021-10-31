@@ -8,13 +8,11 @@ use bevy::{
 // another side
 // caps
 
-const SHADOW_WIDTH: f32 = 0.3;
+const SHADOW_WIDTH: f32 = 1.0; //0.3;
 
 pub struct ShadowDecal {
     mesh_handle: Handle<Mesh>,
     entity_id: Entity,
-    // id is used as a HACKy way to Z-sort through shadow meshes, so new meshes are always on top
-    id: usize,
 }
 
 impl ShadowDecal {
@@ -23,14 +21,12 @@ impl ShadowDecal {
         mesh_assets: &mut ResMut<Assets<Mesh>>,
         render_pipeline: Handle<PipelineDescriptor>,
         commands: &mut Commands,
-        shadow_id: usize,
     ) -> Self {
         // create a mesh
         let mesh = Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
         let mut out = Self {
             mesh_handle: mesh_assets.add(mesh),
             entity_id: Entity::new(0), // garbage, just so we can init the struct, this is overwritten right after
-            id: shadow_id,
         };
 
         out.update(curve, mesh_assets)
@@ -54,7 +50,7 @@ impl ShadowDecal {
     }
 
     pub fn update(&self, curve: &Curve, mesh_assets: &mut ResMut<Assets<Mesh>>) -> Option<()> {
-        let offset_from_ground = 0.001 * (self.id as f32);
+        let offset_from_ground = 0.001;
 
         let bevy_mesh = mesh_assets.get_mut(self.mesh_handle.clone())?;
 
@@ -96,6 +92,13 @@ impl ShadowDecal {
             let l_end = end + offset_pts[quad_index + 1].0;
             let r_end = end + offset_pts[quad_index + 1].1;
 
+            indices.extend(
+                &([0, 1, 2, 1, 3, 2, 0, 4, 1, 4, 5, 1]
+                    .iter()
+                    .map(|i| i + positions.len() as u32)
+                    .collect::<Vec<_>>()),
+            );
+
             positions.extend(&[
                 //start vertex
                 [start[0], start[1] + offset_from_ground, start[2]],
@@ -125,13 +128,6 @@ impl ShadowDecal {
                 // right offset
                 [1.0, 1.0],
             ]);
-
-            indices.extend(
-                &([0, 1, 2, 1, 3, 2, 0, 4, 1, 4, 5, 1]
-                    .iter()
-                    .map(|i| i + (quad_index * 6) as u32)
-                    .collect::<Vec<_>>()),
-            )
         }
 
         let normals = vec![[0.0, 1.0, 0.0]; positions.len()];

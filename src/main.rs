@@ -48,7 +48,10 @@ use bevy::{
     prelude::*,
     render::{
         mesh::shape,
-        pipeline::{PipelineDescriptor, RenderPipeline},
+        pipeline::{
+            CompareFunction, DepthBiasState, DepthStencilState, PipelineDescriptor, RenderPipeline,
+            StencilFaceState, StencilState,
+        },
         render_graph::{base, RenderGraph, RenderResourcesNode},
         shader::ShaderStages,
     },
@@ -56,6 +59,12 @@ use bevy::{
 use bevy_dolly::Transform2Bevy;
 use bevy_mod_picking::{PickableBundle, PickingCamera, PickingCameraBundle, PickingPlugin};
 use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
+
+use bevy::render::{
+    pipeline::{BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite},
+    shader::{Shader, ShaderStage},
+    texture::TextureFormat,
+};
 
 use curve::Curve;
 use curve_manager::{CurveManager, UserDrawnCurve};
@@ -134,7 +143,6 @@ fn update_wall_2(
                 &mut meshes,
                 shadow_pipeline_handle,
                 &mut commands,
-                user_curves_count,
             ));
         }
 
@@ -180,12 +188,46 @@ fn setup(
         },
     )));
 
-    curve_manager.shadow_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
-        ShaderStages {
+    // Same as in `build_pbr_pipeline` but with depth_write_enabled=false, because shadows are transparent
+    let shadow_pipeline_descriptor = PipelineDescriptor {
+        depth_stencil: Some(DepthStencilState {
+            format: TextureFormat::Depth32Float,
+            depth_write_enabled: false,
+            depth_compare: CompareFunction::Less,
+            stencil: StencilState {
+                front: StencilFaceState::IGNORE,
+                back: StencilFaceState::IGNORE,
+                read_mask: 0,
+                write_mask: 0,
+            },
+            bias: DepthBiasState {
+                constant: 0,
+                slope_scale: 0.0,
+                clamp: 0.0,
+            },
+            clamp_depth: false,
+        }),
+        color_target_states: vec![ColorTargetState {
+            format: TextureFormat::default(),
+            color_blend: BlendState {
+                src_factor: BlendFactor::SrcAlpha,
+                dst_factor: BlendFactor::OneMinusSrcAlpha,
+                operation: BlendOperation::Add,
+            },
+            alpha_blend: BlendState {
+                src_factor: BlendFactor::One,
+                dst_factor: BlendFactor::One,
+                operation: BlendOperation::Add,
+            },
+            write_mask: ColorWrite::ALL,
+        }],
+        ..PipelineDescriptor::new(ShaderStages {
             vertex: asset_server.load::<Shader, _>("shaders/shadow.vert"),
             fragment: Some(asset_server.load::<Shader, _>("shaders/shadow.frag")),
-        },
-    )));
+        })
+    };
+
+    curve_manager.shadow_pipeline_handle = Some(pipelines.add(shadow_pipeline_descriptor));
 
     // Create a new shader pipeline
     let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
