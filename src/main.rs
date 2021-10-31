@@ -23,9 +23,24 @@
 // you can double click on the brick, and it will fall off (physically). This way you can create half-destroyed walls!
 // from a tech perspective, I can detect where you clicked, and make that brick into its own mesh & entity and enable physics sim. (and if I will have ivy and plants, that will destoy plants!)
 
+// TODO:
+// [+] fix roughness
+// [+] fix gaps
+// [+] add resolution to bricks
+// [+] BONUS: split some bricks into 2 horizontal
+// [+] change keybindings :P
+//
+// TMRW:
+// - add blob shadows
+// - better colors (just vertex color from Houdini is fine!) inverted sphere trick :hackerman:
+// - BONUS: randomly split some TOP bricks into 2 vertical (or just do more splits for the last row? :P)
+//
+// - make a tweet! opensource rightaway and continue working on it~
+
 mod curve;
 mod curve_manager;
 mod instanced_wall;
+mod shadow_decal;
 mod utils;
 mod wall_constructor;
 
@@ -51,6 +66,7 @@ use bevy::{
     render::{draw::RenderCommand, renderer::RenderResources},
 };
 use instanced_wall::InstancedWall;
+use shadow_decal::ShadowDecal;
 
 #[derive(RenderResources, Default, TypeUuid)]
 #[uuid = "93fb26fc-6c05-489b-9029-601edf703b6b"]
@@ -58,7 +74,7 @@ pub struct TimeUniform {
     pub value: f32,
 }
 
-const CURVE_SHOW_DEBUG: bool = false;
+const CURVE_SHOW_DEBUG: bool = true;
 
 // Give camera a component so we can find it and update with Dolly rig
 struct MainCamera;
@@ -94,13 +110,14 @@ fn animate_shader(time: Res<Time>, mut query: Query<&mut TimeUniform>) {
 }
 
 fn update_wall_2(
-    commands: Commands,
+    mut commands: Commands,
     mut curve_manager: ResMut<CurveManager>,
-    materials: ResMut<Assets<StandardMaterial>>,
-    meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
+    mut meshes: ResMut<Assets<Mesh>>,
 ) {
     let user_curves_count = curve_manager.user_curves.len();
-    let pipeline_handle = curve_manager.wall_pipeline_handle.clone().unwrap();
+    let wall_pipeline_handle = curve_manager.wall_pipeline_handle.clone().unwrap();
+    let shadow_pipeline_handle = curve_manager.shadow_pipeline_handle.clone().unwrap();
     // If there is a curve being drawn
     if let Some(curve) = curve_manager.user_curves.last() {
         if curve.points.len() < 2 {
@@ -111,6 +128,19 @@ fn update_wall_2(
         let curve = Curve::from(utils::smooth_points(&curve.points, 50));
         let bricks = WallConstructor::from_curve(&curve);
 
+        // Check if there is already shadow constructed
+        if let Some(shadow) = curve_manager.shadow_decals.get_mut(user_curves_count - 1) {
+            shadow.update(&curve, &mut meshes);
+        } else {
+            curve_manager.shadow_decals.push(ShadowDecal::new(
+                &curve,
+                &mut meshes,
+                shadow_pipeline_handle,
+                &mut commands,
+                user_curves_count,
+            ));
+        }
+
         // Check if there is already wall constructed
         if let Some(wall) = curve_manager.instanced_walls.get_mut(user_curves_count - 1) {
             wall.update(bricks, meshes);
@@ -119,7 +149,7 @@ fn update_wall_2(
                 bricks,
                 meshes,
                 materials,
-                pipeline_handle,
+                wall_pipeline_handle,
                 commands,
             ));
         }
@@ -150,6 +180,13 @@ fn setup(
         ShaderStages {
             vertex: asset_server.load::<Shader, _>("shaders/pbr.vert"),
             fragment: Some(asset_server.load::<Shader, _>("shaders/pbr.frag")),
+        },
+    )));
+
+    curve_manager.shadow_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
+        ShaderStages {
+            vertex: asset_server.load::<Shader, _>("shaders/shadow.vert"),
+            fragment: Some(asset_server.load::<Shader, _>("shaders/shadow.frag")),
         },
     )));
 

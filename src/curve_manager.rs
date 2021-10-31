@@ -1,4 +1,4 @@
-use crate::{instanced_wall::InstancedWall, utils, CustomMesh};
+use crate::{instanced_wall::InstancedWall, shadow_decal::ShadowDecal, utils, CustomMesh};
 use bevy::{
     prelude::*,
     render::pipeline::{PipelineDescriptor, RenderPipeline},
@@ -80,17 +80,21 @@ impl UserDrawnCurve {
 pub struct CurveManager {
     pub user_curves: Vec<UserDrawnCurve>,
     pub instanced_walls: Vec<InstancedWall>,
+    pub shadow_decals: Vec<ShadowDecal>,
     pub curve_pipeline_handle: Option<Handle<PipelineDescriptor>>,
     pub wall_pipeline_handle: Option<Handle<PipelineDescriptor>>,
+    pub shadow_pipeline_handle: Option<Handle<PipelineDescriptor>>,
 }
 
 impl CurveManager {
     pub fn new() -> Self {
         Self {
+            shadow_decals: Vec::new(),
             user_curves: Vec::new(),
             instanced_walls: Vec::new(),
             curve_pipeline_handle: None,
             wall_pipeline_handle: None,
+            shadow_pipeline_handle: None,
         }
     }
 }

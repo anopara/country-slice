@@ -6,8 +6,8 @@ use bevy::{
 use utils::MeshBuffer;
 
 pub struct InstancedWall {
-    bevy_mesh_handle: Handle<Mesh>,
-    mesh_buffer: MeshBuffer,
+    bevy_mesh_handle: Handle<Mesh>, // mesh of the whole wall
+    mesh_buffer: MeshBuffer,        // pre-loaded mesh of a single brick
     entity_id: Entity,
 }
 
@@ -167,14 +167,3 @@ impl InstancedWall {
         }
     }
 }
-
-/*
-
-pub struct Brick {
-    pub pivot_u: f32,
-    pub scale: Vec3,
-    pub position: Vec3,
-    pub rotation: Quat,
-}
-
-*/

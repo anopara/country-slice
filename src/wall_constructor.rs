@@ -119,8 +119,8 @@ impl WallConstructor {
 
 pub struct Brick {
     pub row_count: usize, // of the whole wall TODO: redundant information, move it out of Brick
-    pub row_id_bottom: usize, // for sin wave
-    pub row_id_top: usize,
+    pub row_id_bottom: usize, // for sin wave, brick's bottom ID
+    pub row_id_top: usize,  // for sin wave, brick's top ID
     pub bounds_uv: Vec2,
     pub pivot_uv: Vec2,
     pub scale: Vec3,
