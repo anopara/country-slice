@@ -48,7 +48,7 @@ use bevy::{
     prelude::*,
     render::{
         mesh::shape,
-        pipeline::PipelineDescriptor,
+        pipeline::{PipelineDescriptor, RenderPipeline},
         render_graph::{base, RenderGraph, RenderResourcesNode},
         shader::ShaderStages,
     },
@@ -223,9 +223,9 @@ fn setup(
             "assets/meshes/floor.glb",
         )),
         material: materials.add(Color::WHITE.into()),
-        //render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-        //    pipeline_handle,
-        //)]),
+        render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+            pipeline_handle,
+        )]),
         ..Default::default()
     };
     commands

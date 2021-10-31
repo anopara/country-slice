@@ -8,6 +8,8 @@ use bevy::{
 // another side
 // caps
 
+const SHADOW_WIDTH: f32 = 0.3;
+
 pub struct ShadowDecal {
     mesh_handle: Handle<Mesh>,
     entity_id: Entity,
@@ -57,7 +59,7 @@ impl ShadowDecal {
         let bevy_mesh = mesh_assets.get_mut(self.mesh_handle.clone())?;
 
         let curve_pts = &curve.points;
-        let offset_pts: Vec<Vec3> = curve_pts
+        let offset_pts: Vec<(Vec3, Vec3)> = curve_pts
             .iter()
             .enumerate()
             .map(|(idx, p)| {
@@ -74,7 +76,10 @@ impl ShadowDecal {
 
                 let tangent = (*next - *this).normalize();
 
-                tangent.cross(-Vec3::Y) * 0.3
+                (
+                    tangent.cross(-Vec3::Y) * SHADOW_WIDTH,
+                    tangent.cross(Vec3::Y) * SHADOW_WIDTH,
+                )
             })
             .collect();
 
@@ -85,36 +90,46 @@ impl ShadowDecal {
 
         for quad_index in 0..(curve_pts.len() - 1) {
             let start = curve_pts[quad_index];
-            let o_1 = start + offset_pts[quad_index];
+            let l_start = start + offset_pts[quad_index].0;
+            let r_start = start + offset_pts[quad_index].1;
             let end = curve_pts[quad_index + 1];
-            let o_2 = end + offset_pts[quad_index + 1];
+            let l_end = end + offset_pts[quad_index + 1].0;
+            let r_end = end + offset_pts[quad_index + 1].1;
 
             positions.extend(&[
                 //start vertex
                 [start[0], start[1] + offset_from_ground, start[2]],
-                // start vertex + offset
-                [o_1[0], o_1[1] + offset_from_ground, o_1[2]],
                 // end vertex
                 [end[0], end[1] + offset_from_ground, end[2]],
-                // end vertex + offset
-                [o_2[0], o_2[1] + offset_from_ground, o_2[2]],
+                // start vertex + left offset
+                [l_start[0], l_start[1] + offset_from_ground, l_start[2]],
+                // end vertex + left offset
+                [l_end[0], l_end[1] + offset_from_ground, l_end[2]],
+                // start vertex + right offset
+                [r_start[0], r_start[1] + offset_from_ground, r_start[2]],
+                // end vertex + right offset
+                [r_end[0], r_end[1] + offset_from_ground, r_end[2]],
             ]);
 
             uvs.extend(&vec![
                 // start vertex
                 [0.0, 0.0],
-                // offset up
-                [0.0, 1.0],
                 // end vertex
                 [1.0, 0.0],
-                // offset up
+                // left offset
+                [0.0, 1.0],
+                // left offset
+                [1.0, 1.0],
+                // right offset
+                [0.0, 1.0],
+                // right offset
                 [1.0, 1.0],
             ]);
 
             indices.extend(
-                &([0, 2, 1, 2, 3, 1]
+                &([0, 1, 2, 1, 3, 2, 0, 4, 1, 4, 5, 1]
                     .iter()
-                    .map(|i| i + (quad_index * 4) as u32)
+                    .map(|i| i + (quad_index * 6) as u32)
                     .collect::<Vec<_>>()),
             )
         }
