@@ -6,6 +6,8 @@ layout(location = 2) in vec2 Vertex_Uv;
 
 #ifdef STANDARDMATERIAL_NORMAL_MAP
 layout(location = 3) in vec4 Vertex_Tangent;
+// This is a copy of Bevy's PBR shader with small insertions/modifications
+
 #endif
 
 layout(location = 0) out vec3 v_WorldPosition;

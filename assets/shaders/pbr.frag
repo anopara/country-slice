@@ -1,3 +1,5 @@
+// This is a copy of Bevy's PBR shader with small insertions/modifications
+
 // From the Filament design doc
 // https://google.github.io/filament/Filament.html#table_symbols
 // Symbol Definition
