@@ -4,6 +4,10 @@ use bevy::{
     render::pipeline::{PipelineDescriptor, RenderPipeline},
 };
 
+// TODO:
+// another side
+// caps
+
 pub struct ShadowDecal {
     mesh_handle: Handle<Mesh>,
     entity_id: Entity,
@@ -125,18 +129,3 @@ impl ShadowDecal {
         Some(())
     }
 }
-
-/*
-let (this, next) = if let Some(next) = curve_pts.get(idx + 1) {
-    (p, next)
-} else {
-    (
-        curve_pts.get(idx - 1).expect(
-            "ShadowDecal: there was not pervious point to constuct tangent",
-        ),
-        p,
-    )
-};
-
-let tangent = (*next - *this).normalize();
-*/

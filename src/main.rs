@@ -48,7 +48,7 @@ use bevy::{
     prelude::*,
     render::{
         mesh::shape,
-        pipeline::{PipelineDescriptor, RenderPipeline},
+        pipeline::PipelineDescriptor,
         render_graph::{base, RenderGraph, RenderResourcesNode},
         shader::ShaderStages,
     },
@@ -61,10 +61,7 @@ use curve::Curve;
 use curve_manager::{CurveManager, UserDrawnCurve};
 use wall_constructor::WallConstructor;
 
-use bevy::{
-    reflect::TypeUuid,
-    render::{draw::RenderCommand, renderer::RenderResources},
-};
+use bevy::{reflect::TypeUuid, render::renderer::RenderResources};
 use instanced_wall::InstancedWall;
 use shadow_decal::ShadowDecal;
 
@@ -112,7 +109,7 @@ fn animate_shader(time: Res<Time>, mut query: Query<&mut TimeUniform>) {
 fn update_wall_2(
     mut commands: Commands,
     mut curve_manager: ResMut<CurveManager>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
+    materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
 ) {
     let user_curves_count = curve_manager.user_curves.len();
