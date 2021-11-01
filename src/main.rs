@@ -1,20 +1,3 @@
-// I dont' want the wall to jitter, so the splits need to be length invariant, as if you are revealing the splits as you draw
-// RMB -> adds Ivy (if not near wall, adds a plant?) - or maybe ivy grows together with the wall, but you can also add more? (with a vegetation brush?)
-
-// Maybe its a small story about a knight who ventured into the ruins (you make walls and setdressing)
-// then he saw a house (you make an outline an its a house)
-// he entered the houset to kill a witch
-// everything soaks red from the house, the knight leaves
-// dark creatures gather
-// the girl comes out of the house and she turns the knight into one of the creatures (you can draw the creatures?)
-
-// Blob shadows!
-// and bulging out terrain where you create walls
-
-// IDEA:
-// you can double click on the brick, and it will fall off (physically). This way you can create half-destroyed walls!
-// from a tech perspective, I can detect where you clicked, and make that brick into its own mesh & entity and enable physics sim. (and if I will have ivy and plants, that will destoy plants!)
-
 mod curve;
 mod curve_manager;
 mod instanced_wall;
