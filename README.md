@@ -1,8 +1,10 @@
 # country-slice
 
-My small weekend project, written in [Bevy Engine](https://github.com/bevyengine/bevy). Still **active WIP**! Making it public early in case someone might find this example of simple proc stuff in Bevy useful 😇
+My small weekend project, written in [Bevy Engine](https://github.com/bevyengine/bevy). Still **active WIP**! Expect breakage on main! 
 
-## Build and Run
+Making it public early in case someone might find this example of simple proc stuff in Bevy useful 😇
+
+### Build and Run
 
 1. download the repo
 2. cd to the `country-slice` directory
@@ -14,7 +16,7 @@ OR
 4. move the executable from `target/release` to the `country-slice` directory (so that it's with the `assets` directory)
 5. Launch it (`country-slice.exe` on Windows, `./country-slice` on Mac and Linux)
 
-## Compilation problems
+### Compilation problems
 
 You may have compilation problems if some dependencies are missing.
 
