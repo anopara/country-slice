@@ -8,6 +8,7 @@ edition = "2018"
 [dependencies]
 bevy = "0.5" 
 bevy_dolly = { git = "https://github.com/BlackPhlox/bevy_dolly" }
+natura = {git = "https://github.com/ziyasal/natura"} # Spring test
 dolly = "0.1.3"
 bevy_mod_picking = "0.4.0" #for selecting objects in 3D from cursor screenspace position
 gltf = "0.16.0"

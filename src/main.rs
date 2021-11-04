@@ -51,21 +51,64 @@ struct PreviewCube;
 
 struct CustomMesh;
 
+//struct HackyVelocity(pub Vec2);
+
 fn main() {
     App::build()
         .insert_resource(Msaa { samples: 4 })
         .add_plugins(DefaultPlugins)
         .add_plugin(PickingPlugin)
         .insert_resource(CurveManager::new())
+        // Spring test
+        //.insert_resource(natura::Spring::new(natura::fps(60), 10.0, 0.5))
+        //.insert_resource(HackyVelocity(Vec2::ZERO))
         .add_startup_system(setup.system())
         .add_system(update_camera.system())
-        //.add_system(handle_mouse_clicks.system())
+        //.add_system(spring_test.system())
         .add_system(mouse_preview.system())
         .add_system(update_curve_manager.system().label("curve manager"))
         .add_system(update_wall_2.system().after("curve manager").label("wall"))
         //.add_system(animate_shader.system()) //.after("wall"))
         .run();
 }
+/*
+fn spring_test(
+    mut query: Query<&mut PickingCamera>,
+    mut spring: ResMut<natura::Spring>,
+    mut velocity: ResMut<HackyVelocity>,
+    mut cube_query: Query<(
+        &mut PreviewCube,
+        &mut bevy::transform::components::Transform,
+    )>,
+) {
+    for camera in query.iter_mut() {
+        if let Some((_, intersection)) = camera.intersect_top() {
+            for (_, mut transform) in cube_query.iter_mut() {
+                let pos = transform.translation;
+
+                let (sprite_x, sprite_x_velocity) = spring.update(
+                    pos.x as f64,
+                    velocity.0.x as f64,
+                    intersection.position().x as f64,
+                );
+                let new_x = sprite_x;
+                let new_vel_x = sprite_x_velocity;
+
+                let (sprite_y, sprite_y_velocity) = spring.update(
+                    pos.z as f64,
+                    velocity.0.y as f64,
+                    intersection.position().z as f64,
+                );
+                let new_y = sprite_y;
+                let new_vel_y = sprite_y_velocity;
+
+                transform.translation = Vec3::new(new_x as f32, 0.0, new_y as f32);
+                velocity.0 = Vec2::new(new_vel_x as f32, new_vel_y as f32);
+            }
+        }
+    }
+}
+*/
 
 /*
 /// In this system we query for the `TimeComponent` and global `Time` resource, and set
@@ -283,15 +326,6 @@ fn setup(
         .insert(MainCamera)
         .insert_bundle(PickingCameraBundle::default());
 }
-
-/*
-fn handle_mouse_clicks(mouse_input: Res<Input<MouseButton>>, windows: Res<Windows>) {
-    let win = windows.get_primary().expect("no primary window");
-    if mouse_input.just_pressed(MouseButton::Left) {
-        //println!("click at {:?}", win.cursor_position());
-    }
-}
-*/
 
 fn mouse_preview(
     mut query: Query<&mut PickingCamera>,

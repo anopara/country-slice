@@ -1134,6 +1134,7 @@ dependencies = [
  "fastrand",
  "gltf 0.16.0",
  "itertools",
+ "natura",
  "tri-mesh",
 ]
 
@@ -2282,6 +2283,11 @@ dependencies = [
  "spirv_headers",
  "thiserror",
 ]
+
+[[package]]
+name = "natura"
+version = "0.1.0"
+source = "git+https://github.com/ziyasal/natura#d37b53b8c5dba8295c05cac97c3572d003db0b99"
 
 [[package]]
 name = "ndk"
