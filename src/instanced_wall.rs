@@ -14,10 +14,10 @@ pub struct InstancedWall {
 impl InstancedWall {
     pub fn new(
         bricks: Vec<Brick>,
-        mut mesh_assets: ResMut<Assets<Mesh>>,
-        mut materials: ResMut<Assets<StandardMaterial>>,
+        mesh_assets: &mut ResMut<Assets<Mesh>>,
+        materials: &mut ResMut<Assets<StandardMaterial>>,
         render_pipeline: Handle<PipelineDescriptor>,
-        mut commands: Commands,
+        commands: &mut Commands,
     ) -> Self {
         // create a mesh
         let mesh = Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
@@ -57,7 +57,7 @@ impl InstancedWall {
         out
     }
 
-    pub fn update(&mut self, bricks: Vec<Brick>, mut mesh_assets: ResMut<Assets<Mesh>>) {
+    pub fn update(&mut self, bricks: Vec<Brick>, mesh_assets: &mut ResMut<Assets<Mesh>>) {
         if let Some(bevy_mesh) = mesh_assets.get_mut(self.bevy_mesh_handle.clone()) {
             let mut positions: Vec<[f32; 3]> = Vec::new();
             let mut normals: Vec<[f32; 3]> = Vec::new();

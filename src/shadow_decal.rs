@@ -76,7 +76,8 @@ impl ShadowDecal {
         let mut positions: Vec<[f32; 3]> = Vec::new();
         let mut uvs: Vec<[f32; 2]> = Vec::new();
 
-        for quad_index in 0..(curve_pts.len() - 1) {
+        // Trim the first and last point, because shadow caps will sit on top of them (this assumed uniformly sampled curve)
+        for quad_index in 1..(curve_pts.len() - 2) {
             let start = curve_pts[quad_index];
             let l_start = start - offset_pts[quad_index];
             let r_start = start + offset_pts[quad_index];
@@ -122,24 +123,27 @@ impl ShadowDecal {
             ]);
         }
 
-        // add an end cap
-        let last_pt = curve_pts.len() - 1;
-        add_a_cap(
-            curve_pts[last_pt],
-            -(curve_pts[last_pt] - curve_pts[last_pt - 1]).normalize(),
-            &mut indices,
-            &mut positions,
-            &mut uvs,
-        );
+        let caps = if curve_pts.len() == 2 {
+            // If we only have 2 points, place two caps inbetween those two points
+            let start = (curve_pts[1] + curve_pts[0]) / 2.0;
+            let end = start;
+            let t_start = (curve_pts[0] - curve_pts[1]).normalize();
+            let t_end = (curve_pts[1] - curve_pts[0]).normalize();
+            vec![(start, t_start), (end, t_end)]
+        } else {
+            // Trimming point 0 and last one, because caps will go over them
+            let start_index = 1;
+            let end_index = curve_pts.len() - 2;
+            let start = curve_pts[start_index];
+            let end = curve_pts[end_index];
+            let t_start = (curve_pts[start_index + 1] - curve_pts[start_index]).normalize();
+            let t_end = -(curve_pts[end_index + 1] - curve_pts[end_index]).normalize();
+            vec![(start, t_start), (end, t_end)]
+        };
 
-        // add a start cap
-        add_a_cap(
-            curve_pts[0],
-            (curve_pts[1] - curve_pts[0]).normalize(),
-            &mut indices,
-            &mut positions,
-            &mut uvs,
-        );
+        for (position, tangent) in caps {
+            add_a_cap(position, tangent, &mut indices, &mut positions, &mut uvs);
+        }
 
         let normals = vec![[0.0, 1.0, 0.0]; positions.len()];
 

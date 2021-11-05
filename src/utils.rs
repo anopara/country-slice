@@ -40,7 +40,7 @@ pub fn curve_to_trimesh(points: &[Vec3]) -> (tri_mesh::mesh::Mesh, Vec<[f32; 2]>
     let mut indices: Vec<u32> = Vec::new();
     let mut positions: Vec<f64> = Vec::new();
 
-    let temp_curve = Curve::from(points.to_vec());
+    let temp_curve = Curve::new(points.to_vec());
     let curve_u = temp_curve.points_u;
     let mut uvs: Vec<[f32; 2]> = Vec::new();
 

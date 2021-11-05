@@ -2,12 +2,13 @@ use bevy::prelude::*;
 
 pub struct Curve {
     pub points: Vec<Vec3>,
+    // cache u values upon creation
     pub points_u: Vec<f32>,
     pub length: f32,
 }
 
 impl Curve {
-    pub fn from(points: Vec<Vec3>) -> Self {
+    pub fn new(points: Vec<Vec3>) -> Self {
         let length = points
             .iter()
             .enumerate()
@@ -34,6 +35,23 @@ impl Curve {
             points_u,
             length,
         }
+    }
+
+    pub fn resample(&self, segment_length: f32) -> Curve {
+        if segment_length >= self.length {
+            return Curve::new(vec![self.points[0], *self.points.last().unwrap()]);
+        }
+
+        //  TODO: this is TEMPORARY & SLOW! this re-uses the `get_pos_at_u` which searches the curve from start every time
+        let u_spacing = segment_length / self.length;
+        let target_points = (1.0 / u_spacing).round() as usize;
+        let target_u_spacing = 1.0 / (target_points as f32);
+
+        Curve::new(
+            (0..=target_points)
+                .map(|i| self.get_pos_at_u((i as f32) * target_u_spacing))
+                .collect(),
+        )
     }
 
     // Curve segment is defined by start_point_index and end_point_index

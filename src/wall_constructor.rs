@@ -19,15 +19,6 @@ pub struct WallConstructor;
 
 impl WallConstructor {
     pub fn from_curve(curve: &Curve) -> Vec<Brick> {
-        // CHEAT: extend the curve, so that the shadow mesh cap fits nicely!
-        // TODO: remove this hack by taking that into account in the shadow mesh. Potential solution is to unifromly sample the curve received by the shadow mesh, and clip it to fit the
-        let extension_start = curve.points[0] - curve.get_tangent_at_u(0.0) * 0.1;
-        let extension_end = *curve.points.last().unwrap() + curve.get_tangent_at_u(1.0) * 0.1;
-        let mut new_points = vec![extension_start];
-        new_points.extend(&curve.points);
-        new_points.push(extension_end);
-        let curve = Curve::from(new_points);
-
         let rng = fastrand::Rng::with_seed(0);
 
         let wall_length: f32 = curve.length;
