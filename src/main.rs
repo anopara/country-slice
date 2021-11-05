@@ -140,33 +140,33 @@ fn update_wall_2(
         let curve = Curve::new(utils::smooth_points(&curve.points, 50)).resample(0.2);
         let bricks = WallConstructor::from_curve(&curve);
 
-        // TODO: there is an annoying delay when the user drawn curve is too short to place any bricks, thus nothing happens (no bricks are placed)
-        // maybe extend the curve in the direction of the user curve, thus trying to predict where the wall will go. will not be accurate, but will give feedback
-        if !bricks.is_empty() {
-            // Check if there is already wall constructed
-            if let Some(wall) = curve_manager.instanced_walls.get_mut(user_curves_count - 1) {
-                wall.update(bricks, &mut meshes);
-            } else {
-                curve_manager.instanced_walls.push(InstancedWall::new(
-                    bricks,
-                    &mut meshes,
-                    &mut materials,
-                    wall_pipeline_handle,
-                    &mut commands,
-                ));
-            }
+        if bricks.is_empty() {
+            warn!("WallConstructor returned empty wall");
+        }
 
-            // Check if there is already shadow constructed
-            if let Some(shadow) = curve_manager.shadow_decals.get_mut(user_curves_count - 1) {
-                shadow.update(&curve, &mut meshes);
-            } else {
-                curve_manager.shadow_decals.push(ShadowDecal::new(
-                    &curve,
-                    &mut meshes,
-                    shadow_pipeline_handle,
-                    &mut commands,
-                ));
-            }
+        // Check if there is already wall constructed
+        if let Some(wall) = curve_manager.instanced_walls.get_mut(user_curves_count - 1) {
+            wall.update(bricks, &mut meshes);
+        } else {
+            curve_manager.instanced_walls.push(InstancedWall::new(
+                bricks,
+                &mut meshes,
+                &mut materials,
+                wall_pipeline_handle,
+                &mut commands,
+            ));
+        }
+
+        // Check if there is already shadow constructed
+        if let Some(shadow) = curve_manager.shadow_decals.get_mut(user_curves_count - 1) {
+            shadow.update(&curve, &mut meshes);
+        } else {
+            curve_manager.shadow_decals.push(ShadowDecal::new(
+                &curve,
+                &mut meshes,
+                shadow_pipeline_handle,
+                &mut commands,
+            ));
         }
     }
 }

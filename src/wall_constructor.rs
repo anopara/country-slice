@@ -25,8 +25,8 @@ impl WallConstructor {
         
         let row_count = (WALL_HEIGHT / BRICK_HEIGHT).floor() as usize;
         let rows  = random_splits(row_count, BRICK_HEIGHT_VARIANCE / WALL_HEIGHT, &rng);
-        let bricks_per_row = (wall_length / BRICK_WIDTH).floor() as usize;
-        
+        let bricks_per_row = (wall_length / BRICK_WIDTH).ceil() as usize; // this needs ceil, so that we always draw a brickwall if a curve is given, even if the bricks are too short
+
         let mut bricks = Vec::new();
         for (i, row_u) in rows.iter().enumerate() {
 
