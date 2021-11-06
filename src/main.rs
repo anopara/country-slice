@@ -190,11 +190,11 @@ fn setup(
     asset_server: Res<AssetServer>,
     mut render_graph: ResMut<RenderGraph>,
 ) {
-    let grid_pipeline = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
-        vertex: asset_server.load::<Shader, _>("shaders/grid_test.vert"),
-        fragment: Some(asset_server.load::<Shader, _>("shaders/grid_test.frag")),
-    }));
-    grid.create_debug_mesh(&mut meshes, &mut materials, &mut commands, grid_pipeline);
+    //let grid_pipeline = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
+    //    vertex: asset_server.load::<Shader, _>("shaders/grid_test.vert"),
+    //    fragment: Some(asset_server.load::<Shader, _>("shaders/grid_test.frag")),
+    //}));
+    //grid.create_debug_mesh(&mut meshes, &mut materials, &mut commands, grid_pipeline);
 
     // Watch for changes
     asset_server.watch_for_changes().unwrap();
@@ -360,9 +360,9 @@ fn mouse_preview(
                 transform.translation = intersection.position();
             }
             // Update uniform for dummy shader
-            let mut uniform_mouse_position = mouse_query.single_mut().unwrap();
-            uniform_mouse_position.x = intersection.position().x;
-            uniform_mouse_position.z = intersection.position().z;
+            //let mut uniform_mouse_position = mouse_query.single_mut().unwrap();
+            //uniform_mouse_position.x = intersection.position().x;
+            //uniform_mouse_position.z = intersection.position().z;
         }
     }
 }

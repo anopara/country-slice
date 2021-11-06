@@ -9,14 +9,15 @@ float fit01(float x, float min, float max) {
 
 void main() {
 
-/*
+
     float v = 1.0 - max(fit01(v_Uv.y, -0.6, 1.0), 0.0);
 
     float alpha = pow(v, 2.0);
     o_Target = vec4(0.0, 0.0, 0.0, alpha * 0.6);
-    */
+    
 
     // DUMMY WIREFRAME
+    /*
 
     float THICKNESS = 0.05;
 
@@ -25,5 +26,7 @@ void main() {
         alpha = 1.0;
     } 
 
+
     o_Target = vec4(1.0, 0.0, 0.0, alpha);
+    */
 }
