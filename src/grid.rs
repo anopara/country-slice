@@ -1,4 +1,8 @@
-use bevy::prelude::*;
+use crate::MousePosition;
+use bevy::{
+    prelude::*,
+    render::pipeline::{PipelineDescriptor, RenderPipeline},
+};
 //use genmesh::{Quad, Triangle, Vertex};
 //use genmesh::{Triangulate, Vertices};
 
@@ -25,6 +29,7 @@ impl Grid {
         mesh_assets: &mut ResMut<Assets<Mesh>>,
         materials: &mut ResMut<Assets<StandardMaterial>>,
         commands: &mut Commands,
+        render_pipeline: Handle<PipelineDescriptor>,
     ) {
         let mut mesh = Mesh::new(bevy::render::pipeline::PrimitiveTopology::TriangleList);
 
@@ -86,9 +91,6 @@ impl Grid {
                 mesh: mesh_assets.add(Mesh::from(shape::Cube { size: 0.05 })),
                 material: materials.add(Color::rgb(1.0, 0.0, 0.0).into()),
                 transform: Transform::from_xyz(p[0], p[1], p[2]),
-                //render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-                //    self.debug_mesh_pipeline.clone(),
-                //)]),
                 ..Default::default()
             });
         }
@@ -103,14 +105,16 @@ impl Grid {
 
         let handle = mesh_assets.add(mesh);
 
-        commands.spawn_bundle(PbrBundle {
-            mesh: handle,
-            material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
-            //render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-            //    self.debug_mesh_pipeline.clone(),
-            //)]),
-            ..Default::default()
-        });
+        commands
+            .spawn_bundle(PbrBundle {
+                mesh: handle,
+                material: materials.add(Color::rgb(0.0, 1.0, 1.0).into()),
+                render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
+                    render_pipeline.clone(),
+                )]),
+                ..Default::default()
+            })
+            .insert(MousePosition { x: 0.0, z: 0.0 });
 
         /*
         let plane =
