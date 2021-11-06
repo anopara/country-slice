@@ -126,6 +126,7 @@ fn update_wall_2(
     mut curve_manager: ResMut<CurveManager>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mouse_button_input: Res<Input<MouseButton>>,
 ) {
     let user_curves_count = curve_manager.user_curves.len();
     let wall_pipeline_handle = curve_manager.wall_pipeline_handle.clone().unwrap();
@@ -133,6 +134,9 @@ fn update_wall_2(
     // If there is a curve being drawn
     if let Some(curve) = curve_manager.user_curves.last() {
         if curve.points.len() < 2 {
+            return;
+        }
+        if !mouse_button_input.pressed(MouseButton::Left) {
             return;
         }
 
