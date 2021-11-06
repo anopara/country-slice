@@ -1,5 +1,6 @@
 mod curve;
 mod curve_manager;
+mod grid;
 mod instanced_wall;
 mod shadow_decal;
 mod utils;
@@ -32,6 +33,7 @@ use curve_manager::{CurveManager, UserDrawnCurve};
 use wall_constructor::WallConstructor;
 
 use bevy::{reflect::TypeUuid, render::renderer::RenderResources};
+use grid::Grid;
 use instanced_wall::InstancedWall;
 use shadow_decal::ShadowDecal;
 
@@ -59,6 +61,7 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugin(PickingPlugin)
         .insert_resource(CurveManager::new())
+        .insert_resource(Grid::new(Vec2::ZERO, Vec2::splat(10.0), (10, 10)))
         // Spring test
         //.insert_resource(natura::Spring::new(natura::fps(60), 10.0, 0.5))
         //.insert_resource(HackyVelocity(Vec2::ZERO))
@@ -179,12 +182,15 @@ fn update_wall_2(
 fn setup(
     mut commands: Commands,
     mut curve_manager: ResMut<CurveManager>,
+    mut grid: ResMut<Grid>,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
     asset_server: Res<AssetServer>,
     mut render_graph: ResMut<RenderGraph>,
 ) {
+    grid.create_debug_mesh(&mut meshes, &mut materials, &mut commands);
+
     // Watch for changes
     asset_server.watch_for_changes().unwrap();
 

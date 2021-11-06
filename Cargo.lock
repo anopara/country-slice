@@ -898,6 +898,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64a4b57c8f4e3a2e9ac07e0f6abc9c24b6fc9e1b54c3478cfb598f3d0023e51c"
 dependencies = [
  "approx 0.1.1",
+ "mint",
  "num-traits 0.1.43",
  "rand 0.4.6",
 ]
@@ -1132,6 +1133,7 @@ dependencies = [
  "bevy_mod_picking",
  "dolly",
  "fastrand",
+ "genmesh",
  "gltf 0.16.0",
  "itertools",
  "natura",
@@ -1454,6 +1456,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c31b6d751ae2c7f11320402d34e41349dd1016f8d5d45e48c4312bc8625af50c"
 dependencies = [
  "byteorder",
+]
+
+[[package]]
+name = "genmesh"
+version = "0.6.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "093d52460513e54346e440eadad05a799378654001d7c3a384c3d1e59b5f1e9f"
+dependencies = [
+ "cgmath",
+ "mint",
 ]
 
 [[package]]
@@ -2202,6 +2214,12 @@ checksum = "791daaae1ed6889560f8c4359194f56648355540573244a5448a83ba1ecc7435"
 dependencies = [
  "adler32",
 ]
+
+[[package]]
+name = "mint"
+version = "0.5.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "162e591484b4b8fe9e1ca16ebf07ab584fdc3334508d76a788cd54d89cfc20dc"
 
 [[package]]
 name = "mio"
