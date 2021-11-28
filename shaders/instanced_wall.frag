@@ -1,3 +1,6 @@
+// port of Bevy's PBR shader
+// https://github.com/bevyengine/bevy/blob/97d8e4e1793ede3df8c77ed44736e800b38ff7a4/crates/bevy_pbr/src/render_graph/pbr_pipeline/pbr.frag
+
 #version 450 core
 
 in flat int instance_id;
