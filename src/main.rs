@@ -47,14 +47,6 @@ struct ComputeTest {
     texture_dims: (i32, i32),
 }
 
-// TODO:
-// 1. FIX TRANSPARENCY BLENDING (ask Tom)
-// 1.5 something strange with shadow caps -- did I port the correct version? check latest branch
-// 2. port the pbr shader
-// ------
-// next - try using the compute shader texture to affect how walls are constructed!
-// Bible: https://github.com/h3r2tic/rendertoy/blob/d84b56ba2a803affa7bfa19f07041e8dc93e71e2/src/shader.rs#L198
-
 fn main() {
     let (mut windowed_context, event_loop) =
         setup::setup_glutin_and_opengl((SCR_WIDTH, SCR_HEIGHT));
