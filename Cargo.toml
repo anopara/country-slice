@@ -1,18 +1,22 @@
 [package]
-name = "country-slice"
+name = "open-gl"
 version = "0.1.0"
 edition = "2018"
+
+authors = ["Anastasia Opara <anastasiaopara@gmail.com>"] 
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-bevy = "0.5" 
-bevy_dolly = { git = "https://github.com/BlackPhlox/bevy_dolly" }
-natura = {git = "https://github.com/ziyasal/natura"} # Spring test
-dolly = "0.1.3"
-bevy_mod_picking = "0.4.0" #for selecting objects in 3D from cursor screenspace position
+gl = "0.14.0"
+glutin = "0.27.0"
+glam = "0.20.0"
 gltf = "0.16.0"
-tri-mesh = "0.5.0"
-itertools = "0.10.1"
+dolly = "0.1.4"
+hotwatch = "0.4.6"
+bevy_app = "0.5"
+bevy_core = "0.5"
+bevy_ecs = "0.5"
+bevy_input = "0.5"
+bevy_asset = "0.5"
 fastrand = "1.5.0"
-genmesh = "0.6.2"

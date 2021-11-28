@@ -1,0 +1,34 @@
+#version 430
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(rgba32f) uniform image2D img_output;
+
+uniform vec3 Mouse_Position;
+
+void main() {
+    
+    // get index in global work group i.e x,y position
+    ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 dims = imageSize(img_output); // fetch image dimensions
+
+     // base pixel colour for image
+    vec4 pixel = imageLoad(img_output, pixel_coords); //vec4(0.0, 0.0, 0.0, 1.0);
+
+    // MAIN ---------------------
+
+    // range -1 to 1
+    float x = (float(pixel_coords.x * 2 - dims.x) / dims.x);
+    float y = (float(pixel_coords.y * 2 - dims.y) / dims.y);
+
+    vec3 pixel_ws = vec3(x, 0.0, y) * 10.0;
+
+    float d = distance(pixel_ws, Mouse_Position);
+    d = clamp(d, 0.0, 1.0);
+    d = 1.0 -d;
+
+    pixel = max(pixel, vec4(d,d,d, 1.0));
+
+    //-----------------------------
+
+    // output to a specific pixel in the image
+    imageStore(img_output, pixel_coords, pixel);
+}

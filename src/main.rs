@@ -1,449 +1,154 @@
-mod curve;
-mod curve_manager;
-mod grid;
-mod instanced_wall;
-mod shadow_decal;
+use asset_libraries::mesh_library::AssetMeshLibrary;
+use asset_libraries::shader_library::AssetShaderLibrary;
+use asset_libraries::vao_library::AssetVAOLibrary;
+use asset_libraries::Handle;
+
+use bevy_app::App;
+use bevy_ecs::prelude::*;
+
+use glam::Vec3;
+use glutin::event_loop::ControlFlow;
+
+use render::camera::MainCamera;
+
+use render::shader::ShaderProgram;
+use render::shaderwatch::*;
+use window_events::{process_window_events, CursorMoved, WindowSize};
+
+use crate::systems::*;
+
+mod asset_libraries;
+mod components;
+mod geometry;
+mod render;
+mod render_loop;
+mod setup;
+mod systems;
 mod utils;
-mod wall_constructor;
+mod window_events;
 
-use bevy::{
-    prelude::*,
-    render::{
-        mesh::shape,
-        pipeline::{
-            CompareFunction, DepthBiasState, DepthStencilState, PipelineDescriptor, RenderPipeline,
-            StencilFaceState, StencilState,
-        },
-        render_graph::{base, RenderGraph, RenderResourcesNode},
-        shader::ShaderStages,
-    },
-};
-use bevy_dolly::Transform2Bevy;
-use bevy_mod_picking::{PickableBundle, PickingCamera, PickingCameraBundle, PickingPlugin};
-use dolly::prelude::{Arm, CameraRig, Smooth, YawPitch};
+// https://github.com/bwasty/learn-opengl-rs
+// https://learnopengl.com/Getting-started/Hello-Triangle
 
-use bevy::render::{
-    pipeline::{BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite},
-    shader::Shader,
-    texture::TextureFormat,
-};
-
-use curve::Curve;
-use curve_manager::{CurveManager, UserDrawnCurve};
-use wall_constructor::WallConstructor;
-
-use bevy::{reflect::TypeUuid, render::renderer::RenderResources};
-use grid::Grid;
-use instanced_wall::InstancedWall;
-use shadow_decal::ShadowDecal;
-
-#[derive(RenderResources, Default, TypeUuid)]
-#[uuid = "93fb26fc-6c05-489b-9029-601edf703b6b"]
-pub struct MousePosition {
-    pub x: f32,
-    pub z: f32,
-}
-
-const CURVE_SHOW_DEBUG: bool = false;
-
-// Give camera a component so we can find it and update with Dolly rig
-struct MainCamera;
+// settings
+const SCR_WIDTH: u32 = 1600;
+const SCR_HEIGHT: u32 = 1200;
 
 // Mark the cube that is the preview of mouse raycast intersection
-struct PreviewCube;
+pub struct MousePreviewCube;
 
-struct CustomMesh;
+pub struct CursorRaycast(pub Vec3);
 
-//struct HackyVelocity(pub Vec2);
+pub struct DisplayTestMask;
+
+struct ComputeTest {
+    compute_program: Handle<ShaderProgram>,
+    texture: u32,
+    texture_dims: (i32, i32),
+}
+
+// TODO:
+// 1. FIX TRANSPARENCY BLENDING (ask Tom)
+// 1.5 something strange with shadow caps -- did I port the correct version? check latest branch
+// 2. port the pbr shader
+// ------
+// next - try using the compute shader texture to affect how walls are constructed!
+// Bible: https://github.com/h3r2tic/rendertoy/blob/d84b56ba2a803affa7bfa19f07041e8dc93e71e2/src/shader.rs#L198
 
 fn main() {
-    App::build()
-        .insert_resource(Msaa { samples: 4 })
-        .add_plugins(DefaultPlugins)
-        .add_plugin(PickingPlugin)
-        .insert_resource(CurveManager::new())
-        .insert_resource(Grid::new(Vec2::ZERO, Vec2::splat(10.0), (10, 10)))
-        // Spring test
-        //.insert_resource(natura::Spring::new(natura::fps(60), 10.0, 0.5))
-        //.insert_resource(HackyVelocity(Vec2::ZERO))
-        .add_startup_system(setup.system())
-        .add_system(update_camera.system())
-        //.add_system(spring_test.system())
-        .add_system(mouse_preview.system())
-        .add_system(update_curve_manager.system().label("curve manager"))
-        .add_system(update_wall_2.system().after("curve manager").label("wall"))
-        //.add_system(animate_shader.system()) //.after("wall"))
-        .run();
-}
-/*
-fn spring_test(
-    mut query: Query<&mut PickingCamera>,
-    mut spring: ResMut<natura::Spring>,
-    mut velocity: ResMut<HackyVelocity>,
-    mut cube_query: Query<(
-        &mut PreviewCube,
-        &mut bevy::transform::components::Transform,
-    )>,
-) {
-    for camera in query.iter_mut() {
-        if let Some((_, intersection)) = camera.intersect_top() {
-            for (_, mut transform) in cube_query.iter_mut() {
-                let pos = transform.translation;
+    let (mut windowed_context, event_loop) =
+        setup::setup_glutin_and_opengl((SCR_WIDTH, SCR_HEIGHT));
 
-                let (sprite_x, sprite_x_velocity) = spring.update(
-                    pos.x as f64,
-                    velocity.0.x as f64,
-                    intersection.position().x as f64,
-                );
-                let new_x = sprite_x;
-                let new_vel_x = sprite_x_velocity;
+    let mut temp_shaderwatch = ShaderWatch::new();
+    let mut temp_assets_shader = AssetShaderLibrary::new();
+    // COMPUTE SHADER -------------------------------------------
+    let compute_test = unsafe {
+        let texture_dims = (512, 512);
+        // Create texture
+        let mut texture = 0;
+        gl::GenTextures(1, &mut texture);
+        gl::ActiveTexture(gl::TEXTURE0);
+        gl::BindTexture(gl::TEXTURE_2D, texture);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+        gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+        gl::TexImage2D(
+            gl::TEXTURE_2D,
+            0,
+            gl::RGBA32F as i32,
+            texture_dims.0,
+            texture_dims.1,
+            0,
+            gl::RGBA,
+            gl::FLOAT,
+            std::ptr::null(),
+        );
+        // create shader program
+        let shader_program = ShaderProgram::new_compute("shaders/compute_test.glsl").unwrap();
 
-                let (sprite_y, sprite_y_velocity) = spring.update(
-                    pos.z as f64,
-                    velocity.0.y as f64,
-                    intersection.position().z as f64,
-                );
-                let new_y = sprite_y;
-                let new_vel_y = sprite_y_velocity;
+        temp_shaderwatch.watch(&shader_program);
+        let handle = temp_assets_shader.add(shader_program.into());
 
-                transform.translation = Vec3::new(new_x as f32, 0.0, new_y as f32);
-                velocity.0 = Vec2::new(new_vel_x as f32, new_vel_y as f32);
-            }
+        ComputeTest {
+            compute_program: handle,
+            texture,
+            texture_dims,
         }
-    }
-}
-*/
-
-/*
-/// In this system we query for the `TimeComponent` and global `Time` resource, and set
-/// `time.seconds_since_startup()` as the `value` of the `TimeComponent`. This value will be
-/// accessed by the fragment shader and used to animate the shader.
-fn animate_shader(time: Res<Time>, mut query: Query<&mut TimeUniform>) {
-    for mut time_uniform in query.iter_mut() {
-        time_uniform.value = time.seconds_since_startup() as f32;
-    }
-}
-*/
-
-fn update_wall_2(
-    mut commands: Commands,
-    mut curve_manager: ResMut<CurveManager>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mouse_button_input: Res<Input<MouseButton>>,
-) {
-    let user_curves_count = curve_manager.user_curves.len();
-    let wall_pipeline_handle = curve_manager.wall_pipeline_handle.clone().unwrap();
-    let shadow_pipeline_handle = curve_manager.shadow_pipeline_handle.clone().unwrap();
-    // If there is a curve being drawn
-    if let Some(curve) = curve_manager.user_curves.last() {
-        if curve.points.len() < 2 {
-            return;
-        }
-        if !mouse_button_input.pressed(MouseButton::Left) {
-            return;
-        }
-
-        // Calculate brick transforms
-        let curve = Curve::new(utils::smooth_points(&curve.points, 50)).resample(0.2);
-        let bricks = WallConstructor::from_curve(&curve);
-
-        if bricks.is_empty() {
-            warn!("WallConstructor returned empty wall");
-        }
-
-        // Check if there is already wall constructed
-        if let Some(wall) = curve_manager.instanced_walls.get_mut(user_curves_count - 1) {
-            wall.update(bricks, &mut meshes);
-        } else {
-            curve_manager.instanced_walls.push(InstancedWall::new(
-                bricks,
-                &mut meshes,
-                &mut materials,
-                wall_pipeline_handle,
-                &mut commands,
-            ));
-        }
-
-        // Check if there is already shadow constructed
-        if let Some(shadow) = curve_manager.shadow_decals.get_mut(user_curves_count - 1) {
-            shadow.update(&curve, &mut meshes);
-        } else {
-            curve_manager.shadow_decals.push(ShadowDecal::new(
-                &curve,
-                &mut meshes,
-                shadow_pipeline_handle,
-                &mut commands,
-            ));
-        }
-    }
-}
-
-/// set up a simple 3D scene
-fn setup(
-    mut commands: Commands,
-    mut curve_manager: ResMut<CurveManager>,
-    mut grid: ResMut<Grid>,
-    mut meshes: ResMut<Assets<Mesh>>,
-    mut materials: ResMut<Assets<StandardMaterial>>,
-    mut pipelines: ResMut<Assets<PipelineDescriptor>>,
-    asset_server: Res<AssetServer>,
-    mut render_graph: ResMut<RenderGraph>,
-) {
-    //let grid_pipeline = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
-    //    vertex: asset_server.load::<Shader, _>("shaders/grid_test.vert"),
-    //    fragment: Some(asset_server.load::<Shader, _>("shaders/grid_test.frag")),
-    //}));
-    //grid.create_debug_mesh(&mut meshes, &mut materials, &mut commands, grid_pipeline);
-
-    // Watch for changes
-    asset_server.watch_for_changes().unwrap();
-
-    curve_manager.curve_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
-        ShaderStages {
-            vertex: asset_server.load::<Shader, _>("shaders/curve_test.vert"),
-            fragment: Some(asset_server.load::<Shader, _>("shaders/curve_test.frag")),
-        },
-    )));
-
-    curve_manager.wall_pipeline_handle = Some(pipelines.add(PipelineDescriptor::default_config(
-        ShaderStages {
-            vertex: asset_server.load::<Shader, _>("shaders/pbr.vert"),
-            fragment: Some(asset_server.load::<Shader, _>("shaders/pbr.frag")),
-        },
-    )));
-
-    // Same as in `build_pbr_pipeline` but with depth_write_enabled=false, because shadows are transparent
-    let shadow_pipeline_descriptor = PipelineDescriptor {
-        depth_stencil: Some(DepthStencilState {
-            format: TextureFormat::Depth32Float,
-            depth_write_enabled: false,
-            depth_compare: CompareFunction::Less,
-            stencil: StencilState {
-                front: StencilFaceState::IGNORE,
-                back: StencilFaceState::IGNORE,
-                read_mask: 0,
-                write_mask: 0,
-            },
-            bias: DepthBiasState {
-                constant: 0,
-                slope_scale: 0.0,
-                clamp: 0.0,
-            },
-            clamp_depth: false,
-        }),
-        color_target_states: vec![ColorTargetState {
-            format: TextureFormat::default(),
-            color_blend: BlendState {
-                src_factor: BlendFactor::SrcAlpha,
-                dst_factor: BlendFactor::OneMinusSrcAlpha,
-                operation: BlendOperation::Add,
-            },
-            alpha_blend: BlendState {
-                src_factor: BlendFactor::One,
-                dst_factor: BlendFactor::One,
-                operation: BlendOperation::Add,
-            },
-            write_mask: ColorWrite::ALL,
-        }],
-        ..PipelineDescriptor::new(ShaderStages {
-            vertex: asset_server.load::<Shader, _>("shaders/shadow.vert"),
-            fragment: Some(asset_server.load::<Shader, _>("shaders/shadow.frag")),
-        })
     };
 
-    curve_manager.shadow_pipeline_handle = Some(pipelines.add(shadow_pipeline_descriptor));
+    // ----------------------------------------------------------
 
-    // Create a new shader pipeline
-    let pipeline_handle = pipelines.add(PipelineDescriptor::default_config(ShaderStages {
-        vertex: asset_server.load::<Shader, _>("shaders/vertex_color.vert"),
-        fragment: Some(asset_server.load::<Shader, _>("shaders/vertex_color.frag")),
-    }));
+    let mut app = App::build();
+    app.add_plugin(bevy_core::CorePlugin::default())
+        .add_plugin(bevy_input::InputPlugin::default())
+        .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
+        .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
+        .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
+        .insert_resource(temp_shaderwatch)
+        .insert_resource(WallManager::new())
+        .insert_resource(CursorRaycast(Vec3::ZERO))
+        .insert_resource(AssetMeshLibrary::new())
+        .insert_resource(AssetVAOLibrary::new())
+        .insert_resource(temp_assets_shader)
+        .insert_resource(compute_test)
+        .add_stage_after(
+            bevy_app::CoreStage::PreUpdate,
+            "opengl",
+            SystemStage::single_threaded(),
+        )
+        .add_stage_after(
+            "opengl",
+            "main_singlethread",
+            SystemStage::single_threaded(),
+        )
+        .add_system_to_stage("opengl", shaderwatch.system().label("reload_shaders"))
+        .add_system_to_stage("opengl", build_missing_vaos.system().label("build_vaos"))
+        .add_system_to_stage("opengl", rebuild_vaos.system().after("build_vaos"))
+        .add_system(main_camera_update.system())
+        .add_system(mouse_raycast.system())
+        .add_system(draw_curve.system().label("usercurve"))
+        .add_system_to_stage(
+            "main_singlethread",
+            walls_update.system().after("usercurve"),
+        );
 
-    /*
-    commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(0.0, 0.0, 0.0),
-        light: Light {
-            color: Color::rgb(1.0, 0.0, 0.0),
-            ..Default::default()
-        },
-        global_transform: Default::default(),
+    systems::startup(&mut app.world_mut());
+
+    // main loop
+    // -----------
+    event_loop.run(move |event, _, control_flow| {
+        // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't
+        // dispatched any events. This is ideal for games and similar applications.
+        *control_flow = ControlFlow::Poll;
+
+        app.app.update();
+
+        process_window_events(
+            event,
+            &mut windowed_context,
+            control_flow,
+            &mut app.world_mut(),
+        );
     });
-    */
-
-    // Add a `RenderResourcesNode` to our `RenderGraph`. This will bind `TimeComponent` to our
-    // shader.
-    render_graph.add_system_node(
-        "mouse_position",
-        RenderResourcesNode::<MousePosition>::new(true),
-    );
-
-    // Add a `RenderGraph` edge connecting our new "time_component" node to the main pass node. This
-    // ensures that "time_component" runs before the main pass.
-    render_graph
-        .add_node_edge("mouse_position", base::node::MAIN_PASS)
-        .unwrap();
-
-    // floor
-    let floor_bundle = PbrBundle {
-        mesh: meshes.add(utils::load_gltf_as_bevy_mesh_w_vertex_color(
-            "assets/meshes/floor.glb",
-        )),
-        material: materials.add(Color::WHITE.into()),
-        render_pipelines: RenderPipelines::from_pipelines(vec![RenderPipeline::new(
-            pipeline_handle,
-        )]),
-        ..Default::default()
-    };
-    commands
-        .spawn_bundle(floor_bundle)
-        .insert_bundle(PickableBundle::default());
-
-    // preview cube
-    commands
-        .spawn_bundle(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 0.1 })),
-            material: materials.add(StandardMaterial {
-                base_color: Color::rgb(1.0, 1.0, 1.0),
-                base_color_texture: None,
-                roughness: 1.0,
-                metallic: 0.0,
-                metallic_roughness_texture: None,
-                reflectance: 0.0,
-                normal_map: None,
-                double_sided: true,
-                occlusion_texture: None,
-                emissive: Color::rgb(1.0, 1.0, 1.0),
-                emissive_texture: None,
-                unlit: false,
-            }),
-            transform: Transform::from_xyz(0.0, 0.5, 0.0),
-            ..Default::default()
-        })
-        .insert(PreviewCube);
-
-    // light
-    commands.spawn_bundle(LightBundle {
-        transform: Transform::from_xyz(4.0, 8.0, 4.0),
-        ..Default::default()
-    });
-    // camera
-    // TODO: can replace this with a resource and update camera
-    commands.spawn().insert(
-        CameraRig::builder()
-            .with(YawPitch::new().yaw_degrees(45.0).pitch_degrees(-35.0))
-            .with(Smooth::new_rotation(1.5))
-            .with(Arm::new(dolly::glam::Vec3::Z * 9.0))
-            .build(),
-    );
-    commands
-        .spawn_bundle(PerspectiveCameraBundle {
-            transform: Transform::from_xyz(-2.0, 10.0, 5.0)
-                .looking_at(bevy::math::Vec3::ZERO, bevy::math::Vec3::Y),
-            ..Default::default()
-        })
-        .insert(MainCamera)
-        .insert_bundle(PickingCameraBundle::default());
-}
-
-fn mouse_preview(
-    mut query: Query<&mut PickingCamera>,
-    mut cube_query: Query<(
-        &mut PreviewCube,
-        &mut bevy::transform::components::Transform,
-    )>,
-    mut mouse_query: Query<&mut MousePosition>,
-) {
-    for camera in query.iter_mut() {
-        if let Some((_, intersection)) = camera.intersect_top() {
-            for (_, mut transform) in cube_query.iter_mut() {
-                transform.translation = intersection.position();
-            }
-            // Update uniform for dummy shader
-            //let mut uniform_mouse_position = mouse_query.single_mut().unwrap();
-            //uniform_mouse_position.x = intersection.position().x;
-            //uniform_mouse_position.z = intersection.position().z;
-        }
-    }
-}
-
-fn update_curve_manager(
-    materials: ResMut<Assets<StandardMaterial>>,
-    mut commands: Commands,
-    meshes: ResMut<Assets<Mesh>>,
-    mut curve_manager: ResMut<CurveManager>,
-    mouse_button_input: Res<Input<MouseButton>>,
-    keys: Res<Input<KeyCode>>,
-    mut query: Query<&mut PickingCamera>,
-) {
-    if keys.just_pressed(KeyCode::Escape) {
-        curve_manager.clear_all(&mut commands);
-    }
-
-    // If LMB was just pressed, start a new curve
-    if mouse_button_input.just_pressed(MouseButton::Left) {
-        let pipeline = curve_manager.curve_pipeline_handle.clone().unwrap();
-        curve_manager
-            .user_curves
-            .push(UserDrawnCurve::new(pipeline));
-    }
-
-    // If there is a curve being drawn
-    if let Some(curve) = curve_manager.user_curves.last_mut() {
-        // Add points to it
-        if mouse_button_input.pressed(MouseButton::Left) {
-            if let Ok(Some((_, intersection))) =
-                query.single_mut().map(|camera| camera.intersect_top())
-            {
-                const DIST_THRESHOLD: f32 = 0.001;
-
-                if curve
-                    .points
-                    .last()
-                    // if curve  had points, only add if the distance is larger than X
-                    .map(|last| intersection.position().distance(*last) > DIST_THRESHOLD)
-                    // if curve  has no points, add this point
-                    .unwrap_or(true)
-                {
-                    curve.points.push(intersection.position())
-                }
-            }
-        }
-
-        // Update its debug mesh
-        if CURVE_SHOW_DEBUG {
-            curve.update_debug_mesh(meshes, materials, commands);
-        }
-    }
-}
-
-fn update_camera(
-    keys: Res<Input<KeyCode>>,
-    time: Res<Time>,
-    mut query: QuerySet<(
-        Query<(&mut Transform, With<MainCamera>)>,
-        Query<&mut CameraRig>,
-    )>,
-) {
-    let mut rig = query.q1_mut().single_mut().unwrap();
-    let camera_driver = rig.driver_mut::<YawPitch>();
-
-    if keys.pressed(KeyCode::Left) {
-        camera_driver.rotate_yaw_pitch(-2.0, 0.0);
-    }
-    if keys.pressed(KeyCode::Right) {
-        camera_driver.rotate_yaw_pitch(2.0, 0.0);
-    }
-
-    if keys.pressed(KeyCode::Up) {
-        camera_driver.rotate_yaw_pitch(0.0, -1.0);
-    }
-    if keys.pressed(KeyCode::Down) {
-        camera_driver.rotate_yaw_pitch(0.0, 1.0);
-    }
-
-    let transform = rig.update(time.delta_seconds());
-    let (mut cam, _) = query.q0_mut().single_mut().unwrap();
-
-    cam.transform_2_bevy(transform);
 }
