@@ -130,8 +130,7 @@ fn main() {
     // main loop
     // -----------
     event_loop.run(move |event, _, control_flow| {
-        // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't
-        // dispatched any events. This is ideal for games and similar applications.
+        // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't dispatched any events
         *control_flow = ControlFlow::Poll;
 
         app.app.update();
