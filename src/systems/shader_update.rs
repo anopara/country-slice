@@ -4,7 +4,6 @@ use crate::{
     asset_libraries::shader_library::AssetShaderLibrary, render::shaderwatch::ShaderWatch,
 };
 
-// System
 pub fn shaderwatch(
     shaderwatch: ResMut<ShaderWatch>,
     mut assets_shader: ResMut<AssetShaderLibrary>,

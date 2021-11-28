@@ -78,7 +78,6 @@ pub fn process_window_events(
                 }
                 let mut window_size = ecs.get_resource_mut::<WindowSize>().unwrap();
                 window_size.set(physical_size.width, physical_size.height);
-                //panic!("Remember to pass the new screen size to ECS, so render loop is updated")
             }
             // If window was closed, or we pressed "Escape", close the app
             WindowEvent::CloseRequested => *control_flow = ControlFlow::Exit,
