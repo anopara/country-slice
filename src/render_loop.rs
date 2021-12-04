@@ -24,7 +24,7 @@ use crate::{ComputeTest, CursorRaycast, DisplayTestMask};
 use crate::components::{drawable::GLDrawMode, transform::Transform};
 
 pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCurrent, Window>) {
-    let mut img_unit = 0;
+    let mut _img_unit = 0;
 
     // render
     // ------
@@ -49,10 +49,10 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             let uniform_name = CString::new("img_output").unwrap();
             let tex_location =
                 gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
-            gl::Uniform1ui(tex_location, img_unit);
+            gl::Uniform1ui(tex_location, _img_unit);
             // bind texture
             gl::BindImageTexture(
-                img_unit,
+                _img_unit,
                 test.texture,
                 0,
                 gl::FALSE,
@@ -64,7 +64,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             shader.set_gl_uniform("Mouse_Position", GlUniform::Vec3(mouse.0.to_array()));
             gl::DispatchCompute(test.texture_dims.0 as u32, test.texture_dims.1 as u32, 1);
 
-            img_unit += 1;
+            _img_unit += 1;
         }
 
         // make sure writing to image has finished before read

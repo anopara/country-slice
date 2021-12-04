@@ -44,6 +44,7 @@ impl InstancedWall {
     }
 }
 
+//TODO: rename into BrickTransform ?
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct InstancedWallData {
