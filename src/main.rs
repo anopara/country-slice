@@ -41,6 +41,18 @@ pub struct CursorRaycast(pub Vec3);
 
 pub struct DisplayTestMask;
 
+// TODO: Arches:
+// 1. Bricks along the arch
+//  - keep userdrawn curves of roads
+//  - find intersection of roads with walls (I can find just the uv position, and perform the operation in curve space (projecting will be way easier :P))
+//  - in places of intersection, we need to _somehow_ arrange bricks (probably should be separate entity from walls, bc we dont want to boolean bricks)
+// 2. Removing intersecting bricks
+//  - hook up with my sdf
+//  - _somehow_ create a shape of an arch there
+//  - discard fragments that are inside
+//  - NOPE! I need to construct an sdf in curve space! otherwise, even if the sdf is grazing against the wall, the fragments are discarded... unless I store direction too?
+// Q: can I drive the shape of an arch parametrically?
+
 struct ComputeTest {
     compute_program: Handle<ShaderProgram>,
     texture: u32,

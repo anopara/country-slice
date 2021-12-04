@@ -5,6 +5,8 @@ layout(rgba32f) uniform image2D img_output;
 uniform vec3 Mouse_Position;
 
 void main() {
+
+    float MAX_DIST = 0.75;
     
     // get index in global work group i.e x,y position
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
@@ -22,8 +24,8 @@ void main() {
     vec3 pixel_ws = vec3(x, 0.0, y) * 10.0;
 
     float d = distance(pixel_ws, Mouse_Position);
-    d = clamp(d, 0.0, 1.0);
-    d = 1.0 -d;
+    d = clamp(d, 0.0, MAX_DIST);
+    d = (MAX_DIST -d)/MAX_DIST;
 
     pixel = max(pixel, vec4(d,d,d, 1.0));
 

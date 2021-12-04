@@ -164,6 +164,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                     .instance_buffer
                     .bind(shader, "instanced_wall_data");
 
+                // bind compute shader texture
+                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+
                 gl::DrawArraysInstanced(
                     mode,
                     0,

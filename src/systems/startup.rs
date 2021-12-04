@@ -1,9 +1,11 @@
 use bevy_ecs::{component::Component, prelude::*};
+use glam::Vec3;
 
 use crate::asset_libraries::Handle;
 use crate::components::drawable::DrawableMeshBundle;
 use crate::components::transform::Transform;
 use crate::geometry::cube::Cube;
+use crate::DisplayTestMask;
 
 use crate::geometry::plane::Plane;
 use crate::{
@@ -21,7 +23,7 @@ pub fn startup(ecs: &mut World) {
     let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
     let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
-    let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
+    let plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
 
     // Load shaders
     let vert_color = load_shader_into_library(
@@ -30,7 +32,7 @@ pub fn startup(ecs: &mut World) {
         "vertex_color_shader",
         ecs,
     );
-    let _test = load_shader_into_library(
+    let test = load_shader_into_library(
         "shaders/texture_test.vert",
         "shaders/texture_test.frag",
         "texture_test_shader",
@@ -56,13 +58,13 @@ pub fn startup(ecs: &mut World) {
         transform: Transform::identity(),
     });
 
-    //ecs.spawn()
-    //    .insert_bundle(DrawableMeshBundle {
-    //        mesh: plane,
-    //        shader: test,
-    //        transform: Transform::from_translation(Vec3::new(0.0, 0.005, 0.0)),
-    //    })
-    //    .insert(DisplayTestMask);
+    ecs.spawn()
+        .insert_bundle(DrawableMeshBundle {
+            mesh: plane,
+            shader: test,
+            transform: Transform::from_translation(Vec3::new(0.0, 0.005, 0.0)),
+        })
+        .insert(DisplayTestMask);
 
     // preview cube
     ecs.spawn()

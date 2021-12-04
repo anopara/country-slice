@@ -9,6 +9,7 @@ out flat int instance_id;
 out vec3 vertex_color; 
 out vec3 vertex_normal_ws;
 out vec3 vertex_position_ws;
+out vec3 curve_position_ws;
 
 struct InstancedWallData {
     mat4 transform;
@@ -75,6 +76,10 @@ void main()
         row_bby_ms = 0.5;
     }
     float row_bby_cs = local_to_curve_space(vec2(Vertex_Position.x, row_bby_ms), instances[gl_InstanceID].curve_uv_bbx_minmax).y;
+    // HACK: somtimes top row gets a wrong sine wave... 
+    // I suspect it's something to do with UV exceeding 0-1 range, 
+    // but needs more investigation (this hack just renormalizes UV)
+    row_bby_cs /= 1.6; 
 
     // Add wavey pattern
     vec3 p = vertex_ws.xyz;
@@ -111,10 +116,16 @@ void main()
 
     vertex_ws = vec4(final_p, 1.0);
 
+    
     gl_Position = projection * view * vertex_ws;
     instance_id = gl_InstanceID;
-    vertex_color = Vertex_Color;
+    vertex_color = vertex_color;
     vertex_position_ws = vertex_ws.xyz;
     vertex_normal_ws = (instance_transform * vec4(Vertex_Normal, 0.0)).xyz;
+
+    // Curve Position in WS is required to know whether to discard brick's fragment, because SDF road-texture is going through the curve
+    // you can think of curve_position_ws, as a wall with no brick depth
+    curve_position_ws = (instance_transform  * vec4(vec3(Vertex_Position.xy, 0.0), 1.0)).xyz;
+    
 } 
 

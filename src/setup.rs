@@ -22,6 +22,7 @@ pub fn setup_glutin_and_opengl(
 
     let windowed_context = ContextBuilder::new()
         .with_gl_profile(GlProfile::Core)
+        .with_vsync(true)
         .with_multisampling(4)
         .build_windowed(wb, &el)
         .unwrap();
