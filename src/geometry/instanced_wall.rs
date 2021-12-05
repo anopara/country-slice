@@ -71,6 +71,16 @@ pub struct GLShaderStorageBuffer<T> {
 // Storage buffer stores the information about instance transforms
 
 impl<T: Copy> GLShaderStorageBuffer<T> {
+    pub fn new_custom(data: &Vec<T>, buffer_size: usize, binding_point: u32) -> Self {
+        Self {
+            id: unsafe { create_storage_buffer::<T>(buffer_size) }, //, data.as_ptr() as *const c_void) },
+            buffer_size,
+            instance_num: data.len(),
+            binding_point,
+            _marker: PhantomData,
+        }
+    }
+
     pub fn new(data: &Vec<T>) -> Self {
         Self {
             id: unsafe { create_storage_buffer::<T>(BUFFER_SIZE) }, //, data.as_ptr() as *const c_void) },

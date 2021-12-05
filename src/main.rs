@@ -59,12 +59,48 @@ struct ComputeTest {
 }
 
 // COMPUTE SHADER INDIRECT DRAW
-struct ComputeDrawIndirectTest {
+pub struct ComputeDrawIndirectTest {
     compute_program: Handle<ShaderProgram>,
     command_buffer: u32,
     command_buffer_binding_point: u32,
     //
     pub transforms_buffer: GLShaderStorageBuffer<glam::Mat4>,
+    //
+    pub curves_buffer: GLShaderStorageBuffer<CurveData>,
+}
+
+#[derive(Clone, Copy)]
+#[repr(C)]
+pub struct CurveData {
+    points_count: u32,
+    pad0: u32,
+    pad1: u32,
+    pad2: u32,
+    positions: [[f32; 4]; 1000], //buffer
+}
+
+impl CurveData {
+    pub fn from(curve: &geometry::curve::Curve) -> Self {
+        let points_count = curve.points.len() as u32;
+        let mut positions = [[0.0; 4]; 1000];
+
+        positions.iter_mut().enumerate().for_each(|(i, p)| {
+            *p = curve
+                .points
+                .get(i)
+                .unwrap_or(&Vec3::ZERO)
+                .extend(1.0)
+                .to_array()
+        });
+
+        Self {
+            points_count,
+            positions,
+            pad0: 0,
+            pad1: 0,
+            pad2: 0,
+        }
+    }
 }
 
 impl ComputeDrawIndirectTest {
@@ -118,6 +154,9 @@ impl ComputeDrawIndirectTest {
                 gl::READ_ONLY,
                 gl::RGBA32F,
             );
+
+            // bind curve ssbo
+            self.curves_buffer.bind(shader, "curves_buffer");
         }
     }
 }
@@ -169,6 +208,7 @@ fn main() {
             command_buffer: ibo,
             command_buffer_binding_point: 0,
             transforms_buffer: GLShaderStorageBuffer::<glam::Mat4>::new(&vec![]),
+            curves_buffer: GLShaderStorageBuffer::<CurveData>::new_custom(&vec![], 1000, 3),
         }
     };
 
@@ -239,13 +279,14 @@ fn main() {
         .add_system_to_stage("opengl", shaderwatch.system().label("reload_shaders"))
         .add_system_to_stage("opengl", build_missing_vaos.system().label("build_vaos"))
         .add_system_to_stage("opengl", rebuild_vaos.system().after("build_vaos"))
+        //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
-        .add_system(draw_curve.system().label("usercurve"))
-        .add_system_to_stage(
-            "main_singlethread",
-            walls_update.system().after("usercurve"),
-        );
+        .add_system_to_stage("main_singlethread", draw_curve.system().label("usercurve")); // HACK: move it to single thread, for indirect compute update
+                                                                                           //.add_system_to_stage(
+                                                                                           //    "main_singlethread",
+                                                                                           //    walls_update.system().after("usercurve"),
+                                                                                           //);
 
     systems::startup(&mut app.world_mut());
 

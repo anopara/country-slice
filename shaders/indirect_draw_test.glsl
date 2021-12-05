@@ -19,13 +19,25 @@ layout (std430, binding=2) buffer transforms_buffer {
     mat4 transforms[];
 };
 
+struct CurveData {
+    uint points_count;
+    uint pad0;
+    uint pad1;
+    uint pad2;
+    vec4 positions[1000];
+};
+
+layout (std430, binding=3) buffer curves_buffer { 
+    CurveData curves[];
+};
+
 layout(rgba32f) uniform image2D road_mask;
 
 void main() {
 
     const uint idx = gl_LocalInvocationID.x;
     cmds[0].count = 312; // brick.glb vertex count
-    cmds[0].instanceCount = 3;
+    cmds[0].instanceCount = curves[0].points_count;
     cmds[0].firstIndex = 0;   
     cmds[0].baseVertex = 0; 
     cmds[0].baseInstance = 0;   
@@ -36,13 +48,23 @@ void main() {
         offset = 1.0;
     }
 
-    for (int i=0; i<3; i++) {
-
-        transforms[i] = transpose(mat4(
-            1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, float(i*1.5) + offset,
-            0.0, 0.0, 1.0, 0.0,
+    for (int i; i<curves[0].points_count; i++) {
+        vec4 pt_position = curves[0].positions[i];
+         transforms[i] = transpose(mat4(
+            0.1, 0.0, 0.0, pt_position.x,
+            0.0, 0.1, 0.0, pt_position.y,
+            0.0, 0.0, 0.1, pt_position.z,
             0.0, 0.0, 0.0, 1.0
         ));
     }
-} 
+
+    //for (int i=0; i<3; i++) {
+    //
+    //    transforms[i] = transpose(mat4(
+    //        1.0, 0.0, 0.0, 0.0,
+    //        0.0, 1.0, 0.0, float(i*1.5) + offset,
+    //        0.0, 0.0, 1.0, 0.0,
+    //        0.0, 0.0, 0.0, 1.0
+    //    ));
+    //}
+}  

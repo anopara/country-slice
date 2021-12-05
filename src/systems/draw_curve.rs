@@ -9,7 +9,7 @@ use crate::{
     },
     geometry::curve::Curve,
     render::mesh::Mesh,
-    CursorRaycast, WallManager,
+    ComputeDrawIndirectTest, CursorRaycast, WallManager,
 };
 
 const CURVE_SHOW_DEBUG: bool = true;
@@ -24,6 +24,8 @@ pub fn draw_curve(
 
     mut assets_mesh: ResMut<AssetMeshLibrary>,
     assets_shader: Res<AssetShaderLibrary>,
+
+    mut compute_indirect: ResMut<ComputeDrawIndirectTest>,
 ) {
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
@@ -53,6 +55,19 @@ pub fn draw_curve(
             if let Some(Ok(mesh_handle)) = preview_entity.map(|ent| query.get_mut(ent)) {
                 update_curve_debug_mesh(&active_curve, mesh_handle, &mut assets_mesh);
             }
+
+            // HACK: update all the curves, bc its easier (in the future, no need to redo the whole buffer....)
+            let data: Vec<_> = wall_manager
+                .curves
+                .iter()
+                .map(|(curve, _)| {
+                    let c = crate::CurveData::from(&curve.clone().smooth(50).resample(0.2));
+                    //println!("curve has {} points", c.points_count);
+                    c
+                })
+                .collect();
+
+            compute_indirect.curves_buffer.update(&data);
         }
     }
 }
