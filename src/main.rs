@@ -161,6 +161,8 @@ impl ComputeDrawIndirectTest {
     }
 }
 
+#[derive(Clone, Copy)]
+#[repr(C)]
 struct DrawElementsIndirectCommand {
     _count: u32,
     _instance_count: u32,
@@ -200,7 +202,7 @@ fn main() {
             (std::mem::size_of::<DrawElementsIndirectCommand>() * COMMAND_BUFFER_SIZE)
                 as GLsizeiptr,
             std::ptr::null(),
-            gl::MAP_READ_BIT, // do I need write here to if I'm to write into that storage?
+            gl::MAP_READ_BIT | gl::MAP_WRITE_BIT, // do I need write here to if I'm to write into that storage?
         );
 
         ComputeDrawIndirectTest {

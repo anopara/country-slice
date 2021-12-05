@@ -18,8 +18,12 @@ use crate::render::{
     shader::{GlUniform, ShaderProgram},
     vao::VAO,
 };
+use crate::systems::draw_wall::WallManager;
 use crate::window_events::WindowSize;
-use crate::{ComputeDrawIndirectTest, ComputeTest, CursorRaycast, DisplayTestMask, IndirectDraw};
+use crate::{
+    ComputeDrawIndirectTest, ComputeTest, CursorRaycast, DisplayTestMask,
+    DrawElementsIndirectCommand, IndirectDraw,
+};
 
 use crate::components::{drawable::GLDrawMode, transform::Transform};
 
@@ -34,13 +38,40 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
         let test = ecs.get_resource::<ComputeTest>().unwrap();
+        let wall_manager = ecs.get_resource::<WallManager>().unwrap();
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
+
+        {
+            gl::BindBuffer(gl::DRAW_INDIRECT_BUFFER, indirect_test.command_buffer);
+            let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
+
+            assert!(!ptr.is_null());
+            //panic!("ptr is not null!");
+
+            let dst = std::slice::from_raw_parts_mut(ptr as *mut DrawElementsIndirectCommand, 1);
+            dst.copy_from_slice(&[DrawElementsIndirectCommand {
+                _count: 312, // number of vertices of brick.glb
+                _instance_count: 0,
+                _first_index: 0,
+                _base_vertex: 0,
+                _base_instance: 0,
+            }]);
+            gl::UnmapBuffer(gl::DRAW_INDIRECT_BUFFER);
+        }
+
+        //let default_draw_command = ;
+        //gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, indirect_test.command_buffer);
+        //gl::BufferSubData(
+        //    gl::SHADER_STORAGE_BUFFER,
+        //    0,
+        //    std::mem::size_of::<DrawElementsIndirectCommand>() as _,
+        //    &default_draw_command as *const DrawElementsIndirectCommand as *const std::ffi::c_void,
+        //);
         indirect_test.bind(assets_shader, test.texture, _img_unit); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
         // bind compute road texture
-
-        gl::DispatchCompute(1, 1, 1);
+        gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
 
         // COMPUTE SHADER PASS -----------------------------------------------------------------------

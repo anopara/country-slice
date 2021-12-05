@@ -35,12 +35,13 @@ layout(rgba32f) uniform image2D road_mask;
 
 void main() {
 
-    const uint idx = gl_LocalInvocationID.x;
-    cmds[0].count = 312; // brick.glb vertex count
-    cmds[0].instanceCount = curves[0].points_count;
-    cmds[0].firstIndex = 0;   
-    cmds[0].baseVertex = 0; 
-    cmds[0].baseInstance = 0;   
+    const uint idx = gl_GlobalInvocationID.x;
+    //cmds[0].count = 312; // brick.glb vertex count
+    uint instance_offset = atomicAdd(cmds[0].instanceCount, curves[idx].points_count); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml
+    //cmds[0].instanceCount = curves[idx].points_count;
+    //cmds[0].firstIndex = 0;   
+    //cmds[0].baseVertex = 0; 
+    //cmds[0].baseInstance = 0;   
 
     float offset = 0.0;
     vec4 pixel = imageLoad(road_mask, ivec2(512/2, 512/2)); //center of the image
@@ -48,9 +49,9 @@ void main() {
         offset = 1.0;
     }
 
-    for (int i; i<curves[0].points_count; i++) {
-        vec4 pt_position = curves[0].positions[i];
-         transforms[i] = transpose(mat4(
+    for (int i; i<curves[idx].points_count; i++) {
+        vec4 pt_position = curves[idx].positions[i];
+         transforms[instance_offset+i] = transpose(mat4(
             0.1, 0.0, 0.0, pt_position.x,
             0.0, 0.1, 0.0, pt_position.y,
             0.0, 0.0, 0.1, pt_position.z,
