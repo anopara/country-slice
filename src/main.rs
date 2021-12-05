@@ -282,11 +282,16 @@ fn main() {
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
-        .add_system_to_stage("main_singlethread", draw_curve.system().label("usercurve")); // HACK: move it to single thread, for indirect compute update
-                                                                                           //.add_system_to_stage(
-                                                                                           //    "main_singlethread",
-                                                                                           //    walls_update.system().after("usercurve"),
-                                                                                           //);
+        .add_system(draw_curve.system().label("usercurve"))
+        .add_system_to_stage(
+            "main_singlethread",
+            update_curve_ssbo.system().after("usercurve"),
+        );
+
+    //.add_system_to_stage(
+    //    "main_singlethread",
+    //    walls_update.system().after("usercurve"),
+    //);
 
     systems::startup(&mut app.world_mut());
 

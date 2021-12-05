@@ -14,6 +14,40 @@ use crate::{
 
 const CURVE_SHOW_DEBUG: bool = true;
 
+// for compute indirect
+pub fn update_curve_ssbo(
+    wall_manager: Res<WallManager>,
+    mouse_button_input: Res<Input<MouseButton>>,
+    mut compute_indirect: ResMut<ComputeDrawIndirectTest>,
+) {
+    // HACK: ideally, this should be an eveent that tells that curves have been update and SSBO needs updating
+    if mouse_button_input.pressed(MouseButton::Left) {
+        // HACK: update all the curves, bc its easier (in the future, no need to redo the whole buffer....)
+        let data: Vec<_> = wall_manager
+            .curves
+            .iter()
+            .map(|(curve, _)| {
+                if curve.points.len() > 0 {
+                    let c = crate::CurveData::from(&curve.clone().smooth(50).resample(0.2));
+                    //println!("curve has {} points", c.points_count);
+                    c
+                } else {
+                    // add empty
+                    crate::CurveData {
+                        points_count: 0,
+                        pad0: 0,
+                        pad1: 0,
+                        pad2: 0,
+                        positions: [[0.0; 4]; 1000],
+                    }
+                }
+            })
+            .collect();
+
+        compute_indirect.curves_buffer.update(&data);
+    }
+}
+
 pub fn draw_curve(
     mut query: Query<&Handle<Mesh>>,
     mut wall_manager: ResMut<WallManager>,
@@ -24,8 +58,6 @@ pub fn draw_curve(
 
     mut assets_mesh: ResMut<AssetMeshLibrary>,
     assets_shader: Res<AssetShaderLibrary>,
-
-    mut compute_indirect: ResMut<ComputeDrawIndirectTest>,
 ) {
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
@@ -55,19 +87,6 @@ pub fn draw_curve(
             if let Some(Ok(mesh_handle)) = preview_entity.map(|ent| query.get_mut(ent)) {
                 update_curve_debug_mesh(&active_curve, mesh_handle, &mut assets_mesh);
             }
-
-            // HACK: update all the curves, bc its easier (in the future, no need to redo the whole buffer....)
-            let data: Vec<_> = wall_manager
-                .curves
-                .iter()
-                .map(|(curve, _)| {
-                    let c = crate::CurveData::from(&curve.clone().smooth(50).resample(0.2));
-                    //println!("curve has {} points", c.points_count);
-                    c
-                })
-                .collect();
-
-            compute_indirect.curves_buffer.update(&data);
         }
     }
 }
