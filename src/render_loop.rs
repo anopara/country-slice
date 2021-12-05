@@ -33,9 +33,13 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         gl::DepthMask(gl::TRUE);
 
         let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
+        let test = ecs.get_resource::<ComputeTest>().unwrap();
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
-        indirect_test.bind(assets_shader); // use shader & bind command buffer & bind transforms buffer
+        indirect_test.bind(assets_shader, test.texture, _img_unit); // use shader & bind command buffer & bind transforms buffer & bind road mask
+
+        // bind compute road texture
+
         gl::DispatchCompute(1, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
 

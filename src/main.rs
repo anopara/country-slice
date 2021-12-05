@@ -68,7 +68,12 @@ struct ComputeDrawIndirectTest {
 }
 
 impl ComputeDrawIndirectTest {
-    pub fn bind(&self, assets_shader: &AssetShaderLibrary) {
+    pub fn bind(
+        &self,
+        assets_shader: &AssetShaderLibrary,
+        road_mask: u32,
+        road_mask_img_unit: u32,
+    ) {
         unsafe {
             // bind compute shader
             let shader = assets_shader.get(self.compute_program).unwrap();
@@ -97,6 +102,22 @@ impl ComputeDrawIndirectTest {
 
             // bind transforms buffer
             self.transforms_buffer.bind(&shader, "transforms_buffer");
+
+            // bind road mask
+            let uniform_name = std::ffi::CString::new("road_mask").unwrap();
+            let tex_location =
+                gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
+            gl::Uniform1ui(tex_location, road_mask_img_unit);
+            // bind texture
+            gl::BindImageTexture(
+                road_mask_img_unit,
+                road_mask,
+                0,
+                gl::FALSE,
+                0,
+                gl::READ_ONLY,
+                gl::RGBA32F,
+            );
         }
     }
 }

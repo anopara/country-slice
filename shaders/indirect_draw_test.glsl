@@ -19,6 +19,8 @@ layout (std430, binding=2) buffer transforms_buffer {
     mat4 transforms[];
 };
 
+layout(rgba32f) uniform image2D road_mask;
+
 void main() {
 
     const uint idx = gl_LocalInvocationID.x;
@@ -28,10 +30,17 @@ void main() {
     cmds[0].baseVertex = 0; 
     cmds[0].baseInstance = 0;   
 
+    float offset = 0.0;
+    vec4 pixel = imageLoad(road_mask, ivec2(512/2, 512/2)); //center of the image
+    if (pixel.x > 0.0) {
+        offset = 1.0;
+    }
+
     for (int i=0; i<3; i++) {
+
         transforms[i] = transpose(mat4(
             1.0, 0.0, 0.0, 0.0,
-            0.0, 1.0, 0.0, float(i*1.5),
+            0.0, 1.0, 0.0, float(i*1.5) + offset,
             0.0, 0.0, 1.0, 0.0,
             0.0, 0.0, 0.0, 1.0
         ));
