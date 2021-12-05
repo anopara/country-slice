@@ -8,7 +8,6 @@ use bevy_input::Input;
 
 use glutin::{window::Window, ContextWrapper, PossiblyCurrent};
 
-use crate::asset_libraries::mesh_library::AssetMeshLibrary;
 use crate::asset_libraries::{
     shader_library::AssetShaderLibrary, vao_library::AssetVAOLibrary, Handle,
 };
@@ -36,13 +35,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
-        indirect_test.bind(assets_shader); // use shader & bind command buffer
+        indirect_test.bind(assets_shader); // use shader & bind command buffer & bind transforms buffer
         gl::DispatchCompute(1, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
-
-        //gl::DrawArrays(gl::TRIANGLES, 0, 24);
-
-        //gl::DrawArraysIndirect(gl::TRIANGLES, ptr::null());
 
         // COMPUTE SHADER PASS -----------------------------------------------------------------------
 
@@ -113,6 +108,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         )>();
         let assets_vao = ecs.get_resource::<AssetVAOLibrary>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
+        let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
 
         let mut transparent_pass = Vec::new();
 
@@ -165,6 +161,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             // check if its an indirect draw
             if indirect_draw.is_some() {
+                indirect_test
+                    .transforms_buffer
+                    .bind(&shader, "transforms_buffer");
                 gl::DrawElementsIndirect(gl::TRIANGLES, gl::UNSIGNED_INT, ptr::null());
                 continue;
             }

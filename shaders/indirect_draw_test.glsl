@@ -15,12 +15,25 @@ layout(std140, binding = 0) writeonly buffer draw_commands {
     DrawCommand cmds[];
 };
 
+layout (std430, binding=2) buffer transforms_buffer { 
+    mat4 transforms[];
+};
+
 void main() {
 
     const uint idx = gl_LocalInvocationID.x;
-    cmds[0].count = 132 * 4; // brick vertices..  (???)     
+    cmds[0].count = 312; // brick.glb vertex count
     cmds[0].instanceCount = 3;
     cmds[0].firstIndex = 0;   
     cmds[0].baseVertex = 0; 
     cmds[0].baseInstance = 0;   
-}
+
+    for (int i=0; i<3; i++) {
+        transforms[i] = transpose(mat4(
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, float(i*1.5),
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0
+        ));
+    }
+} 

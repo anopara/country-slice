@@ -6,11 +6,12 @@ use asset_libraries::Handle;
 use bevy_app::App;
 use bevy_ecs::prelude::*;
 
+use geometry::instanced_wall::GLShaderStorageBuffer;
 use gl::types::GLsizeiptr;
 use glam::Vec3;
 use glutin::event_loop::ControlFlow;
 
-use render::{camera::MainCamera, vao::VAO};
+use render::camera::MainCamera;
 
 use render::shader::ShaderProgram;
 use render::shaderwatch::*;
@@ -61,7 +62,9 @@ struct ComputeTest {
 struct ComputeDrawIndirectTest {
     compute_program: Handle<ShaderProgram>,
     command_buffer: u32,
-    buffer_binding_point: u32,
+    command_buffer_binding_point: u32,
+    //
+    pub transforms_buffer: GLShaderStorageBuffer<glam::Mat4>,
 }
 
 impl ComputeDrawIndirectTest {
@@ -80,13 +83,20 @@ impl ComputeDrawIndirectTest {
                 gl::SHADER_STORAGE_BLOCK,
                 c_str.as_ptr() as *const std::os::raw::c_char,
             );
-            gl::ShaderStorageBlockBinding(shader.id(), block_index, self.buffer_binding_point);
+            gl::ShaderStorageBlockBinding(
+                shader.id(),
+                block_index,
+                self.command_buffer_binding_point,
+            );
             gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.command_buffer);
             gl::BindBufferBase(
                 gl::SHADER_STORAGE_BUFFER,
-                self.buffer_binding_point,
+                self.command_buffer_binding_point,
                 self.command_buffer,
             );
+
+            // bind transforms buffer
+            self.transforms_buffer.bind(&shader, "transforms_buffer");
         }
     }
 }
@@ -136,7 +146,8 @@ fn main() {
         ComputeDrawIndirectTest {
             compute_program: handle,
             command_buffer: ibo,
-            buffer_binding_point: 0,
+            command_buffer_binding_point: 0,
+            transforms_buffer: GLShaderStorageBuffer::<glam::Mat4>::new(&vec![]),
         }
     };
 
