@@ -5,7 +5,7 @@ use crate::asset_libraries::Handle;
 use crate::components::drawable::DrawableMeshBundle;
 use crate::components::transform::Transform;
 use crate::geometry::cube::Cube;
-use crate::DisplayTestMask;
+use crate::{DisplayTestMask, IndirectDraw};
 
 use crate::geometry::plane::Plane;
 use crate::{
@@ -32,6 +32,7 @@ pub fn startup(ecs: &mut World) {
         "vertex_color_shader",
         ecs,
     );
+    // this shader shows the compute_test.glsl as a texture
     let test = load_shader_into_library(
         "shaders/texture_test.vert",
         "shaders/texture_test.frag",
@@ -50,6 +51,21 @@ pub fn startup(ecs: &mut World) {
         "shadow_shader",
         ecs,
     );
+
+    // indirect draw test
+    let indirect_test = load_shader_into_library(
+        "shaders/vertex_color_indirect.vert",
+        "shaders/vertex_color.frag",
+        "indirect_instance_test",
+        ecs,
+    );
+    ecs.spawn()
+        .insert_bundle(DrawableMeshBundle {
+            mesh: _brick,
+            shader: indirect_test,
+            transform: Transform::identity(),
+        })
+        .insert(IndirectDraw);
 
     // Create the starting scene
     ecs.spawn().insert_bundle(DrawableMeshBundle {

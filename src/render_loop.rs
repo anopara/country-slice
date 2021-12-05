@@ -8,6 +8,7 @@ use bevy_input::Input;
 
 use glutin::{window::Window, ContextWrapper, PossiblyCurrent};
 
+use crate::asset_libraries::mesh_library::AssetMeshLibrary;
 use crate::asset_libraries::{
     shader_library::AssetShaderLibrary, vao_library::AssetVAOLibrary, Handle,
 };
@@ -19,7 +20,7 @@ use crate::render::{
     vao::VAO,
 };
 use crate::window_events::WindowSize;
-use crate::{ComputeTest, CursorRaycast, DisplayTestMask};
+use crate::{ComputeDrawIndirectTest, ComputeTest, CursorRaycast, DisplayTestMask, IndirectDraw};
 
 use crate::components::{drawable::GLDrawMode, transform::Transform};
 
@@ -32,12 +33,23 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
     unsafe {
         gl::DepthMask(gl::TRUE);
 
+        let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
+        // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
+        let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
+        indirect_test.bind(assets_shader); // use shader & bind command buffer
+        gl::DispatchCompute(1, 1, 1);
+        gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
+
+        //gl::DrawArrays(gl::TRIANGLES, 0, 24);
+
+        //gl::DrawArraysIndirect(gl::TRIANGLES, ptr::null());
+
+        // COMPUTE SHADER PASS -----------------------------------------------------------------------
+
         let test = ecs.get_resource::<ComputeTest>().unwrap();
         let mouse = ecs.get_resource::<CursorRaycast>().unwrap();
         let mouse_button_input = ecs.get_resource::<Input<MouseButton>>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
-
-        // COMPUTE SHADER PASS -----------------------------------------------------------------------
         // Only update shader if RMB is pressed
         if mouse_button_input.pressed(MouseButton::Right) {
             let shader = assets_shader.get(test.compute_program).unwrap();
@@ -97,6 +109,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             Option<&InstancedWall>,
             Option<&DisplayTestMask>,
             Option<&TransparencyPass>,
+            Option<&IndirectDraw>,
         )>();
         let assets_vao = ecs.get_resource::<AssetVAOLibrary>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -112,6 +125,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             instanced_wall,
             test,
             transparency,
+            indirect_draw,
         ) in query.iter(ecs)
         {
             let vao = assets_vao
@@ -147,6 +161,12 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 ("projection", projection_transform.to_cols_array()),
             ] {
                 shader.set_gl_uniform(name, GlUniform::Mat4(*transform));
+            }
+
+            // check if its an indirect draw
+            if indirect_draw.is_some() {
+                gl::DrawElementsIndirect(gl::TRIANGLES, gl::UNSIGNED_INT, ptr::null());
+                continue;
             }
 
             let mode = gl_draw_flag.map(|c| c.0).unwrap_or(gl::TRIANGLES);

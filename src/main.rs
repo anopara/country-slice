@@ -6,10 +6,11 @@ use asset_libraries::Handle;
 use bevy_app::App;
 use bevy_ecs::prelude::*;
 
+use gl::types::GLsizeiptr;
 use glam::Vec3;
 use glutin::event_loop::ControlFlow;
 
-use render::camera::MainCamera;
+use render::{camera::MainCamera, vao::VAO};
 
 use render::shader::ShaderProgram;
 use render::shaderwatch::*;
@@ -47,11 +48,61 @@ pub struct DisplayTestMask;
 // 4. this shader will need logic of arranging the bricks into arch shape
 // 4. this shader will need to output draw commands for bricks to be drawn with `glDrawArraysIndirect` (see https://lingtorp.com/2018/12/05/OpenGL-SSBO-indirect-drawing.html)
 
+// TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
+
+// TODO: rename to ComputeRoadMask
 struct ComputeTest {
     compute_program: Handle<ShaderProgram>,
     texture: u32,
     texture_dims: (i32, i32),
 }
+
+// COMPUTE SHADER INDIRECT DRAW
+struct ComputeDrawIndirectTest {
+    compute_program: Handle<ShaderProgram>,
+    command_buffer: u32,
+    buffer_binding_point: u32,
+}
+
+impl ComputeDrawIndirectTest {
+    pub fn bind(&self, assets_shader: &AssetShaderLibrary) {
+        unsafe {
+            // bind compute shader
+            let shader = assets_shader.get(self.compute_program).unwrap();
+            gl::UseProgram(shader.id());
+
+            // bind command buffer
+            //from: https://lingtorp.com/2018/12/05/OpenGL-SSBO-indirect-drawing.html
+
+            let c_str = std::ffi::CString::new("draw_commands").unwrap();
+            let block_index = gl::GetProgramResourceIndex(
+                shader.id(),
+                gl::SHADER_STORAGE_BLOCK,
+                c_str.as_ptr() as *const std::os::raw::c_char,
+            );
+            gl::ShaderStorageBlockBinding(shader.id(), block_index, self.buffer_binding_point);
+            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.command_buffer);
+            gl::BindBufferBase(
+                gl::SHADER_STORAGE_BUFFER,
+                self.buffer_binding_point,
+                self.command_buffer,
+            );
+        }
+    }
+}
+
+struct DrawElementsIndirectCommand {
+    _count: u32,
+    _instance_count: u32,
+    _first_index: u32,
+    _base_vertex: u32,
+    _base_instance: u32,
+}
+
+// component
+struct IndirectDraw;
+
+const COMMAND_BUFFER_SIZE: usize = 1000;
 
 fn main() {
     let (mut windowed_context, event_loop) =
@@ -59,6 +110,38 @@ fn main() {
 
     let mut temp_shaderwatch = ShaderWatch::new();
     let mut temp_assets_shader = AssetShaderLibrary::new();
+
+    // COMPUTE SHADER INDIRECT DRAW  -------------------------------------------
+    let compute_indirect_test = unsafe {
+        // create shader program
+        let shader_program = ShaderProgram::new_compute("shaders/indirect_draw_test.glsl").unwrap();
+        temp_shaderwatch.watch(&shader_program);
+        let handle = temp_assets_shader.add(shader_program.into());
+
+        // Setup GL_DRAW_INDIRECT_BUFFER for indirect drawing (basically a command buffer)
+        let mut ibo = 0;
+        gl::GenBuffers(1, &mut ibo);
+        gl::BindBuffer(gl::DRAW_INDIRECT_BUFFER, ibo);
+        // Unlike `gl::BufferData`, `glBufferStorage` don't allow you to de-allocate it
+        // that means the buffer is persistented in the memory, and you don't need to unmap until you really don't need it
+        // (c) https://stackoverflow.com/questions/27810542/what-is-the-difference-between-glbufferstorage-and-glbufferdata
+        gl::BufferStorage(
+            gl::DRAW_INDIRECT_BUFFER,
+            (std::mem::size_of::<DrawElementsIndirectCommand>() * COMMAND_BUFFER_SIZE)
+                as GLsizeiptr,
+            std::ptr::null(),
+            gl::MAP_READ_BIT, // do I need write here to if I'm to write into that storage?
+        );
+
+        ComputeDrawIndirectTest {
+            compute_program: handle,
+            command_buffer: ibo,
+            buffer_binding_point: 0,
+        }
+    };
+
+    // -----------------------------------------------------------
+
     // COMPUTE SHADER -------------------------------------------
     let compute_test = unsafe {
         let texture_dims = (512, 512);
@@ -109,7 +192,8 @@ fn main() {
         .insert_resource(AssetMeshLibrary::new())
         .insert_resource(AssetVAOLibrary::new())
         .insert_resource(temp_assets_shader)
-        .insert_resource(compute_test)
+        .insert_resource(compute_test) //TODO: Rename
+        .insert_resource(compute_indirect_test) // TEST
         .add_stage_after(
             bevy_app::CoreStage::PreUpdate,
             "opengl",
