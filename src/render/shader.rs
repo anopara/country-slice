@@ -179,6 +179,7 @@ pub fn compile_shader(shader_type: gl::types::GLenum, source: &str) -> Result<Sh
                 "ERROR::SHADER::COMPILATION_FAILED\n{}",
                 info_log //, source
             );
+            log::error!("{}", info_log);
             return Err(error);
         }
 
