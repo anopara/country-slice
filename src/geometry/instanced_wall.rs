@@ -6,6 +6,9 @@ use crate::render::{shader::ShaderProgram, ssbo::GLShaderStorageBuffer};
 
 use super::wall_constructor::Brick;
 
+const SSBO_BUFFER_SIZE: usize = 10000;
+const SSBO_BINDING_POINT: u32 = 2;
+
 #[repr(C)]
 pub struct InstancedWall {
     pub wall_length: f32,
@@ -33,6 +36,8 @@ impl InstancedWall {
             wall_length: curve_length,
             instance_buffer: GLShaderStorageBuffer::<BrickTransformSSBO>::new(
                 &Self::instanced_wall_data(bricks),
+                SSBO_BUFFER_SIZE,
+                SSBO_BINDING_POINT,
             ),
         }
     }

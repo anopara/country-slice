@@ -4,9 +4,6 @@ use gl::types::GLsizeiptr;
 
 use super::shader::ShaderProgram;
 
-const BUFFER_SIZE: usize = 10000;
-const BINDING_POINT: u32 = 2;
-
 pub struct GLShaderStorageBuffer<T> {
     id: u32,
     buffer_size: usize,
@@ -21,22 +18,12 @@ pub struct GLShaderStorageBuffer<T> {
 // Storage buffer stores the information about instance transforms
 
 impl<T: Copy> GLShaderStorageBuffer<T> {
-    pub fn new_custom(data: &Vec<T>, buffer_size: usize, binding_point: u32) -> Self {
+    pub fn new(data: &Vec<T>, buffer_size: usize, binding_point: u32) -> Self {
         Self {
             id: unsafe { create_storage_buffer::<T>(buffer_size) },
             buffer_size,
             instance_num: data.len(),
             binding_point,
-            _marker: PhantomData,
-        }
-    }
-
-    pub fn new(data: &Vec<T>) -> Self {
-        Self {
-            id: unsafe { create_storage_buffer::<T>(BUFFER_SIZE) }, //, data.as_ptr() as *const c_void) },
-            buffer_size: BUFFER_SIZE,
-            instance_num: data.len(),
-            binding_point: BINDING_POINT,
             _marker: PhantomData,
         }
     }

@@ -210,8 +210,8 @@ fn main() {
             compute_program: handle,
             command_buffer: ibo,
             command_buffer_binding_point: 0,
-            transforms_buffer: GLShaderStorageBuffer::<glam::Mat4>::new(&vec![]),
-            curves_buffer: GLShaderStorageBuffer::<CurveDataSSBO>::new_custom(&vec![], 1000, 3),
+            transforms_buffer: GLShaderStorageBuffer::<glam::Mat4>::new(&vec![], 10000, 2),
+            curves_buffer: GLShaderStorageBuffer::<CurveDataSSBO>::new(&vec![], 1000, 3),
         }
     };
 
