@@ -42,12 +42,12 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
 
+        // Reset draw command buffer to its default
         {
             gl::BindBuffer(gl::DRAW_INDIRECT_BUFFER, indirect_test.command_buffer);
             let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
 
             assert!(!ptr.is_null());
-            //panic!("ptr is not null!");
 
             let dst = std::slice::from_raw_parts_mut(ptr as *mut DrawElementsIndirectCommand, 1);
             dst.copy_from_slice(&[DrawElementsIndirectCommand {
@@ -60,14 +60,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             gl::UnmapBuffer(gl::DRAW_INDIRECT_BUFFER);
         }
 
-        //let default_draw_command = ;
-        //gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, indirect_test.command_buffer);
-        //gl::BufferSubData(
-        //    gl::SHADER_STORAGE_BUFFER,
-        //    0,
-        //    std::mem::size_of::<DrawElementsIndirectCommand>() as _,
-        //    &default_draw_command as *const DrawElementsIndirectCommand as *const std::ffi::c_void,
-        //);
         indirect_test.bind(assets_shader, test.texture, _img_unit); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
         // bind compute road texture

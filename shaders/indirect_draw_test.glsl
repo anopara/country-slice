@@ -33,39 +33,30 @@ layout (std430, binding=3) buffer curves_buffer {
 
 layout(rgba32f) uniform image2D road_mask;
 
+ivec2 ws_pos_to_pixel_coord(vec3 ws_pos, ivec2 img_dims) {
+    // the img is from -10 to 10 in world space TODO: this should be a uniform coming from a struct on CPU side...
+    vec2 texture_uv = (ws_pos / 20.0 + 0.5).xz;
+    return ivec2(texture_uv.x * img_dims.x, texture_uv.y * img_dims.y);
+}
+
 void main() {
 
+    ivec2 dims = imageSize(road_mask);
     const uint idx = gl_GlobalInvocationID.x;
-    //cmds[0].count = 312; // brick.glb vertex count
-    uint instance_offset = atomicAdd(cmds[0].instanceCount, curves[idx].points_count); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml
-    //cmds[0].instanceCount = curves[idx].points_count;
-    //cmds[0].firstIndex = 0;   
-    //cmds[0].baseVertex = 0; 
-    //cmds[0].baseInstance = 0;   
 
-    float offset = 0.0;
-    vec4 pixel = imageLoad(road_mask, ivec2(512/2, 512/2)); //center of the image
-    if (pixel.x > 0.0) {
-        offset = 1.0;
-    }
+    uint instance_offset = atomicAdd(cmds[0].instanceCount, curves[idx].points_count); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
     for (int i; i<curves[idx].points_count; i++) {
         vec4 pt_position = curves[idx].positions[i];
-         transforms[instance_offset+i] = transpose(mat4(
+
+        ivec2 pixel_coord = ws_pos_to_pixel_coord(pt_position.xyz, dims);
+        vec4 pixel = imageLoad(road_mask, pixel_coord);
+
+        transforms[instance_offset+i] = transpose(mat4(
             0.1, 0.0, 0.0, pt_position.x,
-            0.0, 0.1, 0.0, pt_position.y,
+            0.0, 0.1, 0.0, pt_position.y + pow(pixel.x, 0.3),
             0.0, 0.0, 0.1, pt_position.z,
             0.0, 0.0, 0.0, 1.0
         ));
     }
-
-    //for (int i=0; i<3; i++) {
-    //
-    //    transforms[i] = transpose(mat4(
-    //        1.0, 0.0, 0.0, 0.0,
-    //        0.0, 1.0, 0.0, float(i*1.5) + offset,
-    //        0.0, 0.0, 1.0, 0.0,
-    //        0.0, 0.0, 0.0, 1.0
-    //    ));
-    //}
 }  

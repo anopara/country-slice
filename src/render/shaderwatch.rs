@@ -33,7 +33,7 @@ impl ShaderWatch {
         self.hotwatch
             .watch(path, move |event| {
                 if let Event::Write(_pathbuf) = event {
-                    println!("{:?} has changed", path_string.clone());
+                    //println!("{:?} has changed", path_string.clone());
                     let mut vec = realname.lock().unwrap();
                     vec.insert(path_string.clone());
                 }

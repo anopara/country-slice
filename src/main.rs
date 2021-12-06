@@ -6,12 +6,11 @@ use asset_libraries::Handle;
 use bevy_app::App;
 use bevy_ecs::prelude::*;
 
-use geometry::instanced_wall::GLShaderStorageBuffer;
 use gl::types::GLsizeiptr;
 use glam::Vec3;
 use glutin::event_loop::ControlFlow;
 
-use render::camera::MainCamera;
+use render::{camera::MainCamera, ssbo::GLShaderStorageBuffer};
 
 use render::shader::ShaderProgram;
 use render::shaderwatch::*;
@@ -66,12 +65,12 @@ pub struct ComputeDrawIndirectTest {
     //
     pub transforms_buffer: GLShaderStorageBuffer<glam::Mat4>,
     //
-    pub curves_buffer: GLShaderStorageBuffer<CurveData>,
+    pub curves_buffer: GLShaderStorageBuffer<CurveDataSSBO>,
 }
 
 #[derive(Clone, Copy)]
 #[repr(C)]
-pub struct CurveData {
+pub struct CurveDataSSBO {
     points_count: u32,
     pad0: u32,
     pad1: u32,
@@ -79,7 +78,7 @@ pub struct CurveData {
     positions: [[f32; 4]; 1000], //buffer
 }
 
-impl CurveData {
+impl CurveDataSSBO {
     pub fn from(curve: &geometry::curve::Curve) -> Self {
         let points_count = curve.points.len() as u32;
         let mut positions = [[0.0; 4]; 1000];
@@ -177,6 +176,8 @@ struct IndirectDraw;
 const COMMAND_BUFFER_SIZE: usize = 1000;
 
 fn main() {
+    simple_logger::SimpleLogger::new().init().unwrap();
+
     let (mut windowed_context, event_loop) =
         setup::setup_glutin_and_opengl((SCR_WIDTH, SCR_HEIGHT));
 
@@ -210,7 +211,7 @@ fn main() {
             command_buffer: ibo,
             command_buffer_binding_point: 0,
             transforms_buffer: GLShaderStorageBuffer::<glam::Mat4>::new(&vec![]),
-            curves_buffer: GLShaderStorageBuffer::<CurveData>::new_custom(&vec![], 1000, 3),
+            curves_buffer: GLShaderStorageBuffer::<CurveDataSSBO>::new_custom(&vec![], 1000, 3),
         }
     };
 

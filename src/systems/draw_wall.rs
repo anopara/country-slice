@@ -49,7 +49,7 @@ pub fn walls_update(
         let bricks = WallConstructor::from_curve(&curve);
 
         if bricks.is_empty() {
-            println!("WallConstructor returned empty wall");
+            log::warn!("WallConstructor returned empty wall");
         }
 
         if let Some(wall_entity) = wall_manager.walls.get(wall_manager.curves.len() - 1) {
@@ -58,7 +58,7 @@ pub fn walls_update(
             wall_component.update(curve.length, bricks);
         } else {
             //create a wall
-            println!("creating wall..");
+            log::info!("creating wall..");
             wall_manager.walls.push(create_wall(
                 curve.length,
                 bricks,

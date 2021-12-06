@@ -91,7 +91,7 @@ pub fn startup(ecs: &mut World) {
         })
         .insert(MousePreviewCube);
 
-    println!("Finished startup");
+    log::info!("Finished startup");
 }
 
 fn load_mesh(path: &str) -> Mesh {

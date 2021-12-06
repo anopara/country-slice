@@ -176,8 +176,8 @@ pub fn compile_shader(shader_type: gl::types::GLenum, source: &str) -> Result<Sh
             let info_log = CStr::from_ptr(info_log.as_ptr()).to_string_lossy();
 
             let error = format!(
-                "ERROR::SHADER::COMPILATION_FAILED\n{}\n{}",
-                info_log, source
+                "ERROR::SHADER::COMPILATION_FAILED\n{}",
+                info_log //, source
             );
             return Err(error);
         }

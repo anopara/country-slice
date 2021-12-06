@@ -11,22 +11,18 @@ pub fn shaderwatch(
     let mut changed_shaders = shaderwatch.event_shader_changed.lock().unwrap();
 
     if !changed_shaders.is_empty() {
-        println!("{:?}", changed_shaders);
+        log::info!("Shaderwatch: detected changes: {:?}", changed_shaders);
 
         for (_, shader) in &mut assets_shader.assets {
             // if any of the source code has changed, the shader needs recompilation
             if shader
                 .src_paths()
                 .drain(..)
-                .find(|p| {
-                    println!("checking {}", p);
-                    changed_shaders.contains(*p)
-                })
+                .find(|p| changed_shaders.contains(*p))
                 .is_some()
             {
-                println!("Recompiling..");
                 if let Err(error) = shader.recompile() {
-                    println!(
+                    log::error!(
                         "Failed to recompile shader: {}; thread: {:?}",
                         error,
                         std::thread::current()

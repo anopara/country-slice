@@ -29,7 +29,7 @@ pub fn setup_glutin_and_opengl(
         .unwrap();
     let windowed_context = unsafe { windowed_context.make_current().unwrap() };
 
-    println!(
+    log::info!(
         "Pixel format of the window's GL context: {:?}",
         windowed_context.get_pixel_format()
     );
@@ -122,9 +122,9 @@ extern "system" fn gl_debug_message(
             };
 
             if !is_important_type {
-                println!("GL debug({}): {}\n", id, s.to_string_lossy());
+                log::warn!("GL debug({}): {}\n", id, s.to_string_lossy());
             } else {
-                println!(
+                log::warn!(
                     "OpenGL Debug message ({}, {:x}, {:x}): {}",
                     id,
                     type_,

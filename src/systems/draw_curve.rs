@@ -28,12 +28,12 @@ pub fn update_curve_ssbo(
             .iter()
             .map(|(curve, _)| {
                 if curve.points.len() > 0 {
-                    let c = crate::CurveData::from(&curve.clone().smooth(50).resample(0.2));
+                    let c = crate::CurveDataSSBO::from(&curve.clone().smooth(50).resample(0.2));
                     //println!("curve has {} points", c.points_count);
                     c
                 } else {
                     // add empty
-                    crate::CurveData {
+                    crate::CurveDataSSBO {
                         points_count: 0,
                         pad0: 0,
                         pad1: 0,
