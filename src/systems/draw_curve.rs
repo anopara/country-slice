@@ -44,6 +44,7 @@ pub fn update_curve_ssbo(
             })
             .collect();
 
+        //log::debug!("Updating curves_buffer buffer...");
         compute_indirect.curves_buffer.update(&data);
     }
 }

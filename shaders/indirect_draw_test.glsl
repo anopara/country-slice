@@ -56,7 +56,7 @@ void main() {
     // check whether points are above the road
     // TODO: dont do it per point, do it per line segment!
     uint total_bricks = 0;
-    for (int i; i<(curve_npt-1); i++) {
+    for (int i=0; i+1<curve_npt; i++) {
          // get curve segment positions
         vec3 p1 = curves[idx].positions[i].xyz;
         vec3 p2 = curves[idx].positions[i+1].xyz;
@@ -81,7 +81,7 @@ void main() {
     // that would be our curve chunk, we need to know its length
     // per line segment, we want to know its length and divide into N random bricks (this way we know how many bricks we actually need in total)
 
-    uint instance_offset = atomicAdd(cmds[0].instanceCount, curve_npt+total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
+    uint instance_offset = atomicAdd(cmds[0].instanceCount, curve_npt + total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
    
     // now we actually want to march through the valid segments and write the transform data
@@ -111,10 +111,11 @@ void main() {
         ));
         instance_offset += 1;
 
-        if (i == curve_npt-1) {
+        if (i >= curve_npt-1) {
             continue;
         }
 
+        
         if (height_1 > 0 || height_2 > 0) {
 
             // check segment length
@@ -136,11 +137,10 @@ void main() {
             }
 
         }
+        
     }
-
-    //TODO: why do I sometimes have stack buffer overflow? :S (sometimes even on the start... and sometimes drawing 2nd or 3rd curve)
-    // STATUS_STACK_BUFFER_OVERRUN
     
+    // "As a result it wrote into memory that was not allocated to it and caused the Stack_Buffer_Overrun." ? is that the cause? (c) https://stackoverflow.com/questions/29444364/status-stack-buffer-overrun-encountered
 
 
     // ------------------------
