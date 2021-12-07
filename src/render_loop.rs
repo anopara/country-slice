@@ -71,7 +71,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             assert!(!ptr.is_null());
 
-            let dst = std::slice::from_raw_parts_mut(ptr as *mut glam::Mat4, 10000);
+            let dst = std::slice::from_raw_parts_mut(ptr as *mut glam::Mat4, data.len());
             dst.copy_from_slice(data);
             gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
         }

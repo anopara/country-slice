@@ -47,7 +47,7 @@ float position_ws_to_roadmask_value(vec3 position, ivec2 dims) {
 void main() {
 
     float BRICK_WIDTH = 0.05;
-    uint DEBUG_RESAMPLE = 5;
+    uint DEBUG_RESAMPLE = 3;
 
     ivec2 dims = imageSize(road_mask);
     const uint idx = gl_GlobalInvocationID.x;
@@ -81,7 +81,7 @@ void main() {
     // that would be our curve chunk, we need to know its length
     // per line segment, we want to know its length and divide into N random bricks (this way we know how many bricks we actually need in total)
 
-    uint instance_offset = atomicAdd(cmds[0].instanceCount, curve_npt + total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
+    uint instance_offset = atomicAdd(cmds[0].instanceCount, curve_npt+total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
    
     // now we actually want to march through the valid segments and write the transform data
@@ -93,7 +93,7 @@ void main() {
     //int brick_count = 0;
     // PLACE CURVE PREVIEW
     
-    for (int i; i<curve_npt; i++) {
+    for (int i=0; i<curve_npt; i++) {
 
          // get curve segment positions
         vec3 p1 = curves[idx].positions[i].xyz;
@@ -111,13 +111,25 @@ void main() {
         ));
         instance_offset += 1;
 
+        if (i == curve_npt-1) {
+            continue;
+        }
+
         if (height_1 > 0 || height_2 > 0) {
 
-            for (int k; k<DEBUG_RESAMPLE; k++) { //TODO: WHY REMOVING THIS LINE MAKES THE BELOW EXPRESSION WORK :((((
+            // check segment length
+            vec3 seg_p1 = vec3(p1.x, pow(height_1, 0.3), p1.z);
+            vec3 seg_p2 = vec3(p2.x, pow(height_2, 0.3), p2.z);
+            vec3 subseg_dir = seg_p2-seg_p1;
+
+            for (int k=0; k<DEBUG_RESAMPLE; k++) {
+
+                vec3 subseg_p1 = seg_p1 + subseg_dir * (float(k) / float(DEBUG_RESAMPLE));
+
                 transforms[instance_offset] = transpose(mat4(
-                    0.1, 0.0, 0.0, p1.x,
-                    0.0, 0.1, 0.0, p1.y + pow(height_1, 0.3),
-                    0.0, 0.0, 0.1, p1.z,
+                    0.1, 0.0, 0.0, subseg_p1.x, //p1.x,
+                    0.0, 0.1, 0.0, subseg_p1.y, //p1.y + pow(height_1, 0.3),
+                    0.0, 0.0, 0.1, subseg_p1.z, //p1.z,
                     0.0, 0.0, 0.0, 1.0
                 ));
                 instance_offset += 1;
@@ -126,6 +138,8 @@ void main() {
         }
     }
 
+    //TODO: why do I sometimes have stack buffer overflow? :S (sometimes even on the start... and sometimes drawing 2nd or 3rd curve)
+    // STATUS_STACK_BUFFER_OVERRUN
     
 
 
