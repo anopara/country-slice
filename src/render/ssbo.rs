@@ -58,6 +58,10 @@ impl<T: Copy> GLShaderStorageBuffer<T> {
             gl::BindBufferBase(gl::SHADER_STORAGE_BUFFER, self.binding_point, self.id);
         }
     }
+
+    pub fn gl_id(&self) -> u32 {
+        self.id
+    }
 }
 
 pub unsafe fn create_storage_buffer<T>(size: usize) -> u32 {

@@ -60,6 +60,22 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             gl::UnmapBuffer(gl::DRAW_INDIRECT_BUFFER);
         }
 
+        // For debugging, reset the transform buffer
+        {
+            let data = &[glam::Mat4::IDENTITY; 10000];
+            gl::BindBuffer(
+                gl::SHADER_STORAGE_BUFFER,
+                indirect_test.transforms_buffer.gl_id(),
+            );
+            let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
+
+            assert!(!ptr.is_null());
+
+            let dst = std::slice::from_raw_parts_mut(ptr as *mut glam::Mat4, 10000);
+            dst.copy_from_slice(data);
+            gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
+        }
+
         indirect_test.bind(assets_shader, test.texture, _img_unit); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
         // bind compute road texture

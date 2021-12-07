@@ -102,7 +102,7 @@ fn update_curve_debug_mesh(
         curve
             .points
             .iter()
-            .map(|p| [p.x, p.y + 0.001, p.z])
+            .map(|p| [p.x, p.y + 0.01, p.z])
             .collect::<Vec<[f32; 3]>>(),
     );
     mesh.set_attribute(

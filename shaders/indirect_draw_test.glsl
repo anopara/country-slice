@@ -39,49 +39,139 @@ ivec2 ws_pos_to_pixel_coord(vec3 ws_pos, ivec2 img_dims) {
     return ivec2(texture_uv.x * img_dims.x, texture_uv.y * img_dims.y);
 }
 
-float curve_idx_to_roadmask_value(int i, int idx, ivec2 dims) {
-    ivec2 pixel_coord = ws_pos_to_pixel_coord(curves[idx].positions[i].xyz, dims);
+float position_ws_to_roadmask_value(vec3 position, ivec2 dims) {
+    ivec2 pixel_coord = ws_pos_to_pixel_coord(position, dims);
     return imageLoad(road_mask, pixel_coord).x;
 }
 
 void main() {
 
+    float BRICK_WIDTH = 0.05;
+    uint DEBUG_RESAMPLE = 5;
+
     ivec2 dims = imageSize(road_mask);
     const uint idx = gl_GlobalInvocationID.x;
+    uint curve_npt = curves[idx].points_count;
 
     // check whether points are above the road
-    int arch_points = 0;
-    for (int i; i<curves[idx].points_count; i++) {
-        float pixel = curve_idx_to_roadmask_value(i, idx, dims);
+    // TODO: dont do it per point, do it per line segment!
+    uint total_bricks = 0;
+    for (int i; i<(curve_npt-1); i++) {
+         // get curve segment positions
+        vec3 p1 = curves[idx].positions[i].xyz;
+        vec3 p2 = curves[idx].positions[i+1].xyz;
 
-        if (pixel > 0) {
-            arch_points += 1;
+        // get heights
+        float height_1 = position_ws_to_roadmask_value(p1, dims);
+        float height_2 = position_ws_to_roadmask_value(p2, dims);
+
+        // check segment length
+        //vec3 seg_p1 = vec3(p1.x, height_1, p1.z);
+        //vec3 seg_p2 = vec3(p2.x, height_2, p2.z);
+        //float seg_length = distance(seg_p1, seg_p2);
+
+        // subdivide distance
+        //int total_segment_bricks = DEBUG_RESAMPLE;//int(ceil(seg_length / BRICK_WIDTH));
+
+        if (height_1 > 0 || height_2 > 0) {
+            total_bricks += DEBUG_RESAMPLE;
         }
     }
     // TODO: need to take into account the points that is before the arch, and the point after (if it exists) -- to make sure the points start and end at Y 0
     // that would be our curve chunk, we need to know its length
     // per line segment, we want to know its length and divide into N random bricks (this way we know how many bricks we actually need in total)
 
-    uint instance_offset = atomicAdd(cmds[0].instanceCount, arch_points); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
+    uint instance_offset = atomicAdd(cmds[0].instanceCount, curve_npt + total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
    
     // now we actually want to march through the valid segments and write the transform data
 
     // first version can just be uniform size bricks
 
-    for (int i; i<curves[idx].points_count; i++) {
-        vec4 pt_position = curves[idx].positions[i];
+    // in the future, we can cheat and perturb offset the real curve positions along the segment :P
 
-        ivec2 pixel_coord = ws_pos_to_pixel_coord(pt_position.xyz, dims);
-        vec4 pixel = imageLoad(road_mask, pixel_coord);
+    //int brick_count = 0;
+    // PLACE CURVE PREVIEW
+    
+    for (int i; i<curve_npt; i++) {
 
-        if (pixel.x > 0) {
-            transforms[instance_offset+i] = transpose(mat4(
-                0.1, 0.0, 0.0, pt_position.x,
-                0.0, 0.1, 0.0, pt_position.y + pow(pixel.x, 0.3),
-                0.0, 0.0, 0.1, pt_position.z,
-                0.0, 0.0, 0.0, 1.0
-            ));
+         // get curve segment positions
+        vec3 p1 = curves[idx].positions[i].xyz;
+        vec3 p2 = curves[idx].positions[i+1].xyz;
+
+        // get heights
+        float height_1 = position_ws_to_roadmask_value(p1, dims);
+        float height_2 = position_ws_to_roadmask_value(p2, dims);
+
+        transforms[instance_offset] = transpose(mat4(
+            0.03, 0.0, 0.0, p1.x,
+            0.0, 0.03, 0.0, p1.y + pow(height_1, 0.3),
+            0.0, 0.0, 0.03, p1.z,
+            0.0, 0.0, 0.0, 1.0
+        ));
+        instance_offset += 1;
+
+        if (height_1 > 0 || height_2 > 0) {
+
+            for (int k; k<DEBUG_RESAMPLE; k++) { //TODO: WHY REMOVING THIS LINE MAKES THE BELOW EXPRESSION WORK :((((
+                transforms[instance_offset] = transpose(mat4(
+                    0.1, 0.0, 0.0, p1.x,
+                    0.0, 0.1, 0.0, p1.y + pow(height_1, 0.3),
+                    0.0, 0.0, 0.1, p1.z,
+                    0.0, 0.0, 0.0, 1.0
+                ));
+                instance_offset += 1;
+            }
+
         }
     }
+
+    
+
+
+    // ------------------------
+
+    /*
+    for (int i; i<(curve_npt-1); i++) {
+        // get curve segment positions
+        vec3 p1 = curves[idx].positions[i].xyz;
+        vec3 p2 = curves[idx].positions[i+1].xyz;
+
+        // get heights
+        float height_1 = position_ws_to_roadmask_value(p1, dims);
+        float height_2 = position_ws_to_roadmask_value(p2, dims);
+
+        if (height_1 > 0 || height_2 > 0) {
+
+            // check segment length
+            vec3 seg_p1 = vec3(p1.x, pow(height_1, 0.3), p1.z);
+            vec3 seg_p2 = vec3(p2.x, pow(height_2, 0.3), p2.z);
+            float seg_length = distance(seg_p1, seg_p2);
+
+            // subdivide distance
+            int total_segment_bricks = DEBUG_RESAMPLE;//int(ceil(seg_length / BRICK_WIDTH));
+            //vec3 subseg_dir = seg_p2-seg_p1;
+
+            // calculate transforms
+            for (int j; j<total_segment_bricks; j++) {
+
+                //vec3 subseg_p1 = seg_p1 + subseg_dir * (float(j) / float(total_segment_bricks));
+                //vec3 subseg_p2 = p1 + subseg_dir * (float(j+1) / float(total_segment_bricks));
+
+                transforms[instance_offset+brick_count] = transpose(mat4(
+                    0.1, 0.0, 0.0, p1.x,
+                    0.0, 0.1, 0.0, p1.y,
+                    0.0, 0.0, 0.1, p1.z,
+                    0.0, 0.0, 0.0, 1.0
+                ));
+
+                brick_count += 1;
+
+            }
+
+
+        }
+    }
+    */
+    
 }  

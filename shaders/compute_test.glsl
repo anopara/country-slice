@@ -21,6 +21,7 @@ void main() {
     float x = (float(pixel_coords.x * 2 - dims.x) / dims.x);
     float y = (float(pixel_coords.y * 2 - dims.y) / dims.y);
 
+    // TODO: this assumes -10 to 10 range in world space, BUT this should really come from a uniform on CPU side
     vec3 pixel_ws = vec3(x, 0.0, y) * 10.0;
 
     float d = distance(pixel_ws, Mouse_Position);
