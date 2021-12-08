@@ -46,17 +46,20 @@ float position_ws_to_roadmask_value(vec3 position, ivec2 dims) {
 
 void main() {
 
-    float BRICK_WIDTH = 0.05;
+    float BRICK_WIDTH = 0.2;
     uint DEBUG_RESAMPLE = 3;
 
     ivec2 dims = imageSize(road_mask);
     const uint idx = gl_GlobalInvocationID.x;
     uint curve_npt = curves[idx].points_count;
 
-    // check whether points are above the road
-    // TODO: dont do it per point, do it per line segment!
+    if (curve_npt < 2) {
+        return;
+    }
+
+    // calculate how many bricks we need for the arch
     uint total_bricks = 0;
-    for (int i=0; i+1<curve_npt; i++) {
+    for (int i=0; i<curve_npt-1; i++) {
          // get curve segment positions
         vec3 p1 = curves[idx].positions[i].xyz;
         vec3 p2 = curves[idx].positions[i+1].xyz;
@@ -66,50 +69,43 @@ void main() {
         float height_2 = position_ws_to_roadmask_value(p2, dims);
 
         // check segment length
-        //vec3 seg_p1 = vec3(p1.x, height_1, p1.z);
-        //vec3 seg_p2 = vec3(p2.x, height_2, p2.z);
-        //float seg_length = distance(seg_p1, seg_p2);
+        vec3 seg_p1 = vec3(p1.x, height_1, p1.z);
+        vec3 seg_p2 = vec3(p2.x, height_2, p2.z);
+        float seg_length = distance(seg_p1, seg_p2);
 
         // subdivide distance
-        //int total_segment_bricks = DEBUG_RESAMPLE;//int(ceil(seg_length / BRICK_WIDTH));
+        int total_segment_bricks = int(ceil(seg_length / BRICK_WIDTH));
 
+        // TODO: find exact positions where height starts to go up!
         if (height_1 > 0 || height_2 > 0) {
-            total_bricks += DEBUG_RESAMPLE;
+            total_bricks += total_segment_bricks+1; //TODO: hack to add +1, otherwise there is not enough allocations, needs investigation
         }
     }
-    // TODO: need to take into account the points that is before the arch, and the point after (if it exists) -- to make sure the points start and end at Y 0
-    // that would be our curve chunk, we need to know its length
-    // per line segment, we want to know its length and divide into N random bricks (this way we know how many bricks we actually need in total)
+    // TODO: have some kind of flickering or bricks.. is that a precision issue? :(
+    // also, the program is being quite slow / stuttering now
+ 
 
-    uint instance_offset = atomicAdd(cmds[0].instanceCount, curve_npt + total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
+    uint instance_offset = atomicAdd(cmds[0].instanceCount, total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
-   
-    // now we actually want to march through the valid segments and write the transform data
-
-    // first version can just be uniform size bricks
-
-    // in the future, we can cheat and perturb offset the real curve positions along the segment :P
-
-    //int brick_count = 0;
-    // PLACE CURVE PREVIEW
     
     for (int i=0; i<curve_npt; i++) {
 
-         // get curve segment positions
+        // get curve segment positions
         vec3 p1 = curves[idx].positions[i].xyz;
         vec3 p2 = curves[idx].positions[i+1].xyz;
+        vec3 curve_dir = p2-p1;
 
         // get heights
         float height_1 = position_ws_to_roadmask_value(p1, dims);
         float height_2 = position_ws_to_roadmask_value(p2, dims);
 
-        transforms[instance_offset] = transpose(mat4(
-            0.03, 0.0, 0.0, p1.x,
-            0.0, 0.03, 0.0, p1.y + pow(height_1, 0.3),
-            0.0, 0.0, 0.03, p1.z,
-            0.0, 0.0, 0.0, 1.0
-        ));
-        instance_offset += 1;
+        //transforms[instance_offset] = transpose(mat4(
+        //    0.01, 0.0, 0.0, p1.x,
+        //    0.0, 1.0, 0.0, p1.y + pow(height_1, 0.3),
+        //    0.0, 0.0, 0.01, p1.z,
+        //    0.0, 0.0, 0.0, 1.0
+        //));
+        //instance_offset += 1;
 
         if (i >= curve_npt-1) {
             continue;
@@ -121,18 +117,48 @@ void main() {
             // check segment length
             vec3 seg_p1 = vec3(p1.x, pow(height_1, 0.3), p1.z);
             vec3 seg_p2 = vec3(p2.x, pow(height_2, 0.3), p2.z);
-            vec3 subseg_dir = seg_p2-seg_p1;
+            float seg_length = distance(seg_p1, seg_p2);
+            vec3 seg_dir = seg_p2-seg_p1;
 
-            for (int k=0; k<DEBUG_RESAMPLE; k++) {
+            // subdivide distance
+            int total_segment_bricks = int(ceil(seg_length / BRICK_WIDTH));
 
-                vec3 subseg_p1 = seg_p1 + subseg_dir * (float(k) / float(DEBUG_RESAMPLE));
+            for (int k=0; k<total_segment_bricks; k++) {
+                vec3 subseg_p1 = seg_p1 + seg_dir * (float(k) / float(total_segment_bricks));
+                vec3 subseg_p2 = seg_p1 + seg_dir * (float(k+1) / float(total_segment_bricks));
 
-                transforms[instance_offset] = transpose(mat4(
-                    0.1, 0.0, 0.0, subseg_p1.x, //p1.x,
-                    0.0, 0.1, 0.0, subseg_p1.y, //p1.y + pow(height_1, 0.3),
-                    0.0, 0.0, 0.1, subseg_p1.z, //p1.z,
+                vec3 pivot = (subseg_p1+subseg_p2) / 2.0;
+
+                float subseg_w = seg_length / float(total_segment_bricks);
+
+                vec3 s = vec3(subseg_w, 0.15, 0.25);
+
+                vec3 x = normalize(seg_dir);
+                vec3 z = normalize(cross(x, vec3(0.0, 1.0, 0.0)));
+                vec3 y = normalize(cross(x, z));
+
+                mat4 scale = transpose(mat4(
+                    s.x, 0.0, 0.0, 0.0, 
+                    0.0, s.y, 0.0, 0.0, 
+                    0.0, 0.0, s.z, 0.0, 
                     0.0, 0.0, 0.0, 1.0
                 ));
+
+                mat4 translate = transpose(mat4(
+                    1.0, 0.0, 0.0, pivot.x, 
+                    0.0, 1.0, 0.0, pivot.y, 
+                    0.0, 0.0, 1.0, pivot.z, 
+                    0.0, 0.0, 0.0, 1.0
+                ));
+
+                mat4 rotate = mat4(
+                    x.x, x.y, x.z, 0.0, //p1.x,
+                    y.x, y.y, y.z, 0.0, //p1.y + pow(height_1, 0.3),
+                    z.x, z.y, z.z, 0.0, //p1.z,
+                    0.0, 0.0, 0.0, 1.0
+                );
+
+                transforms[instance_offset] = translate * rotate * scale;
                 instance_offset += 1;
             }
 
@@ -140,9 +166,6 @@ void main() {
         
     }
     
-    // "As a result it wrote into memory that was not allocated to it and caused the Stack_Buffer_Overrun." ? is that the cause? (c) https://stackoverflow.com/questions/29444364/status-stack-buffer-overrun-encountered
-
-
     // ------------------------
 
     /*
