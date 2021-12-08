@@ -87,6 +87,7 @@ void main() {
 
     uint instance_offset = atomicAdd(cmds[0].instanceCount, total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
+    // TODO: add shading to the bricks
     
     for (int i=0; i<curve_npt; i++) {
 

@@ -54,8 +54,8 @@ pub fn startup(ecs: &mut World) {
 
     // indirect draw test
     let indirect_test = load_shader_into_library(
-        "shaders/vertex_color_indirect.vert",
-        "shaders/vertex_color.frag",
+        "shaders/instanced_wall_arch.vert",
+        "shaders/instanced_wall.frag",
         "indirect_instance_test",
         ecs,
     );

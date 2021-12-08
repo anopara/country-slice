@@ -206,6 +206,8 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             // check if its an indirect draw
             if indirect_draw.is_some() {
+                // used for disabling discarding of fragments
+                shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
                 indirect_test
                     .transforms_buffer
                     .bind(&shader, "transforms_buffer");
@@ -222,6 +224,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 );
 
                 shader.set_gl_uniform("wall_length", GlUniform::Float(instanced_wall.wall_length));
+
+                // used for disabling discarding of fragments
+                shader.set_gl_uniform("is_arch", GlUniform::Bool(false));
 
                 // bind to shader
                 instanced_wall

@@ -15,6 +15,8 @@ uniform vec3 camera_position;
 
 uniform sampler2D computeTexture;
 
+uniform bool is_arch;
+
 out vec4 FragColor;  
 
 float random( int p ) {
@@ -219,17 +221,17 @@ void main()
     // tone_mapping
     //output_color.rgb = reinhard_luminance(output_color.rgb);
 
-    
-    // sample compute texture
+    if (!is_arch) {
+        // sample compute texture
+        // convert pos_ws to texture_uv
+        // texture is from -10.0 to 10.0 in ws
+        vec2 texture_uv = (curve_position_ws / 20.0 + 0.5).xz;
+        float texture_color = texture(computeTexture, texture_uv).x; 
 
-    // convert pos_ws to texture_uv
-    // texture is from -10.0 to 10.0 in ws
-    vec2 texture_uv = (curve_position_ws / 20.0 + 0.5).xz;
-    float texture_color = texture(computeTexture, texture_uv).x; 
+        float height_threshold = pow(texture_color, 0.3);
 
-    float height_threshold = pow(texture_color, 0.3);
-
-    if (texture_color > 0.0 && curve_position_ws.y < height_threshold) { discard; }
+        if (texture_color > 0.0 && curve_position_ws.y < height_threshold) { discard; }
+    }
 
     FragColor = output_color;
 }
