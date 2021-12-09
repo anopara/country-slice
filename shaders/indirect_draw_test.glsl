@@ -44,6 +44,32 @@ float position_ws_to_roadmask_value(vec3 position, ivec2 dims) {
     return imageLoad(road_mask, pixel_coord).x;
 }
 
+// Find "exact" value where derivative of img starts changing along the segment
+float find_t_change(vec3 p1, vec3 p2) {
+    float t_out = 0.0;
+    // subdivide the segment
+    const uint SUBDIV = 100;
+    for (int i=0; i<SUBDIV; i++) {
+        float t1 = float(i) / float(SUBDIV);
+        vec3 subdiv_p1 = mix(p1, p2, t1);
+
+        float t2 = float(i+1) / float(SUBDIV);
+        vec3 subdiv_p2 = mix(p1, p2, t2);
+
+        // find where derivative starts changing & one of the elements is 0
+        float h1 = position_ws_to_roadmask_value(subdiv_p1, imageSize(road_mask));
+        float h2 = position_ws_to_roadmask_value(subdiv_p2, imageSize(road_mask));
+
+        if (abs(h1-h2) > 0.001 && (h1 < 0.0001 || h2 < 0.0001)) {
+
+            t_out = t1;
+
+            break;
+        }
+    }
+    return t_out;
+}
+
 void main() {
 
     float BRICK_WIDTH = 0.2;
@@ -59,6 +85,7 @@ void main() {
 
     // calculate how many bricks we need for the arch
     uint total_bricks = 0;
+    //float current_arch_length = 0;
     for (int i=0; i<curve_npt-1; i++) {
          // get curve segment positions
         vec3 p1 = curves[idx].positions[i].xyz;
@@ -68,16 +95,30 @@ void main() {
         float height_1 = position_ws_to_roadmask_value(p1, dims);
         float height_2 = position_ws_to_roadmask_value(p2, dims);
 
-        // check segment length
-        vec3 seg_p1 = vec3(p1.x, height_1, p1.z);
-        vec3 seg_p2 = vec3(p2.x, height_2, p2.z);
-        float seg_length = distance(seg_p1, seg_p2);
+        if (abs(height_1-height_2) > 0.001  && (height_1 < 0.0001 || height_2 < 0.0001)) {
+            // find exact positions where height starts to go up or down!
+            float t = find_t_change(p1, p2);
 
-        // subdivide distance
-        int total_segment_bricks = int(ceil(seg_length / BRICK_WIDTH));
+            if (height_1 < height_2) {
+                // curve starts to go up
+                p1 = mix(p1, p2, t);
+            } else {
+                // curve is going down
+                p2 = mix(p1, p2, t);
+            }
+            
+        }
 
-        // TODO: find exact positions where height starts to go up!
-        if (height_1 > 0 || height_2 > 0) {
+        if (height_1 > 0 || height_2 > 0 ) {
+
+            // check segment length
+            vec3 seg_p1 = vec3(p1.x, height_1, p1.z);
+            vec3 seg_p2 = vec3(p2.x, height_2, p2.z);
+            float seg_length = distance(seg_p1, seg_p2);
+
+            // subdivide distance
+            int total_segment_bricks = int(ceil(seg_length / BRICK_WIDTH));
+
             total_bricks += total_segment_bricks+1; //TODO: hack to add +1, otherwise there is not enough allocations, needs investigation
         }
     }
@@ -87,7 +128,7 @@ void main() {
 
     uint instance_offset = atomicAdd(cmds[0].instanceCount, total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
-    // TODO: add shading to the bricks
+    // TODO: really need to smooth out the curve... (or have a better function)
     
     for (int i=0; i<curve_npt; i++) {
 
@@ -110,6 +151,20 @@ void main() {
 
         if (i >= curve_npt-1) {
             continue;
+        }
+
+        if (abs(height_1-height_2) > 0.001  && (height_1 < 0.0001 || height_2 < 0.0001)) {
+            // find exact positions where height starts to go up or down!
+            float t = find_t_change(p1, p2);
+
+            if (height_1 < height_2) {
+                // curve starts to go up
+                p1 = mix(p1, p2, t);
+            } else {
+                // curve is going down
+                p2 = mix(p1, p2, t);
+            }
+            
         }
 
         
