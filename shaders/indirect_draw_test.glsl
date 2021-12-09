@@ -62,7 +62,7 @@ float find_t_change(vec3 p1, vec3 p2) {
 
         if (abs(h1-h2) > 0.001 && (h1 < 0.0001 || h2 < 0.0001)) {
 
-            t_out = t1;
+            if (h1 < h2) { t_out = t1; } else { t_out = t2; }
 
             break;
         }
@@ -158,10 +158,10 @@ void main() {
             float t = find_t_change(p1, p2);
 
             if (height_1 < height_2) {
-                // curve starts to go up
+                // arch curve starts to go up
                 p1 = mix(p1, p2, t);
             } else {
-                // curve is going down
+                // arch curve is reaching its end
                 p2 = mix(p1, p2, t);
             }
             
@@ -180,16 +180,24 @@ void main() {
             int total_segment_bricks = int(ceil(seg_length / BRICK_WIDTH));
 
             for (int k=0; k<total_segment_bricks; k++) {
-                vec3 subseg_p1 = seg_p1 + seg_dir * (float(k) / float(total_segment_bricks));
-                vec3 subseg_p2 = seg_p1 + seg_dir * (float(k+1) / float(total_segment_bricks));
+                vec3 subseg_p1 = mix(seg_p1, seg_p2, float(k) / float(total_segment_bricks)); //seg_p1 + seg_dir * (float(k) / float(total_segment_bricks));
+                vec3 subseg_p2 = mix(seg_p1, seg_p2, float(k+1) / float(total_segment_bricks)); //seg_p1 + seg_dir * (float(k+1) / float(total_segment_bricks));
+
+                subseg_p1.y = position_ws_to_roadmask_value(subseg_p1, dims);
+                subseg_p1.y = pow(subseg_p1.y, 0.3);
+
+                subseg_p2.y = position_ws_to_roadmask_value(subseg_p2, dims);
+                subseg_p2.y = pow(subseg_p2.y, 0.3);    
 
                 vec3 pivot = (subseg_p1+subseg_p2) / 2.0;
+                //pivot.y = position_ws_to_roadmask_value(pivot, dims);
+                //pivot.y = pow(pivot.y, 0.3);
 
-                float subseg_w = seg_length / float(total_segment_bricks);
+                float subseg_w = distance(subseg_p1, subseg_p2);//seg_length / float(total_segment_bricks);
 
                 vec3 s = vec3(subseg_w, 0.15, 0.25);
 
-                vec3 x = normalize(seg_dir);
+                vec3 x = normalize(subseg_p2-subseg_p1);
                 vec3 z = normalize(cross(x, vec3(0.0, 1.0, 0.0)));
                 vec3 y = normalize(cross(x, z));
 
