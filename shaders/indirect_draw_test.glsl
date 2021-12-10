@@ -70,6 +70,65 @@ float find_t_change(vec3 p1, vec3 p2) {
     return t_out;
 }
 
+vec3 curve_ws_to_arch_ws(vec3 curve_ws) {
+    curve_ws.y = position_ws_to_roadmask_value(curve_ws, imageSize(road_mask));
+    curve_ws.y = pow(curve_ws.y, 0.3);
+    return curve_ws;
+}
+
+float length_arch(vec3 from, vec3 to) {
+    // subdivide the segment
+    const uint SUBDIV = 1000;
+    float out_length = 0.0;
+
+    for (int i=0; i<SUBDIV; i++) {
+
+        vec3 subdiv_p1 = mix(from, to,  float(i) / float(SUBDIV));
+        vec3 subdiv_p2 = mix(from, to, float(i+1) / float(SUBDIV));
+
+        subdiv_p1 = curve_ws_to_arch_ws(subdiv_p1);
+        subdiv_p2 = curve_ws_to_arch_ws(subdiv_p2);
+
+        out_length += distance(subdiv_p1, subdiv_p2);
+    }
+
+    return out_length;
+}
+
+vec3 ws_from_u(vec3 from, vec3 to, float target_u, float seg_length) {
+    // check for quick 1s and 0s
+    if (target_u > 0.99) {
+        return curve_ws_to_arch_ws(to);
+    }
+
+    if (target_u < 0.01) {
+        return curve_ws_to_arch_ws(from);
+    }
+
+    // subdivide the segment
+    const uint SUBDIV = 1000;
+    float dist_traveled = 0.0;
+    for (int i=0; i<SUBDIV+1; i++) {
+
+        vec3 subdiv_p1 = mix(from, to,  float(i) / float(SUBDIV));
+        vec3 subdiv_p2 = mix(from, to,  float(i+1) / float(SUBDIV));
+
+        subdiv_p1 = curve_ws_to_arch_ws(subdiv_p1);
+        subdiv_p2 = curve_ws_to_arch_ws(subdiv_p2);
+
+        float current_u = dist_traveled / seg_length;
+
+        if (current_u > target_u) {
+            return subdiv_p2;
+        }
+
+        dist_traveled += distance(subdiv_p1, subdiv_p2);
+    }
+
+
+    return vec3(0.0, 0.0, 0.0);
+}
+
 void main() {
 
     float BRICK_WIDTH = 0.2;
@@ -114,21 +173,19 @@ void main() {
             // check segment length
             vec3 seg_p1 = vec3(p1.x, height_1, p1.z);
             vec3 seg_p2 = vec3(p2.x, height_2, p2.z);
-            float seg_length = distance(seg_p1, seg_p2);
+            float seg_length = length_arch(seg_p1, seg_p2);
 
             // subdivide distance
-            int total_segment_bricks = int(ceil(seg_length / BRICK_WIDTH));
+            int total_segment_bricks = max(int(floor(seg_length / BRICK_WIDTH)), 1);
 
-            total_bricks += total_segment_bricks+1; //TODO: hack to add +1, otherwise there is not enough allocations, needs investigation
+            total_bricks += total_segment_bricks;
         }
-    }
-    // TODO: have some kind of flickering or bricks.. is that a precision issue? :(
-    // also, the program is being quite slow / stuttering now
- 
+    } 
 
     uint instance_offset = atomicAdd(cmds[0].instanceCount, total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
     // TODO: really need to smooth out the curve... (or have a better function)
+    // TODO: investigate stutterring
     
     for (int i=0; i<curve_npt; i++) {
 
@@ -167,31 +224,32 @@ void main() {
             
         }
 
+        // TODO: the first bricks end up being very stretched.. need to account for it in my bricks calculatins
         
         if (height_1 > 0 || height_2 > 0) {
 
             // check segment length
-            vec3 seg_p1 = vec3(p1.x, pow(height_1, 0.3), p1.z);
-            vec3 seg_p2 = vec3(p2.x, pow(height_2, 0.3), p2.z);
-            float seg_length = distance(seg_p1, seg_p2);
-            vec3 seg_dir = seg_p2-seg_p1;
+            vec3 seg_p1 = p1;//vec3(p1.x, 0.0, p1.z);
+            vec3 seg_p2 = p2;//vec3(p2.x, 0.0, p2.z);
+            float seg_length = length_arch(seg_p1, seg_p2);// distance(seg_p1, seg_p2);
 
             // subdivide distance
-            int total_segment_bricks = int(ceil(seg_length / BRICK_WIDTH));
+            int total_segment_bricks = max(int(floor(seg_length / BRICK_WIDTH)), 1);
 
             for (int k=0; k<total_segment_bricks; k++) {
-                vec3 subseg_p1 = mix(seg_p1, seg_p2, float(k) / float(total_segment_bricks)); //seg_p1 + seg_dir * (float(k) / float(total_segment_bricks));
-                vec3 subseg_p2 = mix(seg_p1, seg_p2, float(k+1) / float(total_segment_bricks)); //seg_p1 + seg_dir * (float(k+1) / float(total_segment_bricks));
 
-                subseg_p1.y = position_ws_to_roadmask_value(subseg_p1, dims);
-                subseg_p1.y = pow(subseg_p1.y, 0.3);
+                float u1 = float(k) / float(total_segment_bricks);
+                float u2 = float(k+1) / float(total_segment_bricks);
 
-                subseg_p2.y = position_ws_to_roadmask_value(subseg_p2, dims);
-                subseg_p2.y = pow(subseg_p2.y, 0.3);    
+                vec3 subseg_p1 = ws_from_u(seg_p1, seg_p2, u1, seg_length);
+                vec3 subseg_p2 = ws_from_u(seg_p1, seg_p2, u2, seg_length);
+
+                if (false) {
+                    subseg_p1 = curve_ws_to_arch_ws(mix(seg_p1, seg_p2, 0.0)); 
+                    subseg_p2 = curve_ws_to_arch_ws(mix(seg_p1, seg_p2, 0.5)); 
+                }
 
                 vec3 pivot = (subseg_p1+subseg_p2) / 2.0;
-                //pivot.y = position_ws_to_roadmask_value(pivot, dims);
-                //pivot.y = pow(pivot.y, 0.3);
 
                 float subseg_w = distance(subseg_p1, subseg_p2);//seg_length / float(total_segment_bricks);
 
@@ -216,9 +274,9 @@ void main() {
                 ));
 
                 mat4 rotate = mat4(
-                    x.x, x.y, x.z, 0.0, //p1.x,
-                    y.x, y.y, y.z, 0.0, //p1.y + pow(height_1, 0.3),
-                    z.x, z.y, z.z, 0.0, //p1.z,
+                    x.x, x.y, x.z, 0.0, 
+                    y.x, y.y, y.z, 0.0, 
+                    z.x, z.y, z.z, 0.0, 
                     0.0, 0.0, 0.0, 1.0
                 );
 
@@ -229,50 +287,5 @@ void main() {
         }
         
     }
-    
-    // ------------------------
-
-    /*
-    for (int i; i<(curve_npt-1); i++) {
-        // get curve segment positions
-        vec3 p1 = curves[idx].positions[i].xyz;
-        vec3 p2 = curves[idx].positions[i+1].xyz;
-
-        // get heights
-        float height_1 = position_ws_to_roadmask_value(p1, dims);
-        float height_2 = position_ws_to_roadmask_value(p2, dims);
-
-        if (height_1 > 0 || height_2 > 0) {
-
-            // check segment length
-            vec3 seg_p1 = vec3(p1.x, pow(height_1, 0.3), p1.z);
-            vec3 seg_p2 = vec3(p2.x, pow(height_2, 0.3), p2.z);
-            float seg_length = distance(seg_p1, seg_p2);
-
-            // subdivide distance
-            int total_segment_bricks = DEBUG_RESAMPLE;//int(ceil(seg_length / BRICK_WIDTH));
-            //vec3 subseg_dir = seg_p2-seg_p1;
-
-            // calculate transforms
-            for (int j; j<total_segment_bricks; j++) {
-
-                //vec3 subseg_p1 = seg_p1 + subseg_dir * (float(j) / float(total_segment_bricks));
-                //vec3 subseg_p2 = p1 + subseg_dir * (float(j+1) / float(total_segment_bricks));
-
-                transforms[instance_offset+brick_count] = transpose(mat4(
-                    0.1, 0.0, 0.0, p1.x,
-                    0.0, 0.1, 0.0, p1.y,
-                    0.0, 0.0, 0.1, p1.z,
-                    0.0, 0.0, 0.0, 1.0
-                ));
-
-                brick_count += 1;
-
-            }
-
-
-        }
-    }
-    */
     
 }  
