@@ -58,7 +58,7 @@ void main()
     if (avg_value > threshold) {
         pos_ws.y = 0.01;
     } else {
-        pos_ws.y = -1;
+        pos_ws = vec3(0.0);
     }
 
     //pos_ws.y = 0.01;
