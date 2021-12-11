@@ -12,7 +12,7 @@ use crate::{
     ComputeDrawIndirectTest, CursorRaycast, WallManager,
 };
 
-const CURVE_SHOW_DEBUG: bool = true;
+const CURVE_SHOW_DEBUG: bool = false; //TODO: investigate why vertex color is not red...
 
 // for compute indirect
 pub fn update_curve_ssbo(

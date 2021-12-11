@@ -24,10 +24,11 @@ pub fn startup(ecs: &mut World) {
     let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
     let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
-    let plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
+    let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
 
     let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
     road_pebbles_mesh.add_color();
+    road_pebbles_mesh.add_uv();
     let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
 
     // Load shaders
@@ -37,8 +38,14 @@ pub fn startup(ecs: &mut World) {
         "vertex_color_shader",
         ecs,
     );
+    let road_shader = load_shader_into_library(
+        "shaders/road.vert",
+        "shaders/vertex_color.frag",
+        "road_shader",
+        ecs,
+    );
     // this shader shows the compute_test.glsl as a texture
-    let test = load_shader_into_library(
+    let _test = load_shader_into_library(
         "shaders/texture_test.vert",
         "shaders/texture_test.frag",
         "texture_test_shader",
@@ -79,12 +86,15 @@ pub fn startup(ecs: &mut World) {
         transform: Transform::identity(),
     });
 
-    ecs.spawn().insert_bundle(DrawableMeshBundle {
-        mesh: road_pebbles,
-        shader: vert_color,
-        transform: Transform::from_translation(Vec3::new(0.0, 0.1, 0.0)),
-    });
+    ecs.spawn()
+        .insert_bundle(DrawableMeshBundle {
+            mesh: road_pebbles,
+            shader: road_shader,
+            transform: Transform::from_translation(Vec3::new(0.0, 0.1, 0.0)),
+        })
+        .insert(crate::RoadComponent);
 
+    /*
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
             mesh: plane,
@@ -92,6 +102,7 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::from_translation(Vec3::new(0.0, 0.005, 0.0)),
         })
         .insert(DisplayTestMask);
+        */
 
     // preview cube
     ecs.spawn()

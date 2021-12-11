@@ -40,13 +40,24 @@ impl Mesh {
 
     pub fn add_color(&mut self) {
         let color_values = vec![
-            [1.0, 1.0, 1.0];
+            [1.0, 0.0, 0.0];
             self.attributes
                 .get("Vertex_Position")
                 .unwrap()
                 .array_length()
         ];
         self.set_attribute(Mesh::ATTRIBUTE_COLOR, color_values);
+    }
+
+    pub fn add_uv(&mut self) {
+        let values = vec![
+            [0.0, 0.0];
+            self.attributes
+                .get("Vertex_Position")
+                .unwrap()
+                .array_length()
+        ];
+        self.set_attribute(Mesh::ATTRIBUTE_UV, values);
     }
 }
 

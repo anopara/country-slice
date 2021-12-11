@@ -173,6 +173,9 @@ struct DrawElementsIndirectCommand {
 // component
 struct IndirectDraw;
 
+//
+struct RoadComponent;
+
 const COMMAND_BUFFER_SIZE: usize = 1000;
 
 fn main() {

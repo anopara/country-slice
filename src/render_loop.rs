@@ -150,6 +150,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             Option<&DisplayTestMask>,
             Option<&TransparencyPass>,
             Option<&IndirectDraw>,
+            Option<&crate::RoadComponent>,
         )>();
         let assets_vao = ecs.get_resource::<AssetVAOLibrary>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -167,6 +168,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             test,
             transparency,
             indirect_draw,
+            road,
         ) in query.iter(ecs)
         {
             let vao = assets_vao
@@ -191,6 +193,14 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             // MEOWMEOWcheckforspecialtexture
             if test.is_some() {
                 gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+            }
+
+            // check if its a road
+            if road.is_some() {
+                // bind road mask
+                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                // tell the shader that its not a wall (atm just re-use is_arch)
+                shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
             }
 
             gl::BindVertexArray(vao.id());

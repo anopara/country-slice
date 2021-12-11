@@ -19,6 +19,22 @@ impl AssetShaderLibrary {
     }
 
     pub fn add(&mut self, asset: Asset<ShaderProgram>) -> Handle<ShaderProgram> {
+        // check if this name already exists
+        if let Some(existing_name) = asset
+            .name
+            .as_ref()
+            .map(|n| match self.by_name.contains_key(n) {
+                true => Some(n),
+                false => None,
+            })
+            .unwrap_or(None)
+        {
+            panic!(
+                "AssetShaderLibrary: the shader name {} is already taken",
+                existing_name
+            );
+        }
+
         let id = HandleId::random();
         let handle = Handle::<ShaderProgram>::new(id);
         self.assets.insert(handle, asset.asset);

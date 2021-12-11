@@ -29,8 +29,27 @@ pub fn load_json_as_mesh(path: &str) -> Result<Mesh, String> {
         .collect();
 
     for attrib_name in attributes {
+        dbg!(attrib_name);
         let strrr = format!("{}", v[attrib_name]["type"]);
         match strrr.as_ref() {
+            r#"["float",4]"# => {
+                let values: Vec<[f32; 4]> = v[attrib_name]["buffer"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .map(|v| {
+                        let d: Vec<_> = v
+                            .as_array()
+                            .unwrap()
+                            .iter()
+                            .map(|v| v.as_f64().unwrap() as f32)
+                            .collect();
+                        [d[0], d[1], d[2], d[3]]
+                    })
+                    .collect();
+                dbg!(values.len());
+                mesh.set_attribute(attrib_name, values)
+            }
             r#"["float",3]"# => {
                 let values: Vec<[f32; 3]> = v[attrib_name]["buffer"]
                     .as_array()
