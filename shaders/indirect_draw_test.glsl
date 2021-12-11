@@ -70,9 +70,13 @@ float find_t_change(vec3 p1, vec3 p2) {
     return t_out;
 }
 
+float arch_function(float h) {
+    return 1.0 - pow(1.0 - h, 4.0);
+}
+
 vec3 curve_ws_to_arch_ws(vec3 curve_ws) {
     curve_ws.y = position_ws_to_roadmask_value(curve_ws, imageSize(road_mask));
-    curve_ws.y = pow(curve_ws.y, 0.3);
+    curve_ws.y = arch_function(curve_ws.y);//pow(curve_ws.y, 0.3);
     return curve_ws;
 }
 

@@ -152,6 +152,10 @@ vec3 reinhard_luminance(vec3 color) {
     float l_new = l_old / (1.0f + l_old);
     return change_luminance(color, l_new);
 }
+
+float arch_function(float h) {
+    return 1.0 - pow(1.0 - h, 4.0);
+}
   
 void main()
 {
@@ -228,9 +232,9 @@ void main()
         vec2 texture_uv = (curve_position_ws / 20.0 + 0.5).xz;
         float texture_color = texture(computeTexture, texture_uv).x; 
 
-        float height_threshold = pow(texture_color, 0.3);
+        float height_threshold = arch_function(texture_color);
 
-        if (texture_color > 0.0 && curve_position_ws.y < height_threshold) { discard; }
+        if (texture_color > 0.01 && curve_position_ws.y < height_threshold) { discard; }
     }
 
     FragColor = output_color;
