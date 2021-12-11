@@ -270,6 +270,10 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             // Render
             shader.gl_use_program();
 
+            // bind road mask (ATM, only shadows have transparency pass, so we can just bind the texture)
+            // TODO: in the future, need to check for whether its a shadow
+            gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+
             gl::BindVertexArray(vao.id());
 
             // Set model, view and projection transforms as uniforms

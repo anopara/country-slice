@@ -64,9 +64,12 @@ void main()
     //pos_ws.y = 0.01;
     //pos_ws.y = float(prim_id) / 8000.0 * 0.00001;
 
+    float random_color = random_f(seed+50.0);
+    random_color = fit01(random_color, 0.086, 0.14);
+
 
     // OUT ----------------------------
     gl_Position = projection * view * vec4(pos_ws, 1.0);
-    ourColor = vec3(0.3); // set ourColor to the input color we got from the vertex data
+    ourColor = vec3(random_color); // set ourColor to the input color we got from the vertex data
     TexCoord = Vertex_UV;
 } 
