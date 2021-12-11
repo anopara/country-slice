@@ -5,6 +5,7 @@ use crate::asset_libraries::Handle;
 use crate::components::drawable::DrawableMeshBundle;
 use crate::components::transform::Transform;
 use crate::geometry::cube::Cube;
+use crate::utils::load_json::load_json_as_mesh;
 use crate::{DisplayTestMask, IndirectDraw};
 
 use crate::geometry::plane::Plane;
@@ -24,6 +25,10 @@ pub fn startup(ecs: &mut World) {
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
     let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
     let plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
+
+    let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
+    road_pebbles_mesh.add_color();
+    let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
 
     // Load shaders
     let vert_color = load_shader_into_library(
@@ -74,6 +79,12 @@ pub fn startup(ecs: &mut World) {
         transform: Transform::identity(),
     });
 
+    ecs.spawn().insert_bundle(DrawableMeshBundle {
+        mesh: road_pebbles,
+        shader: vert_color,
+        transform: Transform::from_translation(Vec3::new(0.0, 0.1, 0.0)),
+    });
+
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
             mesh: plane,
@@ -99,19 +110,20 @@ fn load_mesh(path: &str) -> Mesh {
 
     let mut mesh = Mesh::new();
 
-    if mesh_buffer.colors.is_empty() {
-        mesh.set_attribute(
-            Mesh::ATTRIBUTE_COLOR,
-            vec![[1.0, 1.0, 1.0]; mesh_buffer.positions.len()],
-        );
-    } else {
-        mesh.set_attribute(Mesh::ATTRIBUTE_COLOR, mesh_buffer.colors);
-    }
-
     mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, mesh_buffer.positions);
     mesh.set_attribute(Mesh::ATTRIBUTE_NORMAL, mesh_buffer.normals);
 
     mesh.set_indices(mesh_buffer.indices);
+
+    if mesh_buffer.colors.is_empty() {
+        mesh.add_color();
+        //mesh.set_attribute(
+        //    Mesh::ATTRIBUTE_COLOR,
+        //    vec![[1.0, 1.0, 1.0]; mesh_buffer.positions.len()],
+        //);
+    } else {
+        mesh.set_attribute(Mesh::ATTRIBUTE_COLOR, mesh_buffer.colors);
+    }
 
     mesh
 }

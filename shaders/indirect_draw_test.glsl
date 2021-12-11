@@ -99,7 +99,7 @@ float length_arch(vec3 from, vec3 to) {
     return out_length;
 }
 
-vec3 ws_from_u(vec3 from, vec3 to, float target_u, float seg_length) {
+vec3 curve_ws_from_segment_u(vec3 from, vec3 to, float target_u, float seg_length) {
     // check for quick 1s and 0s
     if (target_u > 0.99) {
         return curve_ws_to_arch_ws(to);
@@ -188,7 +188,7 @@ void main() {
 
     uint instance_offset = atomicAdd(cmds[0].instanceCount, total_bricks); //https://www.khronos.org/registry/OpenGL-Refpages/gl4/html/atomicAdd.xhtml 
 
-    // TODO: really need to smooth out the curve... (or have a better function)
+    
     // TODO: investigate stutterring
     
     for (int i=0; i<curve_npt; i++) {
@@ -228,36 +228,35 @@ void main() {
             
         }
 
-        // TODO: the first bricks end up being very stretched.. need to account for it in my bricks calculatins
-        
         if (height_1 > 0 || height_2 > 0) {
 
             // check segment length
-            vec3 seg_p1 = p1;//vec3(p1.x, 0.0, p1.z);
-            vec3 seg_p2 = p2;//vec3(p2.x, 0.0, p2.z);
-            float seg_length = length_arch(seg_p1, seg_p2);// distance(seg_p1, seg_p2);
+            vec3 seg_p1 = p1;
+            vec3 seg_p2 = p2;
+            float seg_length = length_arch(seg_p1, seg_p2);
 
             // subdivide distance
             int total_segment_bricks = max(int(floor(seg_length / BRICK_WIDTH)), 1);
 
             for (int k=0; k<total_segment_bricks; k++) {
 
+                // TODO: debug my resampling of the curve along u value
                 float u1 = float(k) / float(total_segment_bricks);
                 float u2 = float(k+1) / float(total_segment_bricks);
 
-                vec3 subseg_p1 = ws_from_u(seg_p1, seg_p2, u1, seg_length);
-                vec3 subseg_p2 = ws_from_u(seg_p1, seg_p2, u2, seg_length);
+                vec3 subseg_p1 = curve_ws_from_segment_u(seg_p1, seg_p2, u1, seg_length);
+                vec3 subseg_p2 = curve_ws_from_segment_u(seg_p1, seg_p2, u2, seg_length);
 
-                if (false) {
-                    subseg_p1 = curve_ws_to_arch_ws(mix(seg_p1, seg_p2, 0.0)); 
-                    subseg_p2 = curve_ws_to_arch_ws(mix(seg_p1, seg_p2, 0.5)); 
-                }
+                //if (false) {
+                //    subseg_p1 = curve_ws_to_arch_ws(mix(seg_p1, seg_p2, 0.0)); 
+                //    subseg_p2 = curve_ws_to_arch_ws(mix(seg_p1, seg_p2, 0.5)); 
+                //}
 
                 vec3 pivot = (subseg_p1+subseg_p2) / 2.0;
 
-                float subseg_w = distance(subseg_p1, subseg_p2);//seg_length / float(total_segment_bricks);
+                float width = distance(subseg_p1, subseg_p2);
 
-                vec3 s = vec3(subseg_w, 0.15, 0.25);
+                vec3 s = vec3(width, 0.15, 0.25);
 
                 vec3 x = normalize(subseg_p2-subseg_p1);
                 vec3 z = normalize(cross(x, vec3(0.0, 1.0, 0.0)));

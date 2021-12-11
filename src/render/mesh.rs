@@ -37,6 +37,17 @@ impl Mesh {
     pub fn set_indices(&mut self, indices: Vec<u32>) {
         self.indices = indices;
     }
+
+    pub fn add_color(&mut self) {
+        let color_values = vec![
+            [1.0, 1.0, 1.0];
+            self.attributes
+                .get("Vertex_Position")
+                .unwrap()
+                .array_length()
+        ];
+        self.set_attribute(Mesh::ATTRIBUTE_COLOR, color_values);
+    }
 }
 
 pub enum VertexAttributeValues {
@@ -118,6 +129,16 @@ impl VertexAttributeValues {
                 self.size() * mem::size_of::<GLfloat>() as GLsizei
             }
             Self::Sint32(_) => self.size() * mem::size_of::<GLint>() as GLsizei,
+        }
+    }
+
+    pub fn array_length(&self) -> usize {
+        match self {
+            VertexAttributeValues::Sint32(v) => v.len(),
+            VertexAttributeValues::Float32(v) => v.len(),
+            VertexAttributeValues::Float32x2(v) => v.len(),
+            VertexAttributeValues::Float32x3(v) => v.len(),
+            VertexAttributeValues::Float32x4(v) => v.len(),
         }
     }
 }

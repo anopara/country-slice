@@ -488,6 +488,7 @@ dependencies = [
  "glutin",
  "hotwatch",
  "log",
+ "serde_json",
  "simple_logger",
 ]
 
