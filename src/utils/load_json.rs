@@ -27,6 +27,7 @@ pub fn load_json_as_mesh(path: &str) -> Result<Mesh, String> {
         .map(|v| v.as_str().unwrap())
         .collect();
 
+    // TODO: future Anastasia, if u r reading this and have nothing to do, clean this ugly copy-pasta, knthx!
     for attrib_name in attributes {
         dbg!(attrib_name);
         let strrr = format!("{}", v[attrib_name]["type"]);
