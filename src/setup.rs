@@ -94,6 +94,7 @@ pub fn setup_glutin_and_opengl(
     (windowed_context, el)
 }
 
+// from https://github.com/h3r2tic/rendertoy/blob/d84b56ba2a803affa7bfa19f07041e8dc93e71e2/src/lib.rs#L72
 extern "system" fn gl_debug_message(
     _source: u32,
     type_: u32,

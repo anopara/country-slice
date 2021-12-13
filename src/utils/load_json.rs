@@ -17,7 +17,6 @@ pub fn load_json_as_mesh(path: &str) -> Result<Mesh, String> {
         .iter()
         .map(|v| v.as_u64().unwrap() as u32)
         .collect();
-    dbg!(indices.len());
     mesh.set_indices(indices);
 
     // Read attributes
