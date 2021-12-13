@@ -29,7 +29,7 @@ pub fn load_json_as_mesh(path: &str) -> Result<Mesh, String> {
 
     // TODO: future Anastasia, if u r reading this and have nothing to do, clean this ugly copy-pasta, knthx!
     for attrib_name in attributes {
-        dbg!(attrib_name);
+        //dbg!(attrib_name);
         let strrr = format!("{}", v[attrib_name]["type"]);
         match strrr.as_ref() {
             r#"["float",4]"# => {
@@ -47,7 +47,7 @@ pub fn load_json_as_mesh(path: &str) -> Result<Mesh, String> {
                         [d[0], d[1], d[2], d[3]]
                     })
                     .collect();
-                dbg!(values.len());
+                //dbg!(values.len());
                 mesh.set_attribute(attrib_name, values)
             }
             r#"["float",3]"# => {
@@ -65,7 +65,7 @@ pub fn load_json_as_mesh(path: &str) -> Result<Mesh, String> {
                         [d[0], d[1], d[2]]
                     })
                     .collect();
-                dbg!(values.len());
+                //dbg!(values.len());
                 mesh.set_attribute(attrib_name, values)
             }
             r#"["int",1]"# => {
@@ -75,7 +75,7 @@ pub fn load_json_as_mesh(path: &str) -> Result<Mesh, String> {
                     .iter()
                     .map(|v| v.as_i64().unwrap() as i32)
                     .collect();
-                dbg!(values.len());
+                //dbg!(values.len());
                 mesh.set_attribute(attrib_name, values)
             }
             _ => {
