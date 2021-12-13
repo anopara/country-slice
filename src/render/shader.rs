@@ -122,16 +122,20 @@ impl ShaderProgram {
         let c_str = CString::new(name.as_bytes())
             .expect(&format!("Couldn't create a CString from {}", name));
         let location = gl::GetUniformLocation(self.id(), c_str.as_ptr());
-        match value {
-            GlUniform::Bool(value) => gl::Uniform1i(location, value as i32),
-            GlUniform::Int(value) => gl::Uniform1i(location, value),
-            GlUniform::Float(value) => gl::Uniform1f(location, value),
-            GlUniform::Vec3(v) => gl::Uniform3f(location, v[0], v[1], v[2]),
-            GlUniform::Vec4(v) => gl::Uniform4f(location, v[0], v[1], v[2], v[3]),
-            GlUniform::Mat4(matrix) => {
-                gl::UniformMatrix4fv(location, 1, gl::FALSE, matrix.as_ptr())
-            }
-        };
+        if location == -1 {
+            log::error!("Couldn't Get Uniform Location");
+        } else {
+            match value {
+                GlUniform::Bool(value) => gl::Uniform1i(location, value as i32),
+                GlUniform::Int(value) => gl::Uniform1i(location, value),
+                GlUniform::Float(value) => gl::Uniform1f(location, value),
+                GlUniform::Vec3(v) => gl::Uniform3f(location, v[0], v[1], v[2]),
+                GlUniform::Vec4(v) => gl::Uniform4f(location, v[0], v[1], v[2], v[3]),
+                GlUniform::Mat4(matrix) => {
+                    gl::UniformMatrix4fv(location, 1, gl::FALSE, matrix.as_ptr())
+                }
+            };
+        }
     }
 }
 
