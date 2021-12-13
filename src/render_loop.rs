@@ -35,7 +35,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
     unsafe {
         gl::DepthMask(gl::TRUE);
-
+        /*
         let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
         let test = ecs.get_resource::<ComputeTest>().unwrap();
         let wall_manager = ecs.get_resource::<WallManager>().unwrap();
@@ -124,6 +124,8 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let texture_buffer = test.texture;
 
+         */
+
         // MAIN PASS --------------------------------------------------------------------------------
 
         let (width, height) = ecs.get_resource::<WindowSize>().unwrap().try_into_i32();
@@ -154,7 +156,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         )>();
         let assets_vao = ecs.get_resource::<AssetVAOLibrary>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
-        let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
+        //let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
 
         let mut transparent_pass = Vec::new();
 
@@ -192,13 +194,13 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             // MEOWMEOWcheckforspecialtexture
             if test.is_some() {
-                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                //gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
             }
 
             // check if its a road
             if road.is_some() {
                 // bind road mask
-                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                //gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
                 // tell the shader that its not a wall (atm just re-use is_arch)
                 shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
             }
@@ -214,6 +216,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 shader.set_gl_uniform(name, GlUniform::Mat4(*transform));
             }
 
+            /*
             // check if its an indirect draw
             if indirect_draw.is_some() {
                 // used for disabling discarding of fragments
@@ -224,6 +227,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 gl::DrawElementsIndirect(gl::TRIANGLES, gl::UNSIGNED_INT, ptr::null());
                 continue;
             }
+            */
 
             let mode = gl_draw_flag.map(|c| c.0).unwrap_or(gl::TRIANGLES);
             if let Some(instanced_wall) = instanced_wall {
@@ -244,7 +248,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                     .bind(shader, "instanced_wall_data");
 
                 // bind compute shader texture
-                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                //gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
 
                 gl::DrawArraysInstanced(
                     mode,
@@ -272,7 +276,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             // bind road mask (ATM, only shadows have transparency pass, so we can just bind the texture)
             // TODO: in the future, need to check for whether its a shadow
-            gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+            //gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
 
             gl::BindVertexArray(vao.id());
 
