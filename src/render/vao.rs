@@ -74,35 +74,35 @@ fn build_vao(
         );
 
         for (name, attribute) in mesh.attributes.iter() {
-            // 3. for every attribute, generate a vbo
-            gl::GenBuffers(1, &mut vbo);
-            //println!("----------------- VBO ID is {}", vbo);
-            gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
-            gl::BufferData(
-                gl::ARRAY_BUFFER,
-                // the size of the data (in bytes)
-                attribute.size_in_bytes() as GLsizeiptr,
-                // pass the data
-                attribute.as_ptr(),
-                // GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
-                // GL_STATIC_DRAW: the data is set only once and used many times.
-                // GL_DYNAMIC_DRAW: the data is changed a lot and used many times.
-                // with data that is likely to change frequently, a usage type of GL_DYNAMIC_DRAW ensures the graphics card will place the data in memory that allows for faster writes.
-                gl::STATIC_DRAW,
-            );
-            // 4. then set our vertex attributes pointers
-            // tell OpenGL how to link the vertex data in VBO to the vertex shader's vertex attributes
-            /*
-            Each vertex attribute takes its data from memory managed by a VBO and
-            which VBO it takes its data from is determined by the VBO currently
-            bound to GL_ARRAY_BUFFER when calling glVertexAttribPointer. (you can have multiple VBOs).
-            Since the previously defined VBO is still bound before calling glVertexAttribPointer
-            vertex attribute 0 is now associated with its vertex data.
-            */
             let name_str = CString::new(name.as_str()).unwrap();
             let layout = gl::GetAttribLocation(shader_program_id.0, name_str.as_ptr());
             // Check if this attribute exists in the shader, otherwise, skip setting it
             if layout != -1 {
+                // 3. for every attribute, generate a vbo
+                gl::GenBuffers(1, &mut vbo);
+                //println!("----------------- VBO ID is {}", vbo);
+                gl::BindBuffer(gl::ARRAY_BUFFER, vbo);
+                gl::BufferData(
+                    gl::ARRAY_BUFFER,
+                    // the size of the data (in bytes)
+                    attribute.size_in_bytes() as GLsizeiptr,
+                    // pass the data
+                    attribute.as_ptr(),
+                    // GL_STREAM_DRAW: the data is set only once and used by the GPU at most a few times.
+                    // GL_STATIC_DRAW: the data is set only once and used many times.
+                    // GL_DYNAMIC_DRAW: the data is changed a lot and used many times.
+                    // with data that is likely to change frequently, a usage type of GL_DYNAMIC_DRAW ensures the graphics card will place the data in memory that allows for faster writes.
+                    gl::STATIC_DRAW,
+                );
+                // 4. then set our vertex attributes pointers
+                // tell OpenGL how to link the vertex data in VBO to the vertex shader's vertex attributes
+                /*
+                Each vertex attribute takes its data from memory managed by a VBO and
+                which VBO it takes its data from is determined by the VBO currently
+                bound to GL_ARRAY_BUFFER when calling glVertexAttribPointer. (you can have multiple VBOs).
+                Since the previously defined VBO is still bound before calling glVertexAttribPointer
+                vertex attribute 0 is now associated with its vertex data.
+                */
                 gl::VertexAttribPointer(
                     layout as u32,       // This sets the location of the vertex attribute to (layout = 0)
                     attribute.size(), // specifies the size of the vertex attribute. The position attribute is a vec3 so it is composed of 3 values
