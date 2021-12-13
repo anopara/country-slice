@@ -78,7 +78,7 @@ pub unsafe fn create_storage_buffer<T>(size: usize) -> u32 {
     // Unbind
     gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, 0);
 
-    log::debug!("Created a storage buffer {}", ssbo);
+    log::debug!("Created a new storage buffer, id: {}", ssbo);
 
     ssbo
 }
