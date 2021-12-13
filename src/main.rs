@@ -186,7 +186,7 @@ fn main() {
 
     let mut temp_shaderwatch = ShaderWatch::new();
     let mut temp_assets_shader = AssetShaderLibrary::new();
-    /*
+
     // COMPUTE SHADER INDIRECT DRAW  -------------------------------------------
     let compute_indirect_test = unsafe {
         // create shader program
@@ -299,16 +299,7 @@ fn main() {
         );
 
     systems::startup(&mut app.world_mut());
-        */
 
-    let mut app = App::build();
-    app.add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
-        .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
-        .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
-        .insert_resource(temp_shaderwatch)
-        .insert_resource(AssetMeshLibrary::new())
-        .insert_resource(AssetVAOLibrary::new())
-        .insert_resource(temp_assets_shader);
     // main loop
     // -----------
     event_loop.run(move |event, _, control_flow| {

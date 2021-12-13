@@ -71,7 +71,6 @@ pub fn startup(ecs: &mut World) {
         "indirect_instance_test",
         ecs,
     );
-    /*
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
             mesh: _brick,
@@ -94,7 +93,6 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::from_translation(Vec3::new(0.0, 0.1, 0.0)),
         })
         .insert(crate::RoadComponent);
-        */
 
     /*
     ecs.spawn()
@@ -104,7 +102,7 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::from_translation(Vec3::new(0.0, 0.005, 0.0)),
         })
         .insert(DisplayTestMask);
-
+        */
 
     // preview cube
     ecs.spawn()
@@ -114,7 +112,6 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::identity(),
         })
         .insert(MousePreviewCube);
-         */
 
     log::info!("Finished startup");
 }
