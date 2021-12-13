@@ -99,22 +99,23 @@ fn build_vao(
             Since the previously defined VBO is still bound before calling glVertexAttribPointer
             vertex attribute 0 is now associated with its vertex data.
             */
-
             let name_str = CString::new(name.as_str()).unwrap();
             let layout = gl::GetAttribLocation(shader_program_id.0, name_str.as_ptr());
-            gl::VertexAttribPointer(
-                layout as u32,       // This sets the location of the vertex attribute to (layout = 0)
-                attribute.size(), // specifies the size of the vertex attribute. The position attribute is a vec3 so it is composed of 3 values
-                attribute.gl_type(), //specifies the type of the data
-                gl::FALSE,        // specifies if we want the data to be normalized.
-                attribute.stride(), // the stride tells us the space between consecutive vertex attributes
-                ptr::null(), // the offset of where the position data begins in the buffer. Since the position data is at the start of the data array this value is just 0.
-            );
-            // enable the vertex attribute giving the vertex attribute location as its argument
-            gl::EnableVertexAttribArray(layout as u32);
-            vbos.push(GLVertexBuffer(vbo));
+            // Check if this attribute exists in the shader, otherwise, skip setting it
+            if layout != -1 {
+                gl::VertexAttribPointer(
+                    layout as u32,       // This sets the location of the vertex attribute to (layout = 0)
+                    attribute.size(), // specifies the size of the vertex attribute. The position attribute is a vec3 so it is composed of 3 values
+                    attribute.gl_type(), //specifies the type of the data
+                    gl::FALSE,        // specifies if we want the data to be normalized.
+                    attribute.stride(), // the stride tells us the space between consecutive vertex attributes
+                    ptr::null(), // the offset of where the position data begins in the buffer. Since the position data is at the start of the data array this value is just 0.
+                );
+                // enable the vertex attribute giving the vertex attribute location as its argument
+                gl::EnableVertexAttribArray(layout as u32);
+                vbos.push(GLVertexBuffer(vbo));
+            }
         }
     }
-
     (GLVertexArray(vao), vbos)
 }
