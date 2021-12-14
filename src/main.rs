@@ -139,10 +139,10 @@ impl ComputeDrawIndirectTest {
             self.transforms_buffer.bind(&shader, "transforms_buffer");
 
             // bind road mask
-            let uniform_name = std::ffi::CString::new("road_mask").unwrap();
-            let tex_location =
-                gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
-            gl::Uniform1ui(tex_location, road_mask_img_unit);
+            shader.set_gl_uniform(
+                "road_mask",
+                render::shader::GlUniform::Int(road_mask_img_unit as i32),
+            );
             // bind texture
             gl::BindImageTexture(
                 road_mask_img_unit,
