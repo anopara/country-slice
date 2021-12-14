@@ -1,12 +1,11 @@
 use bevy_ecs::{component::Component, prelude::*};
-use glam::Vec3;
 
 use crate::asset_libraries::Handle;
 use crate::components::drawable::DrawableMeshBundle;
 use crate::components::transform::Transform;
 use crate::geometry::cube::Cube;
 use crate::utils::load_json::load_json_as_mesh;
-use crate::{DisplayTestMask, IndirectDraw};
+use crate::IndirectDraw;
 
 use crate::geometry::plane::Plane;
 use crate::{
@@ -39,7 +38,7 @@ pub fn startup(ecs: &mut World) {
         ecs,
     );
     let road_shader = load_shader_into_library(
-        "shaders/road.vert",
+        "shaders/paths.vert",
         "shaders/vertex_color.frag",
         "road_shader",
         ecs,

@@ -18,11 +18,10 @@ use crate::render::{
     shader::{GlUniform, ShaderProgram},
     vao::VAO,
 };
-use crate::systems::draw_wall::WallManager;
+use crate::resources::{DrawElementsIndirectCommand, WallManager};
 use crate::window_events::WindowSize;
 use crate::{
-    ComputeDrawIndirectTest, ComputeTest, CursorRaycast, DisplayTestMask,
-    DrawElementsIndirectCommand, IndirectDraw,
+    ComputeArchesIndirect, ComputePathsMask, CursorRaycast, DisplayTestMask, IndirectDraw,
 };
 
 use crate::utils::custom_macro::log_if_error;
@@ -38,8 +37,8 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
     unsafe {
         gl::DepthMask(gl::TRUE);
 
-        let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
-        let test = ecs.get_resource::<ComputeTest>().unwrap();
+        let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
+        let test = ecs.get_resource::<ComputePathsMask>().unwrap();
         let wall_manager = ecs.get_resource::<WallManager>().unwrap();
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -88,7 +87,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         // COMPUTE SHADER PASS -----------------------------------------------------------------------
 
-        let test = ecs.get_resource::<ComputeTest>().unwrap();
+        let test = ecs.get_resource::<ComputePathsMask>().unwrap();
         let mouse = ecs.get_resource::<CursorRaycast>().unwrap();
         let mouse_button_input = ecs.get_resource::<Input<MouseButton>>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -158,7 +157,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         )>();
         let assets_vao = ecs.get_resource::<AssetVAOLibrary>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
-        let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
+        let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
 
         let mut transparent_pass = Vec::new();
 

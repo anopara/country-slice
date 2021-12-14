@@ -1,8 +1,6 @@
-use gl::types::*;
 use glam::Mat4;
-use std::{ffi::CString, marker::PhantomData, os::raw::c_char, ptr};
 
-use crate::render::{shader::ShaderProgram, ssbo::GLShaderStorageBuffer};
+use crate::render::ssbo::GLShaderStorageBuffer;
 
 use super::wall_constructor::Brick;
 

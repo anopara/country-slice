@@ -4,25 +4,10 @@ use bevy_input::{mouse::MouseButton, Input};
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::AssetShaderLibrary, Handle},
     components::{drawable::DrawableMeshBundle, transform::Transform},
-    geometry::{curve::Curve, instanced_wall::*, shadow_decal::ShadowDecal, wall_constructor::*},
+    geometry::{instanced_wall::*, shadow_decal::ShadowDecal, wall_constructor::*},
     render::mesh::Mesh,
+    resources::WallManager,
 };
-
-pub struct WallManager {
-    pub curves: Vec<(Curve, Option<Entity>)>,
-    pub walls: Vec<Entity>,
-    pub shadows: Vec<Entity>,
-}
-
-impl WallManager {
-    pub fn new() -> Self {
-        Self {
-            curves: Vec::new(),
-            walls: Vec::new(),
-            shadows: Vec::new(),
-        }
-    }
-}
 
 pub fn walls_update(
     mouse_button_input: Res<Input<MouseButton>>,
