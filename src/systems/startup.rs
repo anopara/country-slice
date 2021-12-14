@@ -22,14 +22,14 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
 pub fn startup(ecs: &mut World) {
     // Load meshes
     let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
-    //let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
+    let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
     let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
-    //let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
+    let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
 
-    //let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
-    //road_pebbles_mesh.add_color();
-    //road_pebbles_mesh.add_uv();
-    //let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
+    let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
+    road_pebbles_mesh.add_color();
+    road_pebbles_mesh.add_uv();
+    let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
 
     // Load shaders
     let vert_color = load_shader_into_library(
@@ -38,7 +38,6 @@ pub fn startup(ecs: &mut World) {
         "vertex_color_shader",
         ecs,
     );
-    /*
     let road_shader = load_shader_into_library(
         "shaders/road.vert",
         "shaders/vertex_color.frag",
@@ -64,10 +63,8 @@ pub fn startup(ecs: &mut World) {
         "shadow_shader",
         ecs,
     );
-    */
 
     // indirect draw test
-    /*
     let indirect_test = load_shader_into_library(
         "shaders/instanced_wall_arch.vert",
         "shaders/instanced_wall.frag",
@@ -81,7 +78,6 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::identity(),
         })
         .insert(IndirectDraw);
-         */
 
     // Create the starting scene
     ecs.spawn().insert_bundle(DrawableMeshBundle {
@@ -90,7 +86,6 @@ pub fn startup(ecs: &mut World) {
         transform: Transform::identity(),
     });
 
-    /*
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
             mesh: road_pebbles,
@@ -99,14 +94,15 @@ pub fn startup(ecs: &mut World) {
         })
         .insert(crate::RoadComponent);
 
+    /*
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
-            mesh: _plane,
-            shader: _test,
+            mesh: plane,
+            shader: test,
             transform: Transform::from_translation(Vec3::new(0.0, 0.005, 0.0)),
         })
         .insert(DisplayTestMask);
-       */
+        */
 
     // preview cube
     ecs.spawn()
