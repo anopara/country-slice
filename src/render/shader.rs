@@ -118,12 +118,12 @@ impl ShaderProgram {
     /// utility uniform function
     /// ------------------------------------------------------------------------
     #[inline(always)]
-    pub unsafe fn set_gl_uniform(&self, name: &str, value: GlUniform) {
+    pub unsafe fn set_gl_uniform(&self, name: &str, value: GlUniform) -> Result<(), String> {
         let c_str = CString::new(name.as_bytes())
             .expect(&format!("Couldn't create a CString from {}", name));
         let location = gl::GetUniformLocation(self.id(), c_str.as_ptr());
         if location == -1 {
-            log::error!("Couldn't Get Uniform Location");
+            return Err(format!("Couldn't Get Uniform Location {}", name));
         } else {
             match value {
                 GlUniform::Bool(value) => gl::Uniform1i(location, value as i32),
@@ -136,6 +136,7 @@ impl ShaderProgram {
                 }
             };
         }
+        Ok(())
     }
 }
 

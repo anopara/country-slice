@@ -17,7 +17,7 @@ layout (std430, binding=2) buffer transforms_buffer {
     mat4 transforms[];
 };
 
-uniform mat4 model;
+//uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 

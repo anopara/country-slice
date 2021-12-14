@@ -25,6 +25,8 @@ use crate::{
     DrawElementsIndirectCommand, IndirectDraw,
 };
 
+use crate::utils::custom_macro::log_if_error;
+
 use crate::components::{drawable::GLDrawMode, transform::Transform};
 
 pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCurrent, Window>) {
@@ -113,7 +115,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 gl::RGBA32F,
             );
 
-            shader.set_gl_uniform("Mouse_Position", GlUniform::Vec3(mouse.0.to_array()));
+            log_if_error!(
+                shader.set_gl_uniform("Mouse_Position", GlUniform::Vec3(mouse.0.to_array()))
+            );
             gl::DispatchCompute(test.texture_dims.0 as u32, test.texture_dims.1 as u32, 1);
 
             _img_unit += 1;
@@ -189,6 +193,10 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             // Render
             shader.gl_use_program();
+            //println!(
+            //    "Using shader with name {:?}",
+            //    assets_shader.debug_get_name(*shader_handle)
+            //);
 
             // MEOWMEOWcheckforspecialtexture
             if test.is_some() {
@@ -199,8 +207,8 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             if road.is_some() {
                 // bind road mask
                 gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
-                // tell the shader that its not a wall (atm just re-use is_arch)
-                shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
+                // TODO: when we used the `instanced_wall.frag` for shading, re-enable this
+                //shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
             }
 
             gl::BindVertexArray(vao.id());
@@ -211,32 +219,35 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 ("view", view_transform.to_cols_array()),
                 ("projection", projection_transform.to_cols_array()),
             ] {
-                shader.set_gl_uniform(name, GlUniform::Mat4(*transform));
+                // it's OK if the shader is not using one of these uniforms, that's not an error
+                let _result = shader.set_gl_uniform(name, GlUniform::Mat4(*transform));
             }
 
             // check if its an indirect draw
             if indirect_draw.is_some() {
                 // used for disabling discarding of fragments
-                shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
+                log_if_error!(shader.set_gl_uniform("is_arch", GlUniform::Bool(true)));
                 indirect_test
                     .transforms_buffer
                     .bind(&shader, "transforms_buffer");
                 gl::DrawElementsIndirect(gl::TRIANGLES, gl::UNSIGNED_INT, ptr::null());
+
                 continue;
             }
 
             let mode = gl_draw_flag.map(|c| c.0).unwrap_or(gl::TRIANGLES);
             if let Some(instanced_wall) = instanced_wall {
                 // Set wall uniforms
-                shader.set_gl_uniform(
+                log_if_error!(shader.set_gl_uniform(
                     "camera_position",
                     GlUniform::Vec3(camera_position.to_array()),
-                );
+                ));
 
-                shader.set_gl_uniform("wall_length", GlUniform::Float(instanced_wall.wall_length));
+                log_if_error!(shader
+                    .set_gl_uniform("wall_length", GlUniform::Float(instanced_wall.wall_length)));
 
                 // used for disabling discarding of fragments
-                shader.set_gl_uniform("is_arch", GlUniform::Bool(false));
+                log_if_error!(shader.set_gl_uniform("is_arch", GlUniform::Bool(false)));
 
                 // bind to shader
                 instanced_wall
@@ -270,7 +281,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             // Render
             shader.gl_use_program();
 
-            // bind road mask (ATM, only shadows have transparency pass, so we can just bind the texture)
+            // atm, I'm just binding the road mask to anything in transparency pass (ATM, only shadows have transparency pass, so we can just bind the texture)
             // TODO: in the future, need to check for whether its a shadow
             gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
 
@@ -282,7 +293,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 ("view", view_transform.to_cols_array()),
                 ("projection", projection_transform.to_cols_array()),
             ] {
-                shader.set_gl_uniform(name, GlUniform::Mat4(*transform));
+                let _result = shader.set_gl_uniform(name, GlUniform::Mat4(*transform));
             }
 
             gl::DrawElements(
