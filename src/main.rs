@@ -17,6 +17,7 @@ use render::shaderwatch::*;
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
 use crate::systems::*;
+use crate::utils::custom_macro::log_if_error;
 
 mod asset_libraries;
 mod components;
@@ -139,10 +140,10 @@ impl ComputeDrawIndirectTest {
             self.transforms_buffer.bind(&shader, "transforms_buffer");
 
             // bind road mask
-            shader.set_gl_uniform(
+            log_if_error!(shader.set_gl_uniform(
                 "road_mask",
                 render::shader::GlUniform::Int(road_mask_img_unit as i32),
-            );
+            ));
             // bind texture
             gl::BindImageTexture(
                 road_mask_img_unit,
@@ -292,11 +293,12 @@ fn main() {
         .add_system_to_stage(
             "main_singlethread",
             update_curve_ssbo.system().after("usercurve"),
-        )
-        .add_system_to_stage(
-            "main_singlethread",
-            walls_update.system().after("usercurve"),
         );
+
+    //.add_system_to_stage(
+    //    "main_singlethread",
+    //    walls_update.system().after("usercurve"),
+    //);
 
     systems::startup(&mut app.world_mut());
 

@@ -62,4 +62,13 @@ impl AssetShaderLibrary {
         let handle = self.by_name.get(&String::from(name))?;
         Some(*handle)
     }
+
+    pub fn debug_get_name(&self, handle: Handle<ShaderProgram>) -> Option<String> {
+        for (name, v) in self.by_name.iter() {
+            if v.id == handle.id {
+                return Some(name.clone());
+            }
+        }
+        None
+    }
 }

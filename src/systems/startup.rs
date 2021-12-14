@@ -90,7 +90,7 @@ pub fn startup(ecs: &mut World) {
         .insert_bundle(DrawableMeshBundle {
             mesh: road_pebbles,
             shader: road_shader,
-            transform: Transform::from_translation(Vec3::new(0.0, 0.1, 0.0)),
+            transform: Transform::identity(),
         })
         .insert(crate::RoadComponent);
 
