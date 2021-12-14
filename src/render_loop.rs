@@ -39,6 +39,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let indirect_test = ecs.get_resource::<ComputeDrawIndirectTest>().unwrap();
         let test = ecs.get_resource::<ComputeTest>().unwrap();
         let wall_manager = ecs.get_resource::<WallManager>().unwrap();
+
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
 
@@ -192,13 +193,13 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             // MEOWMEOWcheckforspecialtexture
             if test.is_some() {
-                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                //gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
             }
 
             // check if its a road
             if road.is_some() {
                 // bind road mask
-                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                //gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
                 // tell the shader that its not a wall (atm just re-use is_arch)
                 shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
             }
@@ -244,7 +245,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                     .bind(shader, "instanced_wall_data");
 
                 // bind compute shader texture
-                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                // gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
 
                 gl::DrawArraysInstanced(
                     mode,
@@ -272,7 +273,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             // bind road mask (ATM, only shadows have transparency pass, so we can just bind the texture)
             // TODO: in the future, need to check for whether its a shadow
-            gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+            //gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
 
             gl::BindVertexArray(vao.id());
 

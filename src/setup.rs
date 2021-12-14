@@ -22,7 +22,7 @@ pub fn setup_glutin_and_opengl(
 
     let windowed_context = ContextBuilder::new()
         .with_gl_profile(GlProfile::Core)
-        .with_gl_debug_flag(false)
+        .with_gl_debug_flag(true)
         .with_vsync(true)
         .with_multisampling(4)
         .build_windowed(wb, &el)
@@ -125,7 +125,7 @@ extern "system" fn gl_debug_message(
             if !is_important_type {
                 log::warn!("GL debug({}): {}\n", id, s.to_string_lossy());
             } else {
-                log::warn!(
+                log::error!(
                     "OpenGL Debug message ({}, {:x}, {:x}): {}",
                     id,
                     type_,

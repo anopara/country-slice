@@ -73,7 +73,7 @@ pub unsafe fn create_storage_buffer<T>(size: usize) -> u32 {
         gl::SHADER_STORAGE_BUFFER,
         (std::mem::size_of::<T>() * size) as GLsizeiptr,
         ptr::null(),
-        gl::STATIC_DRAW,
+        gl::DYNAMIC_DRAW,
     );
     // Unbind
     gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, 0);

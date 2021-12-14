@@ -16,6 +16,7 @@ use render::shader::ShaderProgram;
 use render::shaderwatch::*;
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
+use crate::render::shader::GlUniform;
 use crate::systems::*;
 
 mod asset_libraries;
@@ -116,7 +117,6 @@ impl ComputeDrawIndirectTest {
 
             // bind command buffer
             //from: https://lingtorp.com/2018/12/05/OpenGL-SSBO-indirect-drawing.html
-
             let c_str = std::ffi::CString::new("draw_commands").unwrap();
             let block_index = gl::GetProgramResourceIndex(
                 shader.id(),
@@ -139,10 +139,7 @@ impl ComputeDrawIndirectTest {
             self.transforms_buffer.bind(&shader, "transforms_buffer");
 
             // bind road mask
-            let uniform_name = std::ffi::CString::new("road_mask").unwrap();
-            let tex_location =
-                gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
-            gl::Uniform1ui(tex_location, road_mask_img_unit);
+            shader.set_gl_uniform("road_mask", GlUniform::Int(road_mask_img_unit as i32));
             // bind texture
             gl::BindImageTexture(
                 road_mask_img_unit,
@@ -285,19 +282,19 @@ fn main() {
         .add_system_to_stage("opengl", shaderwatch.system().label("reload_shaders"))
         .add_system_to_stage("opengl", build_missing_vaos.system().label("build_vaos"))
         .add_system_to_stage("opengl", rebuild_vaos.system().after("build_vaos"))
-        //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
-        .add_system(draw_curve.system().label("usercurve"))
-        .add_system_to_stage(
-            "main_singlethread",
-            update_curve_ssbo.system().after("usercurve"),
-        )
-        .add_system_to_stage(
-            "main_singlethread",
-            walls_update.system().after("usercurve"),
-        );
-
+        .add_system(draw_curve.system().label("usercurve"));
+    /*
+       .add_system_to_stage(
+           "main_singlethread",
+           update_curve_ssbo.system().after("usercurve"),
+       )
+       .add_system_to_stage(
+           "main_singlethread",
+           walls_update.system().after("usercurve"),
+       );
+    */
     systems::startup(&mut app.world_mut());
 
     // main loop
