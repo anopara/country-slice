@@ -24,7 +24,7 @@ impl ComputeArchesIndirect {
         unsafe {
             // create shader program
             let shader_program =
-                ShaderProgram::new_compute("shaders/indirect_draw_test.glsl").unwrap();
+                ShaderProgram::new_compute("shaders/indirect_draw_test.comp").unwrap();
             shaderwatch.watch(&shader_program);
             let handle = assets_library.add(shader_program.into());
 
