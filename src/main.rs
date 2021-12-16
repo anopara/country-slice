@@ -57,7 +57,6 @@ fn main() {
     let (mut windowed_context, event_loop) =
         setup::setup_glutin_and_opengl((SCR_WIDTH, SCR_HEIGHT));
 
-    // Validate shaders
     if VALIDATE_SHADERS {
         utils::validate_shaders("shaders/");
         log::info!("Shader validation complete");
