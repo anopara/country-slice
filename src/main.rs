@@ -5,6 +5,7 @@ use asset_libraries::vao_library::AssetVAOLibrary;
 use bevy_app::App;
 use bevy_ecs::prelude::*;
 
+use components::CursorRaycast;
 use glam::Vec3;
 use glutin::event_loop::ControlFlow;
 
@@ -36,20 +37,7 @@ const SCR_HEIGHT: u32 = 1200;
 
 const VALIDATE_SHADERS: bool = true;
 
-// Mark the cube that is the preview of mouse raycast intersection
-pub struct MousePreviewCube;
-
-pub struct CursorRaycast(pub Vec3);
-
-pub struct DisplayTestMask;
-
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
-
-// component
-struct IndirectDraw;
-
-//
-struct RoadComponent;
 
 fn main() {
     simple_logger::SimpleLogger::new().init().unwrap();

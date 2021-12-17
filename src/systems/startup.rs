@@ -1,17 +1,14 @@
 use bevy_ecs::{component::Component, prelude::*};
 
 use crate::asset_libraries::Handle;
-use crate::components::drawable::DrawableMeshBundle;
-use crate::components::transform::Transform;
+use crate::components::*;
 use crate::geometry::cube::Cube;
 use crate::utils::load_json::load_json_as_mesh;
-use crate::IndirectDraw;
 
 use crate::geometry::plane::Plane;
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::AssetShaderLibrary, Asset},
     render::{mesh::Mesh, shader::ShaderProgram, shaderwatch::ShaderWatch},
-    MousePreviewCube,
 };
 
 pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
@@ -91,7 +88,7 @@ pub fn startup(ecs: &mut World) {
             shader: road_shader,
             transform: Transform::identity(),
         })
-        .insert(crate::RoadComponent);
+        .insert(RoadComponent);
 
     /*
     ecs.spawn()

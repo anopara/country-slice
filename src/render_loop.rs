@@ -11,7 +11,7 @@ use glutin::{window::Window, ContextWrapper, PossiblyCurrent};
 use crate::asset_libraries::{
     shader_library::AssetShaderLibrary, vao_library::AssetVAOLibrary, Handle,
 };
-use crate::components::drawable::TransparencyPass;
+use crate::components::*;
 use crate::geometry::instanced_wall::InstancedWall;
 use crate::render::{
     camera::MainCamera,
@@ -20,9 +20,7 @@ use crate::render::{
 };
 use crate::resources::{DrawElementsIndirectCommand, WallManager};
 use crate::window_events::WindowSize;
-use crate::{
-    ComputeArchesIndirect, ComputePathsMask, CursorRaycast, DisplayTestMask, IndirectDraw,
-};
+use crate::{ComputeArchesIndirect, ComputePathsMask, CursorRaycast};
 
 use crate::utils::custom_macro::log_if_error;
 
@@ -153,7 +151,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             Option<&DisplayTestMask>,
             Option<&TransparencyPass>,
             Option<&IndirectDraw>,
-            Option<&crate::RoadComponent>,
+            Option<&RoadComponent>,
         )>();
         let assets_vao = ecs.get_resource::<AssetVAOLibrary>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
