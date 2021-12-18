@@ -12,7 +12,9 @@ use glutin::event_loop::ControlFlow;
 use render::camera::MainCamera;
 
 use render::shaderwatch::*;
-use resources::{ComputeArchesIndirect, ComputePathsMask, CurveDataSSBO, WallManager};
+use resources::{
+    ComputeArchesIndirect, ComputePathsMask, CurveDataSSBO, CurveSegmentsComputePass, WallManager,
+};
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
 use crate::systems::*;
@@ -55,6 +57,8 @@ fn main() {
 
     // COMPUTE SHADERS -------------------------------------------
     let compute_paths_mask = ComputePathsMask::init(&mut temp_shaderwatch, &mut temp_assets_shader);
+    let compute_curve_segments =
+        CurveSegmentsComputePass::init(&mut temp_shaderwatch, &mut temp_assets_shader);
     let compute_arches_indirect =
         ComputeArchesIndirect::init(&mut temp_shaderwatch, &mut temp_assets_shader);
 
@@ -73,7 +77,8 @@ fn main() {
         .insert_resource(AssetVAOLibrary::new())
         .insert_resource(temp_assets_shader)
         .insert_resource(compute_paths_mask) //TODO: Rename
-        .insert_resource(compute_arches_indirect) // TEST
+        .insert_resource(compute_arches_indirect)
+        .insert_resource(compute_curve_segments)
         .add_stage_after(
             bevy_app::CoreStage::PreUpdate,
             "opengl",

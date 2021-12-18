@@ -45,7 +45,7 @@ impl CurveSegmentsComputePass {
         unsafe {
             // create shader program
             let shader_program =
-                ShaderProgram::new_compute("shaders/process_curve_segments.comp").unwrap();
+                ShaderProgram::new_compute("shaders/arch_curve_segments.comp").unwrap();
             shaderwatch.watch(&shader_program);
             let handle = assets_library.add(shader_program.into());
 
@@ -89,7 +89,7 @@ impl CurveSegmentsComputePass {
             // bind command buffer
             //from: https://lingtorp.com/2018/12/05/OpenGL-SSBO-indirect-drawing.html
 
-            let c_str = std::ffi::CString::new("draw_commands").unwrap();
+            let c_str = std::ffi::CString::new("dispatch_indirect").unwrap();
             let block_index = gl::GetProgramResourceIndex(
                 shader.id(),
                 gl::SHADER_STORAGE_BLOCK,
@@ -149,7 +149,7 @@ impl CurveSegmentsComputePass {
 
     pub fn reset_segments_buffer(&self) {
         unsafe {
-            let data = &[ArchSegmentDataSSBO::default(); 10000];
+            let data = &[ArchSegmentDataSSBO::default(); 1000];
             gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.segments_buffer.gl_id());
             let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
 

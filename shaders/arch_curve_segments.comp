@@ -1,0 +1,78 @@
+#version 430
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(rgba32f) uniform image2D road_mask;
+
+// Same as the OpenGL defined struct: DrawElementsIndirectCommand
+struct DispatchIndirectCommand {
+    uint num_groups_x;
+    uint num_groups_y;
+    uint num_groups_z;
+};
+
+
+layout(std140, binding = 5) buffer dispatch_indirect {
+    DispatchIndirectCommand cmds[];
+};
+
+struct CurveData {
+    uint points_count;
+    uint pad0;
+    uint pad1;
+    uint pad2;
+    vec4 positions[1000];
+};
+
+layout (std430, binding=3) buffer curves_buffer { 
+    CurveData curves[];
+};
+
+struct ArchSegmentData {
+    vec2 start;
+    vec2 end;
+};
+
+layout (std430, binding=4) buffer output_segments_buffer { 
+    ArchSegmentData segs[];
+};
+
+// -------------------------------------------
+
+ivec2 ws_pos_to_pixel_coord(vec3 ws_pos, ivec2 img_dims) {
+    // the img is from -10 to 10 in world space TODO: this should be a uniform coming from a struct on CPU side...
+    vec2 texture_uv = (ws_pos / 20.0 + 0.5).xz;
+    return ivec2(texture_uv.x * img_dims.x, texture_uv.y * img_dims.y);
+}
+
+float position_ws_to_roadmask_value(vec3 position, ivec2 dims) {
+    ivec2 pixel_coord = ws_pos_to_pixel_coord(position, dims);
+    return imageLoad(road_mask, pixel_coord).x;
+}
+
+// -------------------------------------------
+
+void main() {
+    ivec2 dims = imageSize(road_mask);
+    const uint idx = gl_GlobalInvocationID.x;
+    uint curve_npt = curves[idx].points_count;
+
+    if (curve_npt < 2) {
+        return;
+    }
+
+    for (int i=0; i<curve_npt-1; i++) {
+         // get curve segment positions
+        vec3 p1 = curves[idx].positions[i].xyz;
+        vec3 p2 = curves[idx].positions[i+1].xyz;
+
+        // get heights
+        float height_1 = position_ws_to_roadmask_value(p1, dims);
+        float height_2 = position_ws_to_roadmask_value(p2, dims);
+
+        if (height_1 > 0 || height_2 > 0 ) {
+            // add this segment data to storage buffer and indirect dispatch
+            uint storage_offset = atomicAdd(cmds[0].num_groups_x, 1);
+            segs[storage_offset].start = p1.xz;
+            segs[storage_offset].end = p2.xz;
+        }
+    } 
+}
