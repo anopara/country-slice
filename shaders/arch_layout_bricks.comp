@@ -1,0 +1,62 @@
+#version 430
+layout(local_size_x = 1, local_size_y = 1) in;
+layout(rgba32f) uniform image2D road_mask;
+
+// Same as the OpenGL defined struct: DrawElementsIndirectCommand
+struct DrawCommand {
+    uint count;         // Num elements (vertices)
+    uint instanceCount; // Number of instances to draw (a.k.a primcount)
+    uint firstIndex;    // Specifies a byte offset (cast to a pointer type) into the buffer bound to GL_ELEMENT_ARRAY_BUFFER to start reading indices from.
+    uint baseVertex;    // Specifies a constant that should be added to each element of indices​ when chosing elements from the enabled vertex arrays.
+    uint baseInstance;  // Specifies the base instance for use in fetching instanced vertex attributes.
+};
+
+// Command buffer backed by a Shader Storage Object Buffer (SSBO)
+layout(std140, binding = 0) writeonly buffer draw_commands {
+    DrawCommand cmds[];
+};
+
+layout (std430, binding=2) buffer transforms_buffer { 
+    mat4 transforms[];
+};
+
+struct ArchSegmentData {
+    vec2 start;
+    vec2 end;
+};
+
+layout (std430, binding=4) buffer segments_buffer { 
+    ArchSegmentData segs[];
+};
+
+
+void main() {
+    uint idx = gl_GlobalInvocationID.x;
+    // dummy for error to go away
+    imageLoad(road_mask, ivec2(0.0, 0.0));
+
+    // TEST just put bricks on top of segments
+    vec2 start_pos = segs[idx].start;
+    vec2 end_pos = segs[idx].end;
+
+    uint instance_offset = atomicAdd(cmds[0].instanceCount, 2);
+
+    mat4 translate = transpose(mat4(
+        0.1, 0.0, 0.0, start_pos.x, 
+        0.0, 0.1, 0.0, 0.0, //float(idx) / 10.0, 
+        0.0, 0.0, 0.1, start_pos.y, 
+        0.0, 0.0, 0.0, 1.0
+    ));
+
+    transforms[instance_offset] = translate;
+    instance_offset += 1;
+
+    translate = transpose(mat4(
+        0.1, 0.0, 0.0, end_pos.x, 
+        0.0, 0.1, 0.0, 0.0, //float(idx)/ 10.0, 
+        0.0, 0.0, 0.1, end_pos.y, 
+        0.0, 0.0, 0.0, 1.0
+    ));
+
+    transforms[instance_offset] = translate;
+}

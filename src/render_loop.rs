@@ -81,7 +81,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         }
 
         // For debugging, reset the transform buffer
-        /*
         {
             //log::debug!("Resetting transform buffer...");
             let data = &[glam::Mat4::IDENTITY; 10000];
@@ -97,12 +96,18 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             dst.copy_from_slice(data);
             gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
         }
-        */
 
-        indirect_test.bind(assets_shader, test.texture, _img_unit); // use shader & bind command buffer & bind transforms buffer & bind road mask
+        indirect_test.bind(
+            assets_shader,
+            &compute_curve_segments.segments_buffer,
+            test.texture,
+            _img_unit,
+        ); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
         // bind compute road texture
-        gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
+        gl::DispatchComputeIndirect(0);
+        //gl::DispatchCompute(1, 1, 1);
+        //gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
 
         // COMPUTE SHADER PASS -----------------------------------------------------------------------

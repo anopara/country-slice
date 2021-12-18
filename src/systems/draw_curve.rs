@@ -13,7 +13,7 @@ use crate::{
     CursorRaycast,
 };
 
-const CURVE_SHOW_DEBUG: bool = false;
+const CURVE_SHOW_DEBUG: bool = true;
 
 pub fn draw_curve(
     mut query: Query<&Handle<Mesh>>,

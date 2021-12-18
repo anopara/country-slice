@@ -25,7 +25,7 @@ pub struct ArchSegmentDataSSBO {
 impl Default for ArchSegmentDataSSBO {
     fn default() -> Self {
         ArchSegmentDataSSBO {
-            start: [0.0, -1.0],
+            start: [0.0, 0.0],
             end: [0.0, -1.0],
         }
     }

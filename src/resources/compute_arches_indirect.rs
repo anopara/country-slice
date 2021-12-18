@@ -24,7 +24,7 @@ impl ComputeArchesIndirect {
         unsafe {
             // create shader program
             let shader_program =
-                ShaderProgram::new_compute("shaders/indirect_draw_test.comp").unwrap();
+                ShaderProgram::new_compute("shaders/arch_layout_bricks.comp").unwrap(); //indirect_draw_test
             shaderwatch.watch(&shader_program);
             let handle = assets_library.add(shader_program.into());
 
@@ -56,6 +56,7 @@ impl ComputeArchesIndirect {
     pub fn bind(
         &self,
         assets_shader: &AssetShaderLibrary,
+        segments_buffer: &GLShaderStorageBuffer<super::ArchSegmentDataSSBO>,
         road_mask: u32,
         road_mask_img_unit: u32,
     ) {
@@ -101,7 +102,10 @@ impl ComputeArchesIndirect {
             );
 
             // bind curve ssbo
-            self.curves_buffer.bind(shader, "curves_buffer");
+            //self.curves_buffer.bind(shader, "curves_buffer");
+
+            // bind segments buffer
+            segments_buffer.bind(&shader, "segments_buffer");
         }
     }
 }
@@ -142,10 +146,10 @@ impl CurveDataSSBO {
 
         Self {
             points_count,
-            positions,
             pad0: 0,
             pad1: 0,
             pad2: 0,
+            positions,
         }
     }
 }
