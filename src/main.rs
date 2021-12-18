@@ -35,7 +35,7 @@ mod window_events;
 const SCR_WIDTH: u32 = 1600;
 const SCR_HEIGHT: u32 = 1200;
 
-const VALIDATE_SHADERS: bool = true;
+const VALIDATE_SHADERS: bool = false;
 
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
 

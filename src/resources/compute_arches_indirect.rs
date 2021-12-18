@@ -11,8 +11,8 @@ const COMMAND_BUFFER_SIZE: usize = 1000;
 
 pub struct ComputeArchesIndirect {
     pub compute_program: Handle<ShaderProgram>,
-    pub command_buffer: u32,
-    pub command_buffer_binding_point: u32,
+    pub draw_indirect_cmd_buffer: u32, //draw indirect
+    pub cmd_buffer_binding_point: u32,
     //
     pub transforms_buffer: GLShaderStorageBuffer<glam::Mat4>,
     //
@@ -40,13 +40,13 @@ impl ComputeArchesIndirect {
                 (std::mem::size_of::<DrawElementsIndirectCommand>() * COMMAND_BUFFER_SIZE)
                     as GLsizeiptr,
                 std::ptr::null(),
-                gl::MAP_READ_BIT | gl::MAP_WRITE_BIT, // do I need write here to if I'm to write into that storage?
+                gl::MAP_READ_BIT | gl::MAP_WRITE_BIT,
             );
 
             ComputeArchesIndirect {
                 compute_program: handle,
-                command_buffer: ibo,
-                command_buffer_binding_point: 0,
+                draw_indirect_cmd_buffer: ibo,
+                cmd_buffer_binding_point: 0,
                 transforms_buffer: GLShaderStorageBuffer::<glam::Mat4>::new(&vec![], 10000, 2),
                 curves_buffer: GLShaderStorageBuffer::<CurveDataSSBO>::new(&vec![], 1000, 3),
             }
@@ -73,16 +73,12 @@ impl ComputeArchesIndirect {
                 gl::SHADER_STORAGE_BLOCK,
                 c_str.as_ptr() as *const std::os::raw::c_char,
             );
-            gl::ShaderStorageBlockBinding(
-                shader.id(),
-                block_index,
-                self.command_buffer_binding_point,
-            );
-            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.command_buffer);
+            gl::ShaderStorageBlockBinding(shader.id(), block_index, self.cmd_buffer_binding_point);
+            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.draw_indirect_cmd_buffer);
             gl::BindBufferBase(
                 gl::SHADER_STORAGE_BUFFER,
-                self.command_buffer_binding_point,
-                self.command_buffer,
+                self.cmd_buffer_binding_point,
+                self.draw_indirect_cmd_buffer,
             );
 
             // bind transforms buffer

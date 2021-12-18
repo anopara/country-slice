@@ -44,7 +44,10 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         // Reset draw command buffer to its default
         {
             //log::debug!("Resetting draw command buffer...");
-            gl::BindBuffer(gl::DRAW_INDIRECT_BUFFER, indirect_test.command_buffer);
+            gl::BindBuffer(
+                gl::DRAW_INDIRECT_BUFFER,
+                indirect_test.draw_indirect_cmd_buffer,
+            );
             let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
 
             assert!(!ptr.is_null());
@@ -61,6 +64,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         }
 
         // For debugging, reset the transform buffer
+        /*
         {
             //log::debug!("Resetting transform buffer...");
             let data = &[glam::Mat4::IDENTITY; 10000];
@@ -76,6 +80,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             dst.copy_from_slice(data);
             gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
         }
+        */
 
         indirect_test.bind(assets_shader, test.texture, _img_unit); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
