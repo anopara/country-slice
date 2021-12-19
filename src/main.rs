@@ -41,6 +41,9 @@ const VALIDATE_SHADERS: bool = false;
 
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
 
+// TODO: clip the arch segments outside of roadmask
+// TODO: make a cache of CurveDataSSBO and don't update the whole storage buffer...
+
 fn main() {
     simple_logger::SimpleLogger::new().init().unwrap();
 
@@ -109,7 +112,17 @@ fn main() {
 
     // main loop
     // -----------
+
+    let server_addr = format!("0.0.0.0:{}", puffin_http::DEFAULT_PORT);
+    eprintln!("Serving demo profile data on {}", server_addr);
+    let _puffin_server = puffin_http::Server::new(&server_addr).unwrap();
+
+    puffin::set_scopes_on(true);
+
     event_loop.run(move |event, _, control_flow| {
+        puffin::profile_scope!("main_loop");
+        puffin::GlobalProfiler::lock().new_frame();
+
         // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't dispatched any events
         *control_flow = ControlFlow::Poll;
 
