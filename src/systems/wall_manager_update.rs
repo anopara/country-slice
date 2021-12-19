@@ -18,6 +18,7 @@ pub fn walls_update(
     assets_shader: Res<AssetShaderLibrary>,
     mut commands: Commands,
 ) {
+    puffin::profile_function!();
     if let Some((curve, _)) = wall_manager.curves.last() {
         if !mouse_button_input.pressed(MouseButton::Left) {
             return;

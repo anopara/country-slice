@@ -120,19 +120,11 @@ fn main() {
     puffin::set_scopes_on(true);
 
     event_loop.run(move |event, _, control_flow| {
-        puffin::profile_scope!("main_loop");
-        puffin::GlobalProfiler::lock().new_frame();
-
         // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't dispatched any events
         *control_flow = ControlFlow::Poll;
 
-        app.app.update();
+        //app.app.update();
 
-        process_window_events(
-            event,
-            &mut windowed_context,
-            control_flow,
-            &mut app.world_mut(),
-        );
+        process_window_events(event, &mut windowed_context, control_flow, &mut app);
     });
 }

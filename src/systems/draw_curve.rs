@@ -26,6 +26,7 @@ pub fn draw_curve(
     mut assets_mesh: ResMut<AssetMeshLibrary>,
     assets_shader: Res<AssetShaderLibrary>,
 ) {
+    puffin::profile_function!();
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
         wall_manager

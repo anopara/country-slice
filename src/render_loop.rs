@@ -27,6 +27,8 @@ use crate::utils::custom_macro::log_if_error;
 use crate::components::{drawable::GLDrawMode, transform::Transform};
 
 pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCurrent, Window>) {
+    puffin::profile_function!();
+
     let mut _img_unit = 0;
 
     // render
