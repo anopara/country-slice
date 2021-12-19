@@ -81,7 +81,7 @@ struct MarchData {
 
 MarchData march_along_arch(float target_u, MarchData march_data_cache, vec3 seg_start, vec3 seg_end, float seg_length) {
 
-    const int SUBDIV = 100;
+    const int SUBDIV = 50;
     MarchData out_march_data;
     // check for quick 1s and 0s
     if (target_u < 0.01) {
@@ -130,6 +130,34 @@ MarchData march_along_arch(float target_u, MarchData march_data_cache, vec3 seg_
     return out_march_data; 
 }
 
+// -----------------------------------
+
+// Find "exact" value where derivative of img starts changing along the segment
+float find_t_change(vec3 p1, vec3 p2) {
+    float t_out = 0.0;
+    // subdivide the segment
+    const uint SUBDIV = 20;
+    for (int i=0; i<SUBDIV; i++) {
+        float t1 = float(i) / float(SUBDIV);
+        vec3 subdiv_p1 = mix(p1, p2, t1);
+
+        float t2 = float(i+1) / float(SUBDIV);
+        vec3 subdiv_p2 = mix(p1, p2, t2);
+
+        // find where derivative starts changing & one of the elements is 0
+        float h1 = position_ws_to_roadmask_value(subdiv_p1, imageSize(road_mask));
+        float h2 = position_ws_to_roadmask_value(subdiv_p2, imageSize(road_mask));
+
+        if (abs(h1-h2) > 0.001 && (h1 < 0.0001 || h2 < 0.0001)) {
+
+            if (h1 < h2) { t_out = t1; } else { t_out = t2; }
+
+            break;
+        }
+    }
+    return t_out;
+}
+
 //------------------------------------
 
 
@@ -140,6 +168,22 @@ void main() {
 
     vec3 seg_start = vec3(segs[idx].start.x, 0.0, segs[idx].start.y);
     vec3 seg_end = vec3(segs[idx].end.x, 0.0, segs[idx].end.y);
+
+    // check whether the segment needs to be clipped
+    float h1 = position_ws_to_roadmask_value(seg_start, imageSize(road_mask));
+    float h2 = position_ws_to_roadmask_value(seg_end, imageSize(road_mask));
+    if (h1 < 0.0001 || h2 < 0.0001) {
+        // find exact positions where height starts to go up or down!
+        float t = find_t_change(seg_start, seg_end);
+
+        if (h1 < h2) {
+            // curve starts to go up
+            seg_start = mix(seg_start, seg_end, t);
+        } else {
+            // curve is going down
+            seg_end = mix(seg_start, seg_end, t);
+        }
+    }
 
 
     // --------------------
