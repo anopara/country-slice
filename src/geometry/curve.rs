@@ -54,9 +54,18 @@ impl Curve {
     }
 
     pub fn smooth(mut self, smoothing_steps: usize) -> Self {
+        if self.points.len() < 3 {
+            return self;
+        }
+
         for _ in 0..smoothing_steps {
             let mut current_iter_smooth = self.points.clone();
             for (i, current_pos) in self.points.iter().enumerate() {
+                // skip first point
+                if i == 0 {
+                    continue;
+                }
+
                 if let (Some(prev_pos), Some(next_pos)) =
                     (self.points.get(i - 1), self.points.get(i + 1))
                 {
