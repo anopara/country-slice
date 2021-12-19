@@ -123,11 +123,11 @@ MarchData march_along_arch(float target_u, MarchData march_data_cache, vec3 seg_
         current_arch_pos = subdiv_p2;
     }
 
-    out_march_data.arch_pos = vec3(3.0);
+    out_march_data.arch_pos = vec3(-1.0);
     out_march_data.subdiv_id = 0;
     out_march_data.dist_traveled = 0.0;
 
-    return out_march_data; //vec4(0.0, 0.0, 0.0, 0.0);
+    return out_march_data; 
 }
 
 //------------------------------------
@@ -143,14 +143,9 @@ void main() {
 
 
     // --------------------
-
-    // TODO: redo, and do it per segment, and bricks pivot is just average like indirect_draw_test
-
     float seg_arch_length = length_arch(seg_start, seg_end);
     int total_segment_bricks = max(int(floor(seg_arch_length / TARGET_BRICK_WIDTH)), 1);
-    //float brick_w = seg_arch_length / float(target_brick_count); 
 
-    //MarchData march_along_arch(float target_u, MarchData march_data_cache, vec3 seg_start, vec3 seg_end, float seg_length) {
     MarchData dummy;
     MarchData march_data_cache = march_along_arch(0.0, dummy, seg_start, seg_end, seg_arch_length);
 
@@ -200,52 +195,4 @@ void main() {
         transforms[instance_offset] = translate * rotate * scale;
         instance_offset += 1;
     }
-
-    /*
-    int current_march_id = 0;
-    vec3 prev_arch_pos = curve_ws_to_arch_ws(start_pos);
-
-    MarchData m = march_along_arch(brick_w / 2.0, current_march_id, start_pos, end_pos);
-    vec3 tangent = normalize(m.arch_pos - prev_arch_pos);
-    place_brick(m, brick_w, tangent);
-    current_march_id = m.subdiv_id;
-    prev_arch_pos = m.arch_pos;
-
-    for (int i=1; i<target_brick_count; i++) {
-
-        m = march_along_arch(brick_w, current_march_id, start_pos, end_pos);
-        tangent = normalize(m.arch_pos - prev_arch_pos);
-        place_brick(m, brick_w, tangent);
-        current_march_id = m.subdiv_id;
-        prev_arch_pos = m.arch_pos;
-
-    }
-    */
-    
-    // ------------------------
-
-    /*
-
-    // TEST just put bricks on top of segments
-    uint instance_offset = atomicAdd(cmds[0].instanceCount, 2);
-
-    mat4 translate = transpose(mat4(
-        0.1, 0.0, 0.0, start_pos.x, 
-        0.0, 0.1, 0.0, 0.0, //float(idx) / 10.0, 
-        0.0, 0.0, 0.1, start_pos.z, 
-        0.0, 0.0, 0.0, 1.0
-    ));
-
-    transforms[instance_offset] = translate;
-    instance_offset += 1;
-
-    translate = transpose(mat4(
-        0.1, 0.0, 0.0, end_pos.x, 
-        0.0, 0.1, 0.0, 0.0, //float(idx)/ 10.0, 
-        0.0, 0.0, 0.1, end_pos.z, 
-        0.0, 0.0, 0.0, 1.0
-    ));
-
-    transforms[instance_offset] = translate;
-    */
 }
