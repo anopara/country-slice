@@ -41,7 +41,6 @@ const VALIDATE_SHADERS: bool = false;
 
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
 
-// TODO: clip the arch segments outside of roadmask
 // TODO: make a cache of CurveDataSSBO and don't update the whole storage buffer...
 
 fn main() {
@@ -102,11 +101,11 @@ fn main() {
         .add_system_to_stage(
             "main_singlethread",
             update_curve_ssbo.system().after("usercurve"),
+        )
+        .add_system_to_stage(
+            "main_singlethread",
+            walls_update.system().after("usercurve"),
         );
-    //.add_system_to_stage(
-    //    "main_singlethread",
-    //    walls_update.system().after("usercurve"),
-    //);
 
     systems::startup(&mut app.world_mut());
 

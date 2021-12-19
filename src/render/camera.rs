@@ -16,7 +16,7 @@ impl MainCamera {
             .with(YawPitch::new().yaw_degrees(45.0).pitch_degrees(-30.0))
             //.with(YawPitch::new().yaw_degrees(0.0).pitch_degrees(90.0))
             .with(Smooth::new_rotation(1.5))
-            .with(Arm::new(dolly::glam::Vec3::Z * 9.0))
+            .with(Arm::new(dolly::glam::Vec3::Z * 15.0)) //9.0))
             //.with(Arm::new(dolly::glam::Vec3::Z * 20.0))
             .build();
         let camera = Camera::new(
