@@ -1,7 +1,7 @@
 use bevy_ecs::prelude::*;
 use bevy_input::{mouse::MouseButton, Input};
 
-use crate::resources::{ComputeArchesIndirect, CurveSegmentsComputePass, WallManager};
+use crate::resources::{CurveSegmentsComputePass, WallManager};
 
 // for compute indirect
 pub fn update_curve_ssbo(

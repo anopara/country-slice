@@ -1,7 +1,6 @@
 use std::convert::TryInto;
 
 use bevy_app::Events;
-use bevy_ecs::prelude::World;
 use bevy_input::mouse::MouseButtonInput;
 use glam::{Mat4, Vec2};
 use glutin::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
