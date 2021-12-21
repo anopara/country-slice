@@ -16,6 +16,7 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
 }
 
 pub fn startup(ecs: &mut World) {
+    puffin::profile_function!();
     // Load meshes
     let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);

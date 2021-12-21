@@ -18,7 +18,7 @@ use crate::render::{
     shader::{GlUniform, ShaderProgram},
     vao::VAO,
 };
-use crate::resources::{DrawElementsIndirectCommand, WallManager};
+use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand, WallManager};
 use crate::window_events::WindowSize;
 use crate::{ComputeArchesIndirect, ComputePathsMask, CursorRaycast};
 
@@ -27,6 +27,8 @@ use crate::utils::custom_macro::log_if_error;
 use crate::components::{drawable::GLDrawMode, transform::Transform};
 
 pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCurrent, Window>) {
+    puffin::profile_function!();
+
     let mut _img_unit = 0;
 
     // render
@@ -36,15 +38,35 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         gl::DepthMask(gl::TRUE);
 
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
+        let compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
         let test = ecs.get_resource::<ComputePathsMask>().unwrap();
         let wall_manager = ecs.get_resource::<WallManager>().unwrap();
-        // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
+        //
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
+
+        // CURVE SEGMNETS COMPUTE
+        {
+            //println!("reset_cmd_buffer");
+            compute_curve_segments.reset_cmd_buffer();
+            //println!("reset_segments_buffer");
+            compute_curve_segments.reset_segments_buffer();
+            //println!("bind");
+            compute_curve_segments.bind(assets_shader, test.texture, _img_unit);
+
+            //println!("DispatchCompute");
+            gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
+            gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
+        }
+
+        // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
 
         // Reset draw command buffer to its default
         {
             //log::debug!("Resetting draw command buffer...");
-            gl::BindBuffer(gl::DRAW_INDIRECT_BUFFER, indirect_test.command_buffer);
+            gl::BindBuffer(
+                gl::DRAW_INDIRECT_BUFFER,
+                indirect_test.draw_indirect_cmd_buffer,
+            );
             let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
 
             assert!(!ptr.is_null());
@@ -77,10 +99,17 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
         }
 
-        indirect_test.bind(assets_shader, test.texture, _img_unit); // use shader & bind command buffer & bind transforms buffer & bind road mask
+        indirect_test.bind(
+            assets_shader,
+            &compute_curve_segments.segments_buffer,
+            test.texture,
+            _img_unit,
+        ); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
         // bind compute road texture
-        gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
+        gl::DispatchComputeIndirect(0);
+        //gl::DispatchCompute(1, 1, 1);
+        //gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
 
         // COMPUTE SHADER PASS -----------------------------------------------------------------------
