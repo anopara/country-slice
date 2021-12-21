@@ -12,7 +12,9 @@ use glutin::event_loop::ControlFlow;
 use render::camera::MainCamera;
 
 use render::shaderwatch::*;
-use resources::{ComputeArchesIndirect, ComputePathsMask, CurveDataSSBO, WallManager};
+use resources::{
+    ComputeArchesIndirect, ComputePathsMask, CurveDataSSBO, CurveSegmentsComputePass, WallManager,
+};
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
 use crate::systems::*;
@@ -35,9 +37,11 @@ mod window_events;
 const SCR_WIDTH: u32 = 1600;
 const SCR_HEIGHT: u32 = 1200;
 
-const VALIDATE_SHADERS: bool = true;
+const VALIDATE_SHADERS: bool = false;
 
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
+
+// TODO: make a cache of CurveDataSSBO and don't update the whole storage buffer...
 
 fn main() {
     simple_logger::SimpleLogger::new().init().unwrap();
@@ -54,6 +58,8 @@ fn main() {
 
     // COMPUTE SHADERS -------------------------------------------
     let compute_paths_mask = ComputePathsMask::init(&mut temp_shaderwatch, &mut temp_assets_shader);
+    let compute_curve_segments =
+        CurveSegmentsComputePass::init(&mut temp_shaderwatch, &mut temp_assets_shader);
     let compute_arches_indirect =
         ComputeArchesIndirect::init(&mut temp_shaderwatch, &mut temp_assets_shader);
 
@@ -72,7 +78,8 @@ fn main() {
         .insert_resource(AssetVAOLibrary::new())
         .insert_resource(temp_assets_shader)
         .insert_resource(compute_paths_mask) //TODO: Rename
-        .insert_resource(compute_arches_indirect) // TEST
+        .insert_resource(compute_arches_indirect)
+        .insert_resource(compute_curve_segments)
         .add_stage_after(
             bevy_app::CoreStage::PreUpdate,
             "opengl",
@@ -103,17 +110,19 @@ fn main() {
 
     // main loop
     // -----------
+
+    let server_addr = format!("0.0.0.0:{}", puffin_http::DEFAULT_PORT);
+    eprintln!("Serving demo profile data on {}", server_addr);
+    let _puffin_server = puffin_http::Server::new(&server_addr).unwrap();
+
+    puffin::set_scopes_on(true);
+
     event_loop.run(move |event, _, control_flow| {
         // ControlFlow::Poll continuously runs the event loop, even if the OS hasn't dispatched any events
         *control_flow = ControlFlow::Poll;
 
-        app.app.update();
+        //app.app.update();
 
-        process_window_events(
-            event,
-            &mut windowed_context,
-            control_flow,
-            &mut app.world_mut(),
-        );
+        process_window_events(event, &mut windowed_context, control_flow, &mut app);
     });
 }

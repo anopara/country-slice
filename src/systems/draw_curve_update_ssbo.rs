@@ -1,14 +1,16 @@
 use bevy_ecs::prelude::*;
 use bevy_input::{mouse::MouseButton, Input};
 
-use crate::resources::{ComputeArchesIndirect, WallManager};
+use crate::resources::{ComputeArchesIndirect, CurveSegmentsComputePass, WallManager};
 
 // for compute indirect
 pub fn update_curve_ssbo(
     wall_manager: Res<WallManager>,
     mouse_button_input: Res<Input<MouseButton>>,
-    mut compute_indirect: ResMut<ComputeArchesIndirect>,
+    //mut compute_indirect: ResMut<ComputeArchesIndirect>,
+    mut compute_indirect: ResMut<CurveSegmentsComputePass>,
 ) {
+    puffin::profile_function!();
     // HACK: ideally, this should be an eveent that tells that curves have been update and SSBO needs updating
     if mouse_button_input.pressed(MouseButton::Left) {
         // HACK: update all the curves, bc its easier (in the future, no need to redo the whole buffer....)

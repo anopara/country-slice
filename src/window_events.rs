@@ -52,8 +52,10 @@ pub fn process_window_events(
     event: Event<()>,
     windowed_context: &mut ContextWrapper<PossiblyCurrent, Window>,
     control_flow: &mut ControlFlow,
-    ecs: &mut World,
+    app: &mut bevy_app::AppBuilder,
 ) {
+    let ecs = app.world_mut();
+
     match event {
         Event::LoopDestroyed => return,
         Event::WindowEvent { event, .. } => match event {
@@ -148,7 +150,11 @@ pub fn process_window_events(
         },
         Event::RedrawRequested(_) => render(ecs, windowed_context),
         Event::MainEventsCleared => {
+            puffin::profile_scope!("main_loop");
+            puffin::GlobalProfiler::lock().new_frame();
+
             // Application update code.
+            app.app.update();
             windowed_context.window().request_redraw();
         }
         _ => (),
