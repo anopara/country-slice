@@ -47,7 +47,6 @@ fn main() {
 
     if VALIDATE_SHADERS {
         utils::validate_shaders("shaders/");
-        log::info!("Shader validation complete");
     }
 
     let mut temp_shaderwatch = ShaderWatch::new();
