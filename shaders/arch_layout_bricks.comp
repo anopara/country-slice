@@ -12,7 +12,7 @@ struct DrawCommand {
 };
 
 // Command buffer backed by a Shader Storage Object Buffer (SSBO)
-layout(std140, binding = 0) writeonly buffer draw_commands {
+layout(std140, binding = 0) buffer draw_commands {
     DrawCommand cmds[];
 };
 
