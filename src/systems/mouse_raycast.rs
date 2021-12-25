@@ -19,8 +19,6 @@ pub fn mouse_raycast(
     terrain: Res<TerrainData>,
 ) {
     if let Some(cursor_latest) = cursor.iter().last() {
-        println!("NEW");
-
         let (cursor_ws, ray) = from_screenspace_to_ws(
             cursor_latest.pos,
             Vec2::new(window_size.width as f32, window_size.height as f32),
@@ -37,6 +35,7 @@ pub fn mouse_raycast(
         let steps = 1000;
         let step_size = (lower_bound_p - upper_bound_p).length() / (steps as f32);
 
+        // raymarch along camera ray
         let mut p = upper_bound_p;
         for _ in 0..steps {
             let new_p = p + ray * step_size;
