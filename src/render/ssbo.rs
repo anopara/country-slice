@@ -51,13 +51,19 @@ impl<T: Copy> GLShaderStorageBuffer<T> {
             assert!(index < self.buffer_size);
 
             gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.id);
-            let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
 
-            assert!(!ptr.is_null());
+            let offset = (std::mem::size_of::<T>() * index) as GLsizeiptr;
+            let size = std::mem::size_of::<T>() as GLsizeiptr;
 
-            let dst = std::slice::from_raw_parts_mut(ptr as *mut T, self.buffer_size);
-            dst[index] = data;
-            gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
+            gl::BufferSubData(
+                gl::SHADER_STORAGE_BUFFER,
+                offset,
+                size,
+                &data as *const T as *const std::ffi::c_void,
+            );
+
+            // Unbind
+            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, 0);
         }
     }
 

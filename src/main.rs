@@ -12,12 +12,10 @@ use glutin::event_loop::ControlFlow;
 use render::camera::MainCamera;
 
 use render::shaderwatch::*;
-use resources::{
-    ComputeArchesIndirect, ComputePathsMask, CurveDataSSBO, CurveSegmentsComputePass, WallManager,
-};
+use resources::{ComputeArchesIndirect, ComputePathsMask, CurveSegmentsComputePass, WallManager};
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
-use crate::{resources::CurveSSBOCache, systems::*};
+use crate::systems::*;
 
 mod asset_libraries;
 mod components;
@@ -80,7 +78,6 @@ fn main() {
         .insert_resource(compute_paths_mask)
         .insert_resource(compute_arches_indirect)
         .insert_resource(compute_curve_segments)
-        .insert_resource(CurveSSBOCache::new())
         .add_stage_after(
             bevy_app::CoreStage::PreUpdate,
             "opengl",
