@@ -46,6 +46,21 @@ impl<T: Copy> GLShaderStorageBuffer<T> {
         }
     }
 
+    pub fn update_element(&mut self, data: T, index: usize) {
+        unsafe {
+            assert!(index < self.buffer_size);
+
+            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.id);
+            let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
+
+            assert!(!ptr.is_null());
+
+            let dst = std::slice::from_raw_parts_mut(ptr as *mut T, self.buffer_size);
+            dst[index] = data;
+            gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
+        }
+    }
+
     pub fn bind(&self, shader_program: &ShaderProgram, name: &str) {
         unsafe {
             let c_str = CString::new(name).unwrap();

@@ -25,8 +25,7 @@ pub fn draw_curve(
 
     mut assets_mesh: ResMut<AssetMeshLibrary>,
     assets_shader: Res<AssetShaderLibrary>,
-
-    mut curve_ssbo_cache: ResMut<CurveSSBOCache>,
+    //mut curve_ssbo_cache: ResMut<CurveSSBOCache>,
 ) {
     puffin::profile_function!();
     // If LMB was just pressed, start a new curve
@@ -36,6 +35,7 @@ pub fn draw_curve(
             .push(start_curve(&mut assets_mesh, &assets_shader, &mut commands));
 
         // add empty SSBO
+        /*
         curve_ssbo_cache.0.push(crate::CurveDataSSBO {
             points_count: 0,
             pad0: 0,
@@ -43,6 +43,7 @@ pub fn draw_curve(
             pad2: 0,
             positions: [[0.0; 4]; 1000],
         });
+        */
     }
     // If LMB is pressed, continue the active curve
     else if mouse_button_input.pressed(MouseButton::Left) {
@@ -68,10 +69,12 @@ pub fn draw_curve(
             }
 
             // Update the curve's SSBO
+            /*
             // TODO: maybe I can directly update the slice in GLShaderStorageBuffer (?)
             *curve_ssbo_cache.0.last_mut().unwrap() =
                 CurveDataSSBO::from(&active_curve.clone().smooth(50).resample(0.2));
             // TODO: re-use the resampled curve that is used for wall construction, atm we are doing double the work
+            */
         }
     }
 }
