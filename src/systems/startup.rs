@@ -1,9 +1,9 @@
 use bevy_ecs::{component::Component, prelude::*};
 
 use crate::asset_libraries::Handle;
-use crate::components::*;
 use crate::geometry::cube::Cube;
 use crate::utils::load_json::load_json_as_mesh;
+use crate::{components::*, TerrainData};
 
 use crate::geometry::plane::Plane;
 use crate::{
@@ -18,29 +18,38 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
 // TODO: add a grid mesh
 // TODO: hook it up with mouse raycast
 // TODO: I probably should write my own one, so that I can have exact 1-1 implementation on GPU?
-fn perlin_noise_mesh(mesh: &mut Mesh) {
-    use bracket_noise::prelude::*;
-
-    let mut noise = FastNoise::seeded(45);
-    noise.set_noise_type(NoiseType::PerlinFractal);
-    noise.set_fractal_type(FractalType::FBM);
-    noise.set_fractal_octaves(3);
-    noise.set_fractal_gain(0.6);
-    noise.set_fractal_lacunarity(2.0);
-    noise.set_frequency(0.1);
-
+fn perlin_noise_mesh(terrain_data: &mut TerrainData, mesh: &mut Mesh) {
     let pos = mesh.attributes.get_mut("Vertex_Position").unwrap();
 
+    let noise = &mut terrain_data.perlin;
+
     let mut noise_values = Vec::new();
+    let mut min_value = 0.0;
+    let mut max_value = 0.0;
+
     if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = pos {
         for p in positions {
             let n = noise.get_noise(p[0], p[2]);
             p[1] = n;
             noise_values.push(n);
+
+            if n < min_value {
+                min_value = n;
+            }
+
+            if n > max_value {
+                max_value = n;
+            }
         }
     } else {
         panic!()
     }
+
+    dbg!(min_value);
+    dbg!(max_value);
+
+    terrain_data.max_y = max_value;
+    terrain_data.min_y = min_value;
 
     let col = mesh.attributes.get_mut("Vertex_Color").unwrap();
     if let crate::render::mesh::VertexAttributeValues::Float32x3(colors) = col {
@@ -70,7 +79,8 @@ pub fn startup(ecs: &mut World) {
 
     let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
     terrain_test.add_color();
-    perlin_noise_mesh(&mut terrain_test);
+    let mut terrain_data = ecs.get_resource_mut::<TerrainData>().unwrap();
+    perlin_noise_mesh(&mut terrain_data, &mut terrain_test);
     terrain_test.add_uv();
     let terrain_test_handle = load_mesh_into_library(terrain_test, "road", ecs);
 

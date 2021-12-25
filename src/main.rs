@@ -45,6 +45,30 @@ const VALIDATE_SHADERS: bool = false;
 // * then this img needs to be sent to GPU too
 // GPU side -> update the meshes, just push the vertices up
 
+pub struct TerrainData {
+    perlin: bracket_noise::prelude::FastNoise,
+    min_y: f32,
+    max_y: f32,
+}
+
+impl TerrainData {
+    pub fn new() -> Self {
+        let mut noise = bracket_noise::prelude::FastNoise::seeded(45);
+        noise.set_noise_type(bracket_noise::prelude::NoiseType::PerlinFractal);
+        noise.set_fractal_type(bracket_noise::prelude::FractalType::FBM);
+        noise.set_fractal_octaves(3);
+        noise.set_fractal_gain(0.6);
+        noise.set_fractal_lacunarity(2.0);
+        noise.set_frequency(0.1);
+
+        Self {
+            perlin: noise,
+            min_y: 0.0,
+            max_y: 0.0,
+        }
+    }
+}
+
 fn main() {
     simple_logger::SimpleLogger::new().init().unwrap();
 
@@ -82,6 +106,7 @@ fn main() {
         .insert_resource(compute_paths_mask)
         .insert_resource(compute_arches_indirect)
         .insert_resource(compute_curve_segments)
+        .insert_resource(TerrainData::new())
         .add_stage_after(
             bevy_app::CoreStage::PreUpdate,
             "opengl",
@@ -97,16 +122,18 @@ fn main() {
         .add_system_to_stage("opengl", rebuild_vaos.system().after("build_vaos"))
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
-        .add_system(mouse_raycast.system())
-        .add_system(draw_curve.system().label("usercurve"))
-        .add_system_to_stage(
-            "main_singlethread",
-            update_curve_ssbo.system().after("usercurve"),
-        )
-        .add_system_to_stage(
-            "main_singlethread",
-            walls_update.system().after("usercurve"),
-        );
+        .add_system(mouse_raycast.system());
+    /*
+    .add_system(draw_curve.system().label("usercurve"))
+    .add_system_to_stage(
+        "main_singlethread",
+        update_curve_ssbo.system().after("usercurve"),
+    )
+    .add_system_to_stage(
+        "main_singlethread",
+        walls_update.system().after("usercurve"),
+    );
+    */
 
     systems::startup(&mut app.world_mut());
 
