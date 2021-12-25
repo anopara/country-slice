@@ -68,6 +68,7 @@ pub fn draw_curve(
             }
 
             // Update the curve's SSBO
+            // TODO: maybe I can directly update the slice in GLShaderStorageBuffer (?)
             *curve_ssbo_cache.0.last_mut().unwrap() =
                 CurveDataSSBO::from(&active_curve.clone().smooth(50).resample(0.2));
             // TODO: re-use the resampled curve that is used for wall construction, atm we are doing double the work
