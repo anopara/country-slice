@@ -17,7 +17,7 @@ use resources::{
 };
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
-use crate::systems::*;
+use crate::{resources::CurveSSBOCache, systems::*};
 
 mod asset_libraries;
 mod components;
@@ -77,9 +77,10 @@ fn main() {
         .insert_resource(AssetMeshLibrary::new())
         .insert_resource(AssetVAOLibrary::new())
         .insert_resource(temp_assets_shader)
-        .insert_resource(compute_paths_mask) //TODO: Rename
+        .insert_resource(compute_paths_mask)
         .insert_resource(compute_arches_indirect)
         .insert_resource(compute_curve_segments)
+        .insert_resource(CurveSSBOCache::new())
         .add_stage_after(
             bevy_app::CoreStage::PreUpdate,
             "opengl",
