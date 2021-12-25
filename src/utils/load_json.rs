@@ -80,7 +80,7 @@ pub fn load_json_as_mesh(path: &str) -> Result<Mesh, String> {
             }
             _ => {
                 return Err(format!(
-                    "load_json_as_mesh: unrecognized attrib {} with type {}",
+                    "load_json_as_mesh: unrecognized attrib '{}' with type '{}'",
                     attrib_name, strrr
                 ));
             }

@@ -39,7 +39,11 @@ const VALIDATE_SHADERS: bool = false;
 
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
 
-// TODO: make a cache of CurveDataSSBO and don't update the whole storage buffer...
+// Uneven terrain
+// CPU side -> mouse raycast
+// * some kind of perlin noise on CPU side
+// * then this img needs to be sent to GPU too
+// GPU side -> update the meshes, just push the vertices up
 
 fn main() {
     simple_logger::SimpleLogger::new().init().unwrap();

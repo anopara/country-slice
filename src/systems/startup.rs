@@ -15,10 +15,50 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
     ecs.get_resource_mut::<T>().unwrap()
 }
 
+// TODO: add a grid mesh
+// TODO: hook it up with mouse raycast
+// TODO: I probably should write my own one, so that I can have exact 1-1 implementation on GPU?
+fn perlin_noise_mesh(mesh: &mut Mesh) {
+    use bracket_noise::prelude::*;
+
+    let mut noise = FastNoise::seeded(45);
+    noise.set_noise_type(NoiseType::PerlinFractal);
+    noise.set_fractal_type(FractalType::FBM);
+    noise.set_fractal_octaves(3);
+    noise.set_fractal_gain(0.6);
+    noise.set_fractal_lacunarity(2.0);
+    noise.set_frequency(0.1);
+
+    let pos = mesh.attributes.get_mut("Vertex_Position").unwrap();
+
+    let mut noise_values = Vec::new();
+    if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = pos {
+        for p in positions {
+            let n = noise.get_noise(p[0], p[2]);
+            p[1] = n;
+            noise_values.push(n);
+        }
+    } else {
+        panic!()
+    }
+
+    let col = mesh.attributes.get_mut("Vertex_Color").unwrap();
+    if let crate::render::mesh::VertexAttributeValues::Float32x3(colors) = col {
+        for (i, c) in colors.iter_mut().enumerate() {
+            let n = noise_values[i];
+            c[0] = n / 1.2 + 0.3;
+            c[1] = n / 1.2 + 0.3;
+            c[2] = n / 1.2 + 0.3;
+        }
+    } else {
+        panic!()
+    }
+}
+
 pub fn startup(ecs: &mut World) {
     puffin::profile_function!();
     // Load meshes
-    let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
+    //let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
     let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
     let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
@@ -27,6 +67,12 @@ pub fn startup(ecs: &mut World) {
     road_pebbles_mesh.add_color();
     road_pebbles_mesh.add_uv();
     let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
+
+    let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
+    terrain_test.add_color();
+    perlin_noise_mesh(&mut terrain_test);
+    terrain_test.add_uv();
+    let terrain_test_handle = load_mesh_into_library(terrain_test, "road", ecs);
 
     // Load shaders
     let vert_color = load_shader_into_library(
@@ -77,11 +123,11 @@ pub fn startup(ecs: &mut World) {
         .insert(IndirectDraw);
 
     // Create the starting scene
-    ecs.spawn().insert_bundle(DrawableMeshBundle {
-        mesh: floor,
-        shader: vert_color,
-        transform: Transform::identity(),
-    });
+    //ecs.spawn().insert_bundle(DrawableMeshBundle {
+    //    mesh: floor,
+    //    shader: vert_color,
+    //    transform: Transform::identity(),
+    //});
 
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
@@ -90,6 +136,12 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::identity(),
         })
         .insert(RoadComponent);
+
+    ecs.spawn().insert_bundle(DrawableMeshBundle {
+        mesh: terrain_test_handle,
+        shader: vert_color,
+        transform: Transform::from_translation(glam::Vec3::new(0.0, 0.0, 0.0)),
+    });
 
     /*
     ecs.spawn()
