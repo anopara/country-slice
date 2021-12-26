@@ -9,8 +9,22 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+uniform sampler2D terrain_texture;
+float sample_terrain_texture_ws(vec2 pos_ws) {
+    vec2 texture_uv = (pos_ws / 20.0 + 0.5);
+    return texture(terrain_texture, texture_uv).x;
+}
+
+float fit01(float x, float min, float max) {
+    return x * (max-min) + min;
+}
+
 void main()
 {   
+
+    float h = sample_terrain_texture_ws(Vertex_Position.xz) + 0.5;
+    h = fit01(h, 0.0, 1.0);
+
     gl_Position = projection * view * model * vec4(Vertex_Position, 1.0);
-    ourColor = Vertex_Color; // set ourColor to the input color we got from the vertex data
+    ourColor = Vertex_Color * h; // set ourColor to the input color we got from the vertex data //vec3(h, 0.0, Vertex_Position.y);//
 } 

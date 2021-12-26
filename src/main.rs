@@ -49,6 +49,7 @@ pub struct TerrainData {
     perlin: bracket_noise::prelude::FastNoise,
     min_y: f32,
     max_y: f32,
+    texture: u32,
 }
 
 impl TerrainData {
@@ -61,10 +62,50 @@ impl TerrainData {
         noise.set_fractal_lacunarity(2.0);
         noise.set_frequency(0.1);
 
+        // generate texture
+        let mut raw_pixels = Vec::new();
+        let texture = unsafe {
+            let size = (20.0, 20.0);
+            let texture_dims = (512, 512);
+
+            for y in 0..texture_dims.1 {
+                let p_y = (y as f32 / texture_dims.1 as f32) * size.1 - size.1 / 2.0;
+
+                for x in 0..texture_dims.0 {
+                    let p_x = (x as f32 / texture_dims.0 as f32) * size.0 - size.0 / 2.0;
+
+                    let n = noise.get_noise(p_x, p_y);
+                    raw_pixels.extend([n, n, n, 1.0]);
+                }
+            }
+            // Create texture
+            let mut texture = 0;
+            gl::GenTextures(1, &mut texture);
+            gl::ActiveTexture(gl::TEXTURE0);
+            gl::BindTexture(gl::TEXTURE_2D, texture);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
+            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
+            gl::TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGBA32F as i32,
+                texture_dims.0,
+                texture_dims.1,
+                0,
+                gl::RGBA,
+                gl::FLOAT,
+                &raw_pixels[0] as *const f32 as *const std::ffi::c_void,
+            );
+            texture
+        };
+
         Self {
             perlin: noise,
             min_y: 0.0,
             max_y: 0.0,
+            texture,
         }
     }
 }

@@ -15,8 +15,6 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
     ecs.get_resource_mut::<T>().unwrap()
 }
 
-// TODO: add a grid mesh
-// TODO: hook it up with mouse raycast
 // TODO: I probably should write my own one, so that I can have exact 1-1 implementation on GPU?
 fn perlin_noise_mesh(terrain_data: &mut TerrainData, mesh: &mut Mesh) {
     let pos = mesh.attributes.get_mut("Vertex_Position").unwrap();
@@ -44,9 +42,6 @@ fn perlin_noise_mesh(terrain_data: &mut TerrainData, mesh: &mut Mesh) {
     } else {
         panic!()
     }
-
-    dbg!(min_value);
-    dbg!(max_value);
 
     terrain_data.max_y = max_value;
     terrain_data.min_y = min_value;
