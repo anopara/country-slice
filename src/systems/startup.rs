@@ -51,6 +51,7 @@ fn perlin_noise_mesh(terrain_data: &mut TerrainData, mesh: &mut Mesh) {
     terrain_data.max_y = max_value;
     terrain_data.min_y = min_value;
 
+    /*
     let col = mesh.attributes.get_mut("Vertex_Color").unwrap();
     if let crate::render::mesh::VertexAttributeValues::Float32x3(colors) = col {
         for (i, c) in colors.iter_mut().enumerate() {
@@ -62,6 +63,7 @@ fn perlin_noise_mesh(terrain_data: &mut TerrainData, mesh: &mut Mesh) {
     } else {
         panic!()
     }
+    */
 }
 
 pub fn startup(ecs: &mut World) {
@@ -73,16 +75,22 @@ pub fn startup(ecs: &mut World) {
     let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
 
     let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
-    road_pebbles_mesh.add_color();
+    road_pebbles_mesh.add_color([1.0; 3]);
     road_pebbles_mesh.add_uv();
     let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
 
     let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
-    terrain_test.add_color();
+    terrain_test.add_color([0.35; 3]);
     let mut terrain_data = ecs.get_resource_mut::<TerrainData>().unwrap();
     perlin_noise_mesh(&mut terrain_data, &mut terrain_test);
     terrain_test.add_uv();
-    let terrain_test_handle = load_mesh_into_library(terrain_test, "road", ecs);
+    let terrain_test_handle = load_mesh_into_library(terrain_test, "terrain", ecs);
+
+    let mut terrain_grid = load_json_as_mesh("meshes/grid_10x10.json").unwrap();
+    terrain_grid.add_color([0.0; 3]);
+    let mut terrain_data = ecs.get_resource_mut::<TerrainData>().unwrap();
+    perlin_noise_mesh(&mut terrain_data, &mut terrain_grid);
+    let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
 
     // Load shaders
     let vert_color = load_shader_into_library(
@@ -150,6 +158,12 @@ pub fn startup(ecs: &mut World) {
     ecs.spawn().insert_bundle(DrawableMeshBundle {
         mesh: terrain_test_handle,
         shader: vert_color,
+        transform: Transform::from_translation(glam::Vec3::new(0.0, -0.005, 0.0)),
+    });
+
+    ecs.spawn().insert_bundle(DrawableMeshBundle {
+        mesh: terrain_grid_handle,
+        shader: vert_color,
         transform: Transform::from_translation(glam::Vec3::new(0.0, 0.0, 0.0)),
     });
 
@@ -186,7 +200,7 @@ fn load_mesh(path: &str) -> Mesh {
     mesh.set_indices(mesh_buffer.indices);
 
     if mesh_buffer.colors.is_empty() {
-        mesh.add_color();
+        mesh.add_color([1.0, 0.0, 1.0]);
         //mesh.set_attribute(
         //    Mesh::ATTRIBUTE_COLOR,
         //    vec![[1.0, 1.0, 1.0]; mesh_buffer.positions.len()],

@@ -122,18 +122,16 @@ fn main() {
         .add_system_to_stage("opengl", rebuild_vaos.system().after("build_vaos"))
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
-        .add_system(mouse_raycast.system());
-    /*
-    .add_system(draw_curve.system().label("usercurve"))
-    .add_system_to_stage(
-        "main_singlethread",
-        update_curve_ssbo.system().after("usercurve"),
-    )
-    .add_system_to_stage(
-        "main_singlethread",
-        walls_update.system().after("usercurve"),
-    );
-    */
+        .add_system(mouse_raycast.system())
+        .add_system(draw_curve.system().label("usercurve"))
+        .add_system_to_stage(
+            "main_singlethread",
+            update_curve_ssbo.system().after("usercurve"),
+        )
+        .add_system_to_stage(
+            "main_singlethread",
+            walls_update.system().after("usercurve"),
+        );
 
     systems::startup(&mut app.world_mut());
 
