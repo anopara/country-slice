@@ -15,40 +15,6 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
     ecs.get_resource_mut::<T>().unwrap()
 }
 
-// TODO: I probably should write my own one, so that I can have exact 1-1 implementation on GPU?
-fn perlin_noise_mesh(terrain_data: &mut TerrainData, mesh: &mut Mesh) {
-    let pos = mesh.attributes.get_mut("Vertex_Position").unwrap();
-
-    //let mut noise_values = Vec::new();
-
-    if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = pos {
-        for p in positions {
-            let n = terrain_data.height_at(p[0], p[2]);
-            p[1] = n;
-            //noise_values.push(n);
-        }
-    } else {
-        panic!()
-    }
-
-    //terrain_data.max_y = max_value;
-    //terrain_data.min_y = min_value;
-
-    /*
-    let col = mesh.attributes.get_mut("Vertex_Color").unwrap();
-    if let crate::render::mesh::VertexAttributeValues::Float32x3(colors) = col {
-        for (i, c) in colors.iter_mut().enumerate() {
-            let n = noise_values[i];
-            c[0] = n / 1.2 + 0.3;
-            c[1] = n / 1.2 + 0.3;
-            c[2] = n / 1.2 + 0.3;
-        }
-    } else {
-        panic!()
-    }
-    */
-}
-
 pub fn startup(ecs: &mut World) {
     puffin::profile_function!();
     // Load meshes

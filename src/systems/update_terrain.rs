@@ -1,5 +1,5 @@
 use bevy_ecs::prelude::*;
-use bevy_input::{keyboard::KeyCode, mouse::MouseButton, Input};
+use bevy_input::{keyboard::KeyCode, Input};
 use glam::Vec2;
 
 use crate::TerrainData;

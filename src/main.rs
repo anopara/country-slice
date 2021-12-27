@@ -139,9 +139,8 @@ impl TerrainData {
         let texture_dims = (512, 512);
 
         // generate texture
-        let mut min_y = 0.0;
-        let mut max_y = 0.0;
-
+        let min_y;
+        let max_y;
         let texture = unsafe {
             let (raw_pixels, min, max) = Self::raw_pixels_f32(&noise, texture_dims, offset, amp);
 
