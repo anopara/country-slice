@@ -103,6 +103,9 @@ pub fn process_window_events(
                     VirtualKeyCode::Right => Some(bevy_input::keyboard::KeyCode::Right),
                     VirtualKeyCode::Up => Some(bevy_input::keyboard::KeyCode::Up),
                     VirtualKeyCode::Down => Some(bevy_input::keyboard::KeyCode::Down),
+                    VirtualKeyCode::Space => Some(bevy_input::keyboard::KeyCode::Space),
+                    VirtualKeyCode::Q => Some(bevy_input::keyboard::KeyCode::Q),
+                    VirtualKeyCode::E => Some(bevy_input::keyboard::KeyCode::E),
                     _ => None,
                 };
 

@@ -4,6 +4,7 @@ pub mod mouse_raycast;
 pub mod shader_update;
 pub mod startup;
 pub mod update_curve_ssbo;
+pub mod update_terrain;
 pub mod vao_update;
 pub mod wall_manager_update;
 
@@ -13,5 +14,6 @@ pub use mouse_raycast::*;
 pub use shader_update::*;
 pub use startup::*;
 pub use update_curve_ssbo::*;
+pub use update_terrain::*;
 pub use vao_update::*;
 pub use wall_manager_update::*;

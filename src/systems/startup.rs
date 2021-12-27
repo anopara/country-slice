@@ -19,30 +19,20 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
 fn perlin_noise_mesh(terrain_data: &mut TerrainData, mesh: &mut Mesh) {
     let pos = mesh.attributes.get_mut("Vertex_Position").unwrap();
 
-    let mut noise_values = Vec::new();
-    let mut min_value = 0.0;
-    let mut max_value = 0.0;
+    //let mut noise_values = Vec::new();
 
     if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = pos {
         for p in positions {
             let n = terrain_data.height_at(p[0], p[2]);
             p[1] = n;
-            noise_values.push(n);
-
-            if n < min_value {
-                min_value = n;
-            }
-
-            if n > max_value {
-                max_value = n;
-            }
+            //noise_values.push(n);
         }
     } else {
         panic!()
     }
 
-    terrain_data.max_y = max_value;
-    terrain_data.min_y = min_value;
+    //terrain_data.max_y = max_value;
+    //terrain_data.min_y = min_value;
 
     /*
     let col = mesh.attributes.get_mut("Vertex_Color").unwrap();
@@ -75,14 +65,14 @@ pub fn startup(ecs: &mut World) {
     let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
     terrain_test.add_color([0.35; 3]);
     let mut terrain_data = ecs.get_resource_mut::<TerrainData>().unwrap();
-    perlin_noise_mesh(&mut terrain_data, &mut terrain_test);
+    //perlin_noise_mesh(&mut terrain_data, &mut terrain_test);
     terrain_test.add_uv();
     let terrain_test_handle = load_mesh_into_library(terrain_test, "terrain", ecs);
 
     let mut terrain_grid = load_json_as_mesh("meshes/grid_10x10.json").unwrap();
     terrain_grid.add_color([0.0; 3]);
     let mut terrain_data = ecs.get_resource_mut::<TerrainData>().unwrap();
-    perlin_noise_mesh(&mut terrain_data, &mut terrain_grid);
+    //perlin_noise_mesh(&mut terrain_data, &mut terrain_grid);
     let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
 
     // Load shaders
