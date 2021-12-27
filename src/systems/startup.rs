@@ -64,15 +64,10 @@ pub fn startup(ecs: &mut World) {
 
     let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
     terrain_test.add_color([0.35; 3]);
-    let mut terrain_data = ecs.get_resource_mut::<TerrainData>().unwrap();
-    //perlin_noise_mesh(&mut terrain_data, &mut terrain_test);
-    terrain_test.add_uv();
     let terrain_test_handle = load_mesh_into_library(terrain_test, "terrain", ecs);
 
     let mut terrain_grid = load_json_as_mesh("meshes/grid_10x10.json").unwrap();
     terrain_grid.add_color([0.0; 3]);
-    let mut terrain_data = ecs.get_resource_mut::<TerrainData>().unwrap();
-    //perlin_noise_mesh(&mut terrain_data, &mut terrain_grid);
     let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
 
     // Load shaders
@@ -86,6 +81,12 @@ pub fn startup(ecs: &mut World) {
         "shaders/paths.vert",
         "shaders/vertex_color.frag",
         "road_shader",
+        ecs,
+    );
+    let terrain_shader = load_shader_into_library(
+        "shaders/vertex_color_terrain.vert",
+        "shaders/vertex_color.frag",
+        "terrain_shader",
         ecs,
     );
     // this shader shows the compute_test.comp as a texture
@@ -140,13 +141,13 @@ pub fn startup(ecs: &mut World) {
 
     ecs.spawn().insert_bundle(DrawableMeshBundle {
         mesh: terrain_test_handle,
-        shader: vert_color,
+        shader: terrain_shader,
         transform: Transform::from_translation(glam::Vec3::new(0.0, -0.005, 0.0)),
     });
 
     ecs.spawn().insert_bundle(DrawableMeshBundle {
         mesh: terrain_grid_handle,
-        shader: vert_color,
+        shader: terrain_shader,
         transform: Transform::from_translation(glam::Vec3::new(0.0, 0.0, 0.0)),
     });
 
