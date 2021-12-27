@@ -21,10 +21,24 @@ layout (std430, binding=2) buffer transforms_buffer {
 uniform mat4 view;
 uniform mat4 projection;
 
+uniform sampler2D terrain_texture;
+
+float sample_terrain_texture_ws(vec2 pos_ws) {
+    vec2 texture_uv = (pos_ws / 20.0 + 0.5);
+    return texture(terrain_texture, texture_uv).x;
+}
+
 void main()
 {   
     mat4 instance_transform = transforms[gl_InstanceID];
     vec4 vertex_ws = instance_transform * vec4(Vertex_Position, 1.0);
+
+    // ---------------------- TERRAIN
+
+    vertex_ws.y += sample_terrain_texture_ws(vertex_ws.xz);
+
+
+    // ----------------------------------
 
     gl_Position = projection * view * vertex_ws;
     instance_id = 0; //used for color, so put 0 here for now...

@@ -47,20 +47,28 @@ const VALIDATE_SHADERS: bool = false;
 
 pub struct TerrainData {
     perlin: bracket_noise::prelude::FastNoise,
+    amp: f32,
     min_y: f32,
     max_y: f32,
     texture: u32,
 }
 
 impl TerrainData {
+    pub fn height_at(&self, x: f32, y: f32) -> f32 {
+        self.perlin.get_noise(x, y) * self.amp
+    }
+
     pub fn new() -> Self {
         let mut noise = bracket_noise::prelude::FastNoise::seeded(45);
         noise.set_noise_type(bracket_noise::prelude::NoiseType::PerlinFractal);
         noise.set_fractal_type(bracket_noise::prelude::FractalType::FBM);
         noise.set_fractal_octaves(3);
-        noise.set_fractal_gain(0.6);
-        noise.set_fractal_lacunarity(2.0);
-        noise.set_frequency(0.1);
+        noise.set_fractal_gain(1.0);
+        noise.set_fractal_lacunarity(3.0);
+        noise.set_frequency(0.05);
+        noise.set_seed(0);
+
+        let amp = 1.3;
 
         // generate texture
         let mut raw_pixels = Vec::new();
@@ -74,7 +82,7 @@ impl TerrainData {
                 for x in 0..texture_dims.0 {
                     let p_x = (x as f32 / texture_dims.0 as f32) * size.0 - size.0 / 2.0;
 
-                    let n = noise.get_noise(p_x, p_y);
+                    let n = noise.get_noise(p_x, p_y) * amp;
                     raw_pixels.extend([n, n, n, 1.0]);
                 }
             }
@@ -106,6 +114,7 @@ impl TerrainData {
             min_y: 0.0,
             max_y: 0.0,
             texture,
+            amp,
         }
     }
 }

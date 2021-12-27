@@ -27,6 +27,10 @@ pub fn draw_curve(
     assets_shader: Res<AssetShaderLibrary>,
     //mut curve_ssbo_cache: ResMut<CurveSSBOCache>,
 ) {
+    // Remove y component from the cursor-terrain raycast position
+    let mut cursor_ws = cursor_ws.0;
+    cursor_ws.y = 0.0;
+
     puffin::profile_function!();
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
@@ -38,7 +42,7 @@ pub fn draw_curve(
     else if mouse_button_input.pressed(MouseButton::Left) {
         let (active_curve, preview_entity) = wall_manager.curves.last_mut().unwrap();
 
-        let intersection = cursor_ws.0;
+        let intersection = cursor_ws;
 
         const DIST_THRESHOLD: f32 = 0.001;
 

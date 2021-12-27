@@ -74,7 +74,7 @@ void main()
     random_color = fit01(random_color, 0.086, 0.14);
 
     float h = sample_terrain_texture_ws(Vertex_Position.xz) + 0.4;
-    h = fit01(h*h, 0.0, 3.0);
+    h = fit01(h*h, 0.1, 3.0);
 
 
     // OUT ----------------------------

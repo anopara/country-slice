@@ -40,7 +40,7 @@ pub fn mouse_raycast(
         for _ in 0..steps {
             let new_p = p + ray * step_size;
 
-            if new_p.y < terrain.perlin.get_noise(new_p.x, new_p.z) {
+            if new_p.y < terrain.height_at(new_p.x, new_p.z) {
                 // intersection with the terrain is found
                 break;
             }

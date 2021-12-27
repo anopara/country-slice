@@ -156,6 +156,31 @@ vec3 reinhard_luminance(vec3 color) {
 float arch_function(float h) {
     return 1.0 - pow(1.0 - h, 4.0);
 }
+
+
+const float ALPHA = 0.14;
+const float INV_ALPHA = 1.0 / ALPHA;
+const float K = 2.0 / (PI * ALPHA);
+
+float nrand( vec2 n )
+{
+	return fract(sin(dot(n.xy, vec2(12.9898, 78.233)))* 43758.5453);
+}
+
+float inv_error_function(float x)
+{
+	float y = log(1.0 - x*x);
+	float z = K + 0.5 * y;
+	return sqrt(sqrt(z*z - y * INV_ALPHA) - z) * sign(x);
+}
+
+float gaussian_rand( vec2 n , float seed)
+{
+	float t = fract( seed );
+	float x = nrand( n + 0.07*t );
+    
+	return inv_error_function(x*2.0-1.0)*0.15 + 0.5;
+}
   
 void main()
 {
@@ -169,7 +194,10 @@ void main()
     float reflectance = 0.1;
 
 
-    float r = fit01(random(instance_id), 0.2, 0.25);
+    //float r = fit01(random(instance_id), 0.15, 0.25);
+    float r = gaussian_rand(vec2(instance_id+4), 0);
+    r = clamp(r, 0.0, 1.0);
+    r = fit01(r, 0.1, 0.35);
     vec4 output_color = vec4(vec3(r), 1.0);
     // Port from Bevy 0.5
     vec3 N = normalize(vertex_normal_ws);
@@ -213,9 +241,9 @@ void main()
     // TODO compensate for energy loss https://google.github.io/filament/Filament.html#materialsystem/improvingthebrdfs/energylossinspecularreflectance
     // light.color.rgb is premultiplied with light.intensity on the CPU
     light_accum +=
-        ((diffuse + specular) * light_color.rgb) * (rangeAttenuation * NoL);
+        ((diffuse + specular) * light_color.rgb) * (rangeAttenuation * NoL * 1.2);
 
-    vec3 diffuse_ambient = EnvBRDFApprox(diffuseColor, 1.0, NdotV);
+    vec3 diffuse_ambient = EnvBRDFApprox(diffuseColor, 1.0, NdotV) * pow((1.0-NoL), 5.0) * 5.0;
     vec3 specular_ambient = EnvBRDFApprox(F0, perceptual_roughness, NdotV);
 
     output_color.rgb = light_accum;

@@ -19,15 +19,13 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
 fn perlin_noise_mesh(terrain_data: &mut TerrainData, mesh: &mut Mesh) {
     let pos = mesh.attributes.get_mut("Vertex_Position").unwrap();
 
-    let noise = &mut terrain_data.perlin;
-
     let mut noise_values = Vec::new();
     let mut min_value = 0.0;
     let mut max_value = 0.0;
 
     if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = pos {
         for p in positions {
-            let n = noise.get_noise(p[0], p[2]);
+            let n = terrain_data.height_at(p[0], p[2]);
             p[1] = n;
             noise_values.push(n);
 

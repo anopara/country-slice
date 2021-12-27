@@ -325,6 +325,15 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             // Render
             shader.gl_use_program();
 
+            {
+                //DEBUG TERRAIN TEXTURE
+                gl::ActiveTexture(gl::TEXTURE1);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
+                //reset
+                gl::ActiveTexture(gl::TEXTURE0);
+            }
+
             // atm, I'm just binding the road mask to anything in transparency pass (ATM, only shadows have transparency pass, so we can just bind the texture)
             // TODO: in the future, need to check for whether its a shadow
             gl::BindTexture(gl::TEXTURE_2D, texture_buffer);

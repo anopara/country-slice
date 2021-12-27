@@ -25,8 +25,8 @@ void main() {
     float road_value = sample_texture_ws(v_pos_ws.xz);
     v = v * (1.0 - pow(min(road_value*2.0, 1.0), 2.0));
 
-    float alpha = pow(v, 2.0);
-    o_Target = vec4(0.0, 0.0, 0.0, alpha * 0.6);
+    float alpha = pow(v, 3.0);
+    o_Target = vec4(0.0, 0.0, 0.0, alpha * 0.7);
 
     // DUMMY WIREFRAME
     

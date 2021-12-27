@@ -23,8 +23,18 @@ void main()
 {   
 
     float h = sample_terrain_texture_ws(Vertex_Position.xz) + 0.5;
-    h = fit01(h, 0.0, 1.0);
+    h = fit01(h, 0.0, 1.2);
+
+    // fall off
+
+    float f = length(Vertex_Position / 10.0);
+    f = pow(f, 3.0);
+    //f = clamp(f, 0.0, 1.0);
+    f = smoothstep(0.0, 1.0, f);
+
+
 
     gl_Position = projection * view * model * vec4(Vertex_Position, 1.0);
-    ourColor = Vertex_Color * h; // set ourColor to the input color we got from the vertex data //vec3(h, 0.0, Vertex_Position.y);//
+    ourColor = vec3(f);
+    ourColor = mix(Vertex_Color * h, vec3(0.120741), f); // set ourColor to the input color we got from the vertex data //vec3(h, 0.0, Vertex_Position.y);//
 } 
