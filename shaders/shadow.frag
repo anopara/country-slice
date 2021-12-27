@@ -19,7 +19,7 @@ void main() {
 
 
 
-    float v = 1.0 - max(fit01(v_Uv.y, -0.6, 1.0), 0.0);
+    float v = 1.0 - max(fit01(v_Uv.y, -0.3, 1.0), 0.0);
 
     // check if we are overlapping with the road
     float road_value = sample_texture_ws(v_pos_ws.xz);

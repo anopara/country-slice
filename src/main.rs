@@ -45,6 +45,9 @@ const VALIDATE_SHADERS: bool = false;
 // * then this img needs to be sent to GPU too
 // GPU side -> update the meshes, just push the vertices up
 
+// TODO: make the walls more straight at the top, but still adapt to the ground
+// maybe make some kind of Y smoothing?
+
 pub struct TerrainData {
     perlin: bracket_noise::prelude::FastNoise,
     amp: f32,

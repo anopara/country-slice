@@ -23,7 +23,7 @@ void main()
 {   
 
     float h = sample_terrain_texture_ws(Vertex_Position.xz) + 0.5;
-    h = fit01(h, 0.0, 1.2);
+    h = fit01(h, 0.0, 1.0);
 
     // fall off
 

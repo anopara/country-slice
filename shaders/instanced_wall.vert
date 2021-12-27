@@ -121,7 +121,13 @@ void main()
 
     // ---------------------- TERRAIN
 
-    final_p.y += sample_terrain_texture_ws(final_p.xz);
+    const float WALL_HEIGHT = 1.4;
+    float height_u = final_p.y / WALL_HEIGHT * 0.7;
+
+    vec3 terrain_p = final_p;
+    terrain_p.y += sample_terrain_texture_ws(final_p.xz);
+
+    final_p = mix(terrain_p, final_p, height_u);
 
 
     // ----------------------------------

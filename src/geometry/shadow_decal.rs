@@ -13,7 +13,7 @@ use crate::{
 use super::curve::Curve;
 
 const OFFSET_FROM_GROUND: f32 = 0.001;
-const SHADOW_WIDTH: f32 = 0.3;
+const SHADOW_WIDTH: f32 = 0.5;
 const SHADOW_CAP_STEPS: usize = 10;
 
 pub struct ShadowDecal;

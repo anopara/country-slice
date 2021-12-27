@@ -19,7 +19,7 @@ float sample_terrain_texture_ws(vec2 pos_ws) {
 void main() {
 
     vec3 pos_ws = (model * vec4(Vertex_Position, 1.0)).xyz;
-    pos_ws.y = sample_terrain_texture_ws(pos_ws.xz) + 0.01;
+    pos_ws.y = sample_terrain_texture_ws(pos_ws.xz) + 0.02;
 
     gl_Position = projection * view * vec4(pos_ws, 1.0);
     v_Uv = Vertex_UV;

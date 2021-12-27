@@ -35,7 +35,15 @@ void main()
 
     // ---------------------- TERRAIN
 
-    vertex_ws.y += sample_terrain_texture_ws(vertex_ws.xz);
+    //vertex_ws.y += sample_terrain_texture_ws(vertex_ws.xz);
+
+    const float WALL_HEIGHT = 1.4;
+    float height_u = vertex_ws.y / WALL_HEIGHT * 0.7;
+
+    vec4 terrain_p = vertex_ws;
+    terrain_p.y += sample_terrain_texture_ws(vertex_ws.xz);
+
+    vertex_ws = mix(terrain_p, vertex_ws, height_u);
 
 
     // ----------------------------------

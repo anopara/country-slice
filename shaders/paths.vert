@@ -75,6 +75,7 @@ void main()
 
     float h = sample_terrain_texture_ws(Vertex_Position.xz) + 0.4;
     h = fit01(h*h, 0.1, 3.0);
+    h = clamp(h, 0.0, 0.8);
 
 
     // OUT ----------------------------

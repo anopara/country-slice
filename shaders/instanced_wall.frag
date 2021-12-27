@@ -196,7 +196,7 @@ void main()
 
     //float r = fit01(random(instance_id), 0.15, 0.25);
     float r = gaussian_rand(vec2(instance_id+4), 0);
-    r = clamp(r, 0.0, 1.0);
+    r = clamp(r, 0.2, 1.0);
     r = fit01(r, 0.1, 0.35);
     vec4 output_color = vec4(vec3(r), 1.0);
     // Port from Bevy 0.5
