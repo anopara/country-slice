@@ -94,7 +94,7 @@ pub fn process_window_events(
                 ..
             } => {
                 if VirtualKeyCode::Escape == virtual_code {
-                    *control_flow = ControlFlow::Exit;
+                    //*control_flow = ControlFlow::Exit;
                 }
 
                 // TODO: do this with marcos?
@@ -106,6 +106,7 @@ pub fn process_window_events(
                     VirtualKeyCode::Space => Some(bevy_input::keyboard::KeyCode::Space),
                     VirtualKeyCode::Q => Some(bevy_input::keyboard::KeyCode::Q),
                     VirtualKeyCode::E => Some(bevy_input::keyboard::KeyCode::E),
+                    VirtualKeyCode::Escape => Some(bevy_input::keyboard::KeyCode::Escape),
                     _ => None,
                 };
 
