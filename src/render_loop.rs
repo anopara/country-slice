@@ -11,7 +11,6 @@ use glutin::{window::Window, ContextWrapper, PossiblyCurrent};
 use crate::asset_libraries::{
     shader_library::AssetShaderLibrary, vao_library::AssetVAOLibrary, Handle,
 };
-use crate::components::*;
 use crate::geometry::instanced_wall::InstancedWall;
 use crate::render::{
     camera::MainCamera,
@@ -20,6 +19,7 @@ use crate::render::{
 };
 use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand, WallManager};
 use crate::window_events::WindowSize;
+use crate::{components::*, TerrainData};
 use crate::{ComputeArchesIndirect, ComputePathsMask, CursorRaycast};
 
 use crate::utils::custom_macro::log_if_error;
@@ -185,6 +185,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let assets_vao = ecs.get_resource::<AssetVAOLibrary>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
+        let terrain_data = ecs.get_resource::<TerrainData>().unwrap();
 
         let mut transparent_pass = Vec::new();
 
@@ -224,6 +225,15 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             //    assets_shader.debug_get_name(*shader_handle)
             //);
 
+            {
+                //DEBUG TERRAIN TEXTURE
+                gl::ActiveTexture(gl::TEXTURE1);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
+                //reset
+                gl::ActiveTexture(gl::TEXTURE0);
+            }
+
             // MEOWMEOWcheckforspecialtexture
             if test.is_some() {
                 gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
@@ -232,7 +242,15 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             // check if its a road
             if road.is_some() {
                 // bind road mask
+                gl::ActiveTexture(gl::TEXTURE0);
                 gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                log_if_error!(shader.set_gl_uniform("path_texture", GlUniform::Int(0)));
+
+                gl::ActiveTexture(gl::TEXTURE1);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                log_if_error!(shader.set_gl_uniform("terrain_texture", GlUniform::Int(1)));
+                //reset
+                gl::ActiveTexture(gl::TEXTURE0);
                 // TODO: when we used the `instanced_wall.frag` for shading, re-enable this
                 //shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
             }
@@ -306,6 +324,15 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         for (vao, shader, model_transform) in transparent_pass {
             // Render
             shader.gl_use_program();
+
+            {
+                //DEBUG TERRAIN TEXTURE
+                gl::ActiveTexture(gl::TEXTURE1);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
+                //reset
+                gl::ActiveTexture(gl::TEXTURE0);
+            }
 
             // atm, I'm just binding the road mask to anything in transparency pass (ATM, only shadows have transparency pass, so we can just bind the texture)
             // TODO: in the future, need to check for whether its a shadow

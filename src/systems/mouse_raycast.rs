@@ -6,7 +6,7 @@ use glam::{Mat4, Vec2, Vec3};
 use crate::components::transform::Transform;
 use crate::components::MousePreviewCube;
 use crate::window_events::{CursorMoved, WindowSize};
-use crate::CursorRaycast;
+use crate::{CursorRaycast, TerrainData};
 
 use crate::render::camera::{Camera, MainCamera};
 
@@ -16,6 +16,7 @@ pub fn mouse_raycast(
     mut cursor_ws_cache: ResMut<CursorRaycast>,
     main_camera: Res<MainCamera>,
     window_size: Res<WindowSize>,
+    terrain: Res<TerrainData>,
 ) {
     if let Some(cursor_latest) = cursor.iter().last() {
         let (cursor_ws, ray) = from_screenspace_to_ws(
@@ -24,8 +25,29 @@ pub fn mouse_raycast(
             &main_camera.camera,
         );
 
+        // solve for the terrain min_y & max_y
         // ray-plane intersction, solving for (P + d * ray).y = 0.0
-        let p = cursor_ws + ray * (-cursor_ws.y / ray.y);
+        // (camera_ws + dist * ray).y = terrain.y;
+        let upper_bound_p = cursor_ws + ray * ((terrain.max_y - cursor_ws.y) / ray.y);
+        let lower_bound_p = cursor_ws + ray * ((terrain.min_y - cursor_ws.y) / ray.y);
+
+        //TODO: at grazing angles, needs more subdivision OR make it adaptive per ray length
+        let steps = 1000;
+        let step_size = (lower_bound_p - upper_bound_p).length() / (steps as f32);
+
+        // raymarch along camera ray
+        let mut p = upper_bound_p;
+        for _ in 0..steps {
+            let new_p = p + ray * step_size;
+
+            if new_p.y < terrain.height_at(new_p.x, new_p.z) {
+                // intersection with the terrain is found
+                break;
+            }
+
+            p = new_p;
+        }
+
         *cursor_ws_cache = CursorRaycast(p);
 
         // Update preview cube

@@ -46,4 +46,26 @@ impl ComputePathsMask {
             }
         }
     }
+
+    pub fn clear_texture(&mut self) {
+        unsafe {
+            gl::BindTexture(gl::TEXTURE_2D, self.texture);
+            let raw_pixels: Vec<[f32; 4]> =
+                vec![[0.0, 0.0, 0.0, 1.0]; (self.texture_dims.0 * self.texture_dims.1) as usize];
+
+            gl::TexImage2D(
+                gl::TEXTURE_2D,
+                0,
+                gl::RGBA32F as i32,
+                self.texture_dims.0,
+                self.texture_dims.1,
+                0,
+                gl::RGBA,
+                gl::FLOAT,
+                &raw_pixels[0] as *const f32 as *const std::ffi::c_void,
+            );
+
+            gl::BindTexture(gl::TEXTURE_2D, 0);
+        }
+    }
 }

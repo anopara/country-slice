@@ -45,6 +45,11 @@ impl InstancedWall {
         self.instance_buffer
             .update(&Self::instanced_wall_data(bricks));
     }
+
+    pub fn free_memory(&mut self) {
+        //TODO:
+        unimplemented!()
+    }
 }
 
 #[allow(dead_code)]

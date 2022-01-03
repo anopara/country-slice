@@ -19,14 +19,14 @@ void main() {
 
 
 
-    float v = 1.0 - max(fit01(v_Uv.y, -0.6, 1.0), 0.0);
+    float v = 1.0 - max(fit01(v_Uv.y, -0.3, 1.0), 0.0);
 
     // check if we are overlapping with the road
     float road_value = sample_texture_ws(v_pos_ws.xz);
     v = v * (1.0 - pow(min(road_value*2.0, 1.0), 2.0));
 
-    float alpha = pow(v, 2.0);
-    o_Target = vec4(0.0, 0.0, 0.0, alpha * 0.6);
+    float alpha = pow(v, 3.0);
+    o_Target = vec4(0.0, 0.0, 0.0, alpha * 0.7);
 
     // DUMMY WIREFRAME
     

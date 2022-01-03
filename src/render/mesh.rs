@@ -38,9 +38,9 @@ impl Mesh {
         self.indices = indices;
     }
 
-    pub fn add_color(&mut self) {
+    pub fn add_color(&mut self, color: [f32; 3]) {
         let color_values = vec![
-            [1.0, 0.0, 0.0];
+            color;
             self.attributes
                 .get("Vertex_Position")
                 .unwrap()

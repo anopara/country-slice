@@ -28,6 +28,13 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
+uniform sampler2D terrain_texture;
+
+float sample_terrain_texture_ws(vec2 pos_ws) {
+    vec2 texture_uv = (pos_ws / 20.0 + 0.5);
+    return texture(terrain_texture, texture_uv).x;
+}
+
 
 float random_f(float x) {
     return fract(sin(x*12.9898) * 43758.5453);
@@ -111,6 +118,17 @@ void main()
         final_p = vec3(p.x, p.y + sin_wave, p.z);
 
     }
+
+    // ---------------------- TERRAIN
+
+    const float WALL_HEIGHT = 1.4;
+    float height_u = final_p.y / WALL_HEIGHT * 0.7;
+
+    vec3 terrain_p = final_p;
+    terrain_p.y += sample_terrain_texture_ws(final_p.xz);
+
+    final_p = mix(terrain_p, final_p, height_u);
+
 
     // ----------------------------------
 

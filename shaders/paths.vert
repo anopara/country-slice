@@ -14,11 +14,17 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-uniform sampler2D ourTexture;
+uniform sampler2D path_texture;
+uniform sampler2D terrain_texture;
 
-float sample_texture_ws(vec2 pos_ws) {
+float sample_terrain_texture_ws(vec2 pos_ws) {
     vec2 texture_uv = (pos_ws / 20.0 + 0.5);
-    return texture(ourTexture, texture_uv).x;
+    return texture(terrain_texture, texture_uv).x;
+}
+
+float sample_path_texture_ws(vec2 pos_ws) {
+    vec2 texture_uv = (pos_ws / 20.0 + 0.5);
+    return texture(path_texture, texture_uv).x;
 }
 
 float random_f(float x) {
@@ -41,13 +47,13 @@ void main()
     float avg_value = 0.0;
 
     // LEFT BOTTOM
-    avg_value += sample_texture_ws(bbx_min);
+    avg_value += sample_path_texture_ws(bbx_min);
     // RIGHT BOTTOM
-    avg_value += sample_texture_ws(vec2(bbx_max.x, bbx_min.y));
+    avg_value += sample_path_texture_ws(vec2(bbx_max.x, bbx_min.y));
     // LEFT TOP
-    avg_value += sample_texture_ws(vec2(bbx_min.x, bbx_max.y));
+    avg_value += sample_path_texture_ws(vec2(bbx_min.x, bbx_max.y));
     // RIGHT TOP
-    avg_value += sample_texture_ws(bbx_max);
+    avg_value += sample_path_texture_ws(bbx_max);
 
     avg_value /= 4.0;
     
@@ -56,7 +62,7 @@ void main()
     threshold = fit01(threshold, 0.2, 0.4);
 
     if (avg_value > threshold) {
-        pos_ws.y = 0.01;
+        pos_ws.y = sample_terrain_texture_ws(pos_ws.xz) + 0.01;
     } else {
         pos_ws = vec3(0.0);
     }
@@ -67,9 +73,14 @@ void main()
     float random_color = random_f(seed+50.0);
     random_color = fit01(random_color, 0.086, 0.14);
 
+    float h = sample_terrain_texture_ws(Vertex_Position.xz) + 0.4;
+    h = fit01(h*h * sign(h), 0.1, 3.0);
+    h = clamp(h, 0.1, 0.8);
+
 
     // OUT ----------------------------
     gl_Position = projection * view * vec4(pos_ws, 1.0);
-    ourColor = vec3(random_color); // set ourColor to the input color we got from the vertex data
+    ourColor = vec3(random_color) * fit01(h, 0.0, 2.0);; // set ourColor to the input color we got from the vertex data
+    ourColor.z *= 1.0-h;
     TexCoord = Vertex_UV;
 } 

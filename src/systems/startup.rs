@@ -1,9 +1,9 @@
 use bevy_ecs::{component::Component, prelude::*};
 
 use crate::asset_libraries::Handle;
-use crate::components::*;
 use crate::geometry::cube::Cube;
 use crate::utils::load_json::load_json_as_mesh;
+use crate::{components::*, TerrainData};
 
 use crate::geometry::plane::Plane;
 use crate::{
@@ -18,15 +18,23 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
 pub fn startup(ecs: &mut World) {
     puffin::profile_function!();
     // Load meshes
-    let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
+    //let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
     let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
     let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
 
     let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
-    road_pebbles_mesh.add_color();
+    road_pebbles_mesh.add_color([1.0; 3]);
     road_pebbles_mesh.add_uv();
     let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
+
+    let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
+    terrain_test.add_color([0.35; 3]);
+    let terrain_test_handle = load_mesh_into_library(terrain_test, "terrain", ecs);
+
+    let mut terrain_grid = load_json_as_mesh("meshes/grid_10x10.json").unwrap();
+    terrain_grid.add_color([0.0; 3]);
+    let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
 
     // Load shaders
     let vert_color = load_shader_into_library(
@@ -39,6 +47,12 @@ pub fn startup(ecs: &mut World) {
         "shaders/paths.vert",
         "shaders/vertex_color.frag",
         "road_shader",
+        ecs,
+    );
+    let terrain_shader = load_shader_into_library(
+        "shaders/vertex_color_terrain.vert",
+        "shaders/vertex_color.frag",
+        "terrain_shader",
         ecs,
     );
     // this shader shows the compute_test.comp as a texture
@@ -77,11 +91,11 @@ pub fn startup(ecs: &mut World) {
         .insert(IndirectDraw);
 
     // Create the starting scene
-    ecs.spawn().insert_bundle(DrawableMeshBundle {
-        mesh: floor,
-        shader: vert_color,
-        transform: Transform::identity(),
-    });
+    //ecs.spawn().insert_bundle(DrawableMeshBundle {
+    //    mesh: floor,
+    //    shader: vert_color,
+    //    transform: Transform::identity(),
+    //});
 
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
@@ -90,6 +104,18 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::identity(),
         })
         .insert(RoadComponent);
+
+    ecs.spawn().insert_bundle(DrawableMeshBundle {
+        mesh: terrain_test_handle,
+        shader: terrain_shader,
+        transform: Transform::from_translation(glam::Vec3::new(0.0, -0.005, 0.0)),
+    });
+
+    ecs.spawn().insert_bundle(DrawableMeshBundle {
+        mesh: terrain_grid_handle,
+        shader: terrain_shader,
+        transform: Transform::from_translation(glam::Vec3::new(0.0, 0.0, 0.0)),
+    });
 
     /*
     ecs.spawn()
@@ -124,7 +150,7 @@ fn load_mesh(path: &str) -> Mesh {
     mesh.set_indices(mesh_buffer.indices);
 
     if mesh_buffer.colors.is_empty() {
-        mesh.add_color();
+        mesh.add_color([1.0, 0.0, 1.0]);
         //mesh.set_attribute(
         //    Mesh::ATTRIBUTE_COLOR,
         //    vec![[1.0, 1.0, 1.0]; mesh_buffer.positions.len()],
