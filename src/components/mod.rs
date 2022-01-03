@@ -16,3 +16,5 @@ pub struct IndirectDraw;
 
 //
 pub struct RoadComponent;
+
+pub struct UiPrompt;

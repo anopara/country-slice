@@ -23,6 +23,11 @@ pub fn startup(ecs: &mut World) {
     let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
     let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
 
+    // testing ui prompts
+    let mut test_cube = Mesh::from(Cube::new(1.0));
+    test_cube.add_color([0.0, 0.5, 0.3]);
+    let test_cube_handle = load_mesh_into_library(test_cube, "test cube", ecs);
+
     let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
     road_pebbles_mesh.add_color([1.0; 3]);
     road_pebbles_mesh.add_uv();
@@ -135,6 +140,14 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::identity(),
         })
         .insert(MousePreviewCube);
+
+    ecs.spawn()
+        .insert_bundle(DrawableMeshBundle {
+            mesh: test_cube_handle,
+            shader: vert_color,
+            transform: Transform::identity(),
+        })
+        .insert(UiPrompt);
 
     log::info!("Finished startup");
 }
