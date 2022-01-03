@@ -1,10 +1,8 @@
 use bevy_ecs::prelude::*;
-use bevy_input::{keyboard::KeyCode, mouse::MouseButton, Input};
+use bevy_input::{keyboard::KeyCode, Input};
 
 use crate::{
-    asset_libraries::Handle,
-    geometry::{instanced_wall::InstancedWall, shadow_decal::ShadowDecal},
-    render::mesh::Mesh,
+    geometry::instanced_wall::InstancedWall,
     resources::{ComputePathsMask, CurveSegmentsComputePass, WallManager},
 };
 
@@ -17,14 +15,13 @@ pub fn clear_canvas(
     keys: Res<Input<KeyCode>>,
     mut wall_manager: ResMut<WallManager>,
     mut query_walls: Query<&mut InstancedWall>,
-    mut query_shadows: Query<(&mut ShadowDecal, &mut Handle<Mesh>)>,
-    mut compute_indirect: ResMut<CurveSegmentsComputePass>,
+    compute_indirect: ResMut<CurveSegmentsComputePass>,
     mut compute_path_mask: ResMut<ComputePathsMask>,
     mut commands: Commands,
 ) {
     if keys.pressed(KeyCode::Escape) {
         for wall_entity in &wall_manager.walls {
-            let wall_component = query_walls.get_mut(*wall_entity).unwrap();
+            let _wall_component = query_walls.get_mut(*wall_entity).unwrap();
             //wall_component.free_memory(); // TODO: I can make a single SSBO for all walls, then I don't need to manage individual memory chunks
             commands.entity(*wall_entity).despawn();
         }

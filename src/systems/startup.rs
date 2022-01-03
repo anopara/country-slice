@@ -1,9 +1,9 @@
 use bevy_ecs::{component::Component, prelude::*};
 
 use crate::asset_libraries::Handle;
+use crate::components::*;
 use crate::geometry::cube::Cube;
 use crate::utils::load_json::load_json_as_mesh;
-use crate::{components::*, TerrainData};
 
 use crate::geometry::plane::Plane;
 use crate::{
