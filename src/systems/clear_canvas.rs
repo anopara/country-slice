@@ -19,7 +19,7 @@ pub fn clear_canvas(
     mut compute_path_mask: ResMut<ComputePathsMask>,
     mut commands: Commands,
 ) {
-    if keys.pressed(KeyCode::Escape) {
+    if keys.pressed(KeyCode::Back) {
         for wall_entity in &wall_manager.walls {
             let _wall_component = query_walls.get_mut(*wall_entity).unwrap();
             //wall_component.free_memory(); // TODO: I can make a single SSBO for all walls, then I don't need to manage individual memory chunks
