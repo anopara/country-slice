@@ -4,13 +4,16 @@ use glam::{Mat4, Vec2, Vec3};
 
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, Handle},
-    components::{Transform, UiPrompt, UiPromptDebugPreview},
+    components::{Transform, UiPrompt},
     render::{
         camera::{Camera, MainCamera},
         mesh::Mesh,
     },
     window_events::{CursorMoved, WindowSize},
 };
+
+//TODO: next -> walls should have ui prompts on their ends
+// if start drawing from the end, continue thta curve
 
 pub fn ui_prompts(
     mut q: QuerySet<(
@@ -23,16 +26,13 @@ pub fn ui_prompts(
     mut assets_mesh: ResMut<AssetMeshLibrary>,
 ) {
     // borrow checker workaround
-    let mut debug = Vec::new();
+    let mut prompt_preview = Vec::new();
 
     for (ui_prompt, transform, mesh_handle) in q.q0().iter() {
-        let mesh_pos_ss: Vec<_> =
-            get_mesh_ws_vertex_positions(*mesh_handle, transform, &mut assets_mesh)
-                .iter()
-                .map(|p| from_ws_to_screenspace(*p, &window_size, &main_camera.camera))
-                .collect();
+        let mesh_pos_ss = iter_mesh_ws_vertex_positions(*mesh_handle, transform, &mut assets_mesh)
+            .map(|p| from_ws_to_screenspace(p, &window_size, &main_camera.camera));
 
-        let mut bbx = bbx_screenspace(&mesh_pos_ss);
+        let mut bbx = bbx_screenspace(mesh_pos_ss);
         bbx.add_padding(ui_prompt.padding);
 
         if let Some(cursor_latest) = cursor.iter().last() {
@@ -47,14 +47,12 @@ pub fn ui_prompts(
             }
         }
 
-        debug.push((ui_prompt.debug_preview, bbx));
+        prompt_preview.push((ui_prompt.debug_preview, bbx));
     }
 
-    for (entity, bbx) in debug {
-        // Update debug previw
-        let debug_mesh_handle = q.q1_mut().get_mut(entity).unwrap();
+    for (entity, bbx) in prompt_preview {
         update_debug_mesh(
-            &debug_mesh_handle,
+            &q.q1_mut().get_mut(entity).unwrap(),
             &bbx,
             &window_size,
             &main_camera.camera,
@@ -82,23 +80,20 @@ pub fn from_screenspace_to_ws(pos_ss: Vec2, screen_size: Vec2, camera: &Camera) 
     pos_ws
 }
 
-pub fn get_mesh_ws_vertex_positions(
+pub fn iter_mesh_ws_vertex_positions<'a>(
     handle: Handle<Mesh>,
-    transform: &Transform,
-    assets_mesh: &mut ResMut<AssetMeshLibrary>,
-) -> Vec<Vec3> {
+    transform: &'a Transform,
+    assets_mesh: &'a mut ResMut<AssetMeshLibrary>,
+) -> impl Iterator<Item = Vec3> + 'a {
     let mesh = assets_mesh.get_mut(handle).unwrap();
     let mesh_ws_pos = mesh.attributes.get(Mesh::ATTRIBUTE_POSITION).unwrap();
 
     if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = mesh_ws_pos {
-        positions
-            .iter()
-            .map(|p| {
-                transform
-                    .compute_matrix()
-                    .transform_point3(Vec3::from_slice(p))
-            })
-            .collect()
+        positions.iter().map(move |p| {
+            transform
+                .compute_matrix()
+                .transform_point3(Vec3::from_slice(p))
+        })
     } else {
         panic!()
     }
@@ -116,8 +111,7 @@ impl ScreenSpaceBoundingBox {
     }
 }
 
-// TODO: ask Tom pub fn bbx_screenspace<'a>(ss_pos: impl Iterator<Item = &'a Vec2>) -> (Vec2, Vec2) {
-pub fn bbx_screenspace(ss_pos: &[Vec2]) -> ScreenSpaceBoundingBox {
+pub fn bbx_screenspace<'a>(ss_pos: impl Iterator<Item = Vec2>) -> ScreenSpaceBoundingBox {
     let mut min = Vec2::new(f32::MAX, f32::MAX);
     let mut max = Vec2::ZERO;
 
