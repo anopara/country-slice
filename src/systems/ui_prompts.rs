@@ -13,78 +13,54 @@ use crate::{
 };
 
 pub fn ui_prompts(
-    query: Query<(&UiPrompt, &Transform, &Handle<Mesh>)>,
-    query_debug: Query<(&UiPromptDebugPreview, &Handle<Mesh>)>,
+    mut q: QuerySet<(
+        Query<(&UiPrompt, &Transform, &Handle<Mesh>)>,
+        Query<&mut Handle<Mesh>>,
+    )>,
     mut cursor: EventReader<CursorMoved>,
     main_camera: Res<MainCamera>,
     window_size: Res<WindowSize>,
     mut assets_mesh: ResMut<AssetMeshLibrary>,
 ) {
-    // for every vertex of the cube, transform it into screenspace
-    let mut mesh_pos_ws = get_mesh_vertex_positions(*query.single().unwrap().2, &mut assets_mesh);
-    mesh_pos_ws = mesh_pos_ws
-        .iter()
-        .map(|p| {
-            query
-                .single()
-                .unwrap()
-                .1
-                .compute_matrix()
-                .transform_point3(*p)
-        })
-        .collect();
+    // borrow checker workaround
+    let mut debug = Vec::new();
 
-    let mesh_pos_ss: Vec<_> = mesh_pos_ws
-        .iter()
-        .map(|p| from_ws_to_screenspace(*p, &window_size, &main_camera.camera))
-        .collect();
-    //dbg!(mesh_pos_ws);
-    //dbg!(mesh_pos_ss.clone());
+    for (ui_prompt, transform, mesh_handle) in q.q0().iter() {
+        let mesh_pos_ss: Vec<_> =
+            get_mesh_ws_vertex_positions(*mesh_handle, transform, &mut assets_mesh)
+                .iter()
+                .map(|p| from_ws_to_screenspace(*p, &window_size, &main_camera.camera))
+                .collect();
 
-    // find the bounding box of them in screenspace -> TODO: check how this looks, does it look correct????
-    let bbx_ss = bbx_screenspace(&mesh_pos_ss);
-    let debug_ss_pos = vec![
-        bbx_ss.0,
-        Vec2::new(bbx_ss.0.x, bbx_ss.1.y),
-        bbx_ss.1,
-        Vec2::new(bbx_ss.1.x, bbx_ss.0.y),
-        bbx_ss.0,
-    ];
-    let debug_ws_pos: Vec<_> = debug_ss_pos
-        .iter()
-        .map(|p| from_screenspace_to_ws(*p, window_size.into_vec2(), &main_camera.camera))
-        .collect();
-    update_debug_mesh(
-        debug_ws_pos,
-        query_debug.single().unwrap().1,
-        &mut assets_mesh,
-    );
+        let mut bbx = bbx_screenspace(&mesh_pos_ss);
+        bbx.add_padding(ui_prompt.padding);
 
-    //dbg!(bbx_ss);
-
-    if let Some(cursor_latest) = cursor.iter().last() {
-        dbg!(cursor_latest.pos);
-        let bbx_min_x = bbx_ss.0.x;
-        let bbx_max_x = bbx_ss.1.x;
-
-        let bbx_min_y = bbx_ss.0.y;
-        let bbx_max_y = bbx_ss.1.y;
-
-        if cursor_latest.pos.x > bbx_min_x
-            && cursor_latest.pos.x < bbx_max_x
-            && (cursor_latest.pos.y) > bbx_min_y
-            && (cursor_latest.pos.y) < bbx_max_y
-        {
-            println!("Inside~ {} vs {:?}", cursor_latest.pos, bbx_ss);
-        } else {
-            println!("NOPE~ {} vs {:?}", cursor_latest.pos, bbx_ss);
+        if let Some(cursor_latest) = cursor.iter().last() {
+            if cursor_latest.pos.x > bbx.min.x
+                && cursor_latest.pos.x < bbx.max.x
+                && (cursor_latest.pos.y) > bbx.min.y
+                && (cursor_latest.pos.y) < bbx.max.y
+            {
+                println!("Inside~");
+            } else {
+                println!("NOPE~");
+            }
         }
+
+        debug.push((ui_prompt.debug_preview, bbx));
     }
 
-    // expand that box by X pixels padding
-    // check if mouse is inside that 2d volume
-    // print something to console if so
-    // TODO: also start looking into events!
+    for (entity, bbx) in debug {
+        // Update debug previw
+        let debug_mesh_handle = q.q1_mut().get_mut(entity).unwrap();
+        update_debug_mesh(
+            &debug_mesh_handle,
+            &bbx,
+            &window_size,
+            &main_camera.camera,
+            &mut assets_mesh,
+        );
+    }
 }
 
 pub fn from_ws_to_screenspace(ws_pos: Vec3, window_size: &WindowSize, camera: &Camera) -> Vec2 {
@@ -106,22 +82,42 @@ pub fn from_screenspace_to_ws(pos_ss: Vec2, screen_size: Vec2, camera: &Camera) 
     pos_ws
 }
 
-pub fn get_mesh_vertex_positions(
+pub fn get_mesh_ws_vertex_positions(
     handle: Handle<Mesh>,
+    transform: &Transform,
     assets_mesh: &mut ResMut<AssetMeshLibrary>,
 ) -> Vec<Vec3> {
     let mesh = assets_mesh.get_mut(handle).unwrap();
     let mesh_ws_pos = mesh.attributes.get(Mesh::ATTRIBUTE_POSITION).unwrap();
 
     if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = mesh_ws_pos {
-        positions.iter().map(|p| Vec3::from_slice(p)).collect()
+        positions
+            .iter()
+            .map(|p| {
+                transform
+                    .compute_matrix()
+                    .transform_point3(Vec3::from_slice(p))
+            })
+            .collect()
     } else {
         panic!()
     }
 }
 
+pub struct ScreenSpaceBoundingBox {
+    min: Vec2,
+    max: Vec2,
+}
+
+impl ScreenSpaceBoundingBox {
+    pub fn add_padding(&mut self, v: usize) {
+        self.min -= Vec2::new(v as f32, v as f32);
+        self.max += Vec2::new(v as f32, v as f32);
+    }
+}
+
 // TODO: ask Tom pub fn bbx_screenspace<'a>(ss_pos: impl Iterator<Item = &'a Vec2>) -> (Vec2, Vec2) {
-pub fn bbx_screenspace(ss_pos: &[Vec2]) -> (Vec2, Vec2) {
+pub fn bbx_screenspace(ss_pos: &[Vec2]) -> ScreenSpaceBoundingBox {
     let mut min = Vec2::new(f32::MAX, f32::MAX);
     let mut max = Vec2::ZERO;
 
@@ -134,14 +130,28 @@ pub fn bbx_screenspace(ss_pos: &[Vec2]) -> (Vec2, Vec2) {
         max.y = max.y.max(p.y);
     }
 
-    (min, max)
+    ScreenSpaceBoundingBox { min, max }
 }
 
 fn update_debug_mesh(
-    positions_ws: Vec<Vec3>,
     mesh_handle: &Handle<Mesh>,
+    bbx: &ScreenSpaceBoundingBox,
+    window_size: &WindowSize,
+    camera: &Camera,
     assets_mesh: &mut ResMut<AssetMeshLibrary>,
 ) {
+    let debug_ss_pos = vec![
+        bbx.min,
+        Vec2::new(bbx.min.x, bbx.max.y),
+        bbx.max,
+        Vec2::new(bbx.max.x, bbx.min.y),
+        bbx.min,
+    ];
+    let positions_ws: Vec<_> = debug_ss_pos
+        .iter()
+        .map(|p| from_screenspace_to_ws(*p, window_size.into_vec2(), camera))
+        .collect();
+
     let mesh = assets_mesh.get_mut(*mesh_handle).expect("MEOW####");
     mesh.set_attribute(
         Mesh::ATTRIBUTE_POSITION,

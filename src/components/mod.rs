@@ -17,5 +17,9 @@ pub struct IndirectDraw;
 //
 pub struct RoadComponent;
 
-pub struct UiPrompt;
+pub struct UiPrompt {
+    pub padding: usize, // padding of the interaction bounding box in screen-space in pixels
+    pub debug_preview: bevy_ecs::prelude::Entity,
+}
+
 pub struct UiPromptDebugPreview; //2D line strip to draw to show the bounding box in screenspace
