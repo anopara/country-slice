@@ -110,11 +110,11 @@ pub fn startup(ecs: &mut World) {
         })
         .insert(RoadComponent);
 
-    ecs.spawn().insert_bundle(DrawableMeshBundle {
-        mesh: terrain_test_handle,
-        shader: terrain_shader,
-        transform: Transform::from_translation(glam::Vec3::new(0.0, -0.005, 0.0)),
-    });
+    //ecs.spawn().insert_bundle(DrawableMeshBundle {
+    //    mesh: terrain_test_handle,
+    //    shader: terrain_shader,
+    //    transform: Transform::from_translation(glam::Vec3::new(0.0, -0.005, 0.0)),
+    //});
 
     ecs.spawn().insert_bundle(DrawableMeshBundle {
         mesh: terrain_grid_handle,
@@ -145,9 +145,34 @@ pub fn startup(ecs: &mut World) {
         .insert_bundle(DrawableMeshBundle {
             mesh: test_cube_handle,
             shader: vert_color,
-            transform: Transform::identity(),
+            transform: Transform::from_translation(glam::Vec3::new(-2.0, 1.0, 0.0)),
         })
         .insert(UiPrompt);
+
+    // TODO: make this into a component? and has a custom draw for it in the render loop?
+    let mut _preview = Mesh::new();
+    _preview.set_attribute(
+        Mesh::ATTRIBUTE_POSITION,
+        vec![
+            [0.0, 0.0, 0.0],
+            [1.0, 0.0, 0.0],
+            [1.0, 1.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 0.0],
+        ],
+    );
+    _preview.set_attribute(Mesh::ATTRIBUTE_COLOR, vec![[1.0, 0.0, 0.0]; 4]);
+    _preview.set_indices(vec![0, 1, 2, 3]);
+    let _preview = load_mesh_into_library(_preview, "ui debug", ecs);
+
+    ecs.spawn()
+        .insert_bundle(DrawableMeshBundle {
+            mesh: _preview,
+            shader: vert_color,
+            transform: Transform::identity(),
+        })
+        .insert(UiPromptDebugPreview)
+        .insert(GLDrawMode(gl::LINE_STRIP));
 
     log::info!("Finished startup");
 }

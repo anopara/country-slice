@@ -43,6 +43,10 @@ impl WindowSize {
             self.height.try_into().unwrap(),
         )
     }
+
+    pub fn into_vec2(&self) -> Vec2 {
+        Vec2::new(self.width as f32, self.height as f32)
+    }
 }
 
 // ------

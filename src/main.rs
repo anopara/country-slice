@@ -235,6 +235,7 @@ fn main() {
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
+        .add_system(ui_prompts.system())
         .add_system(draw_curve.system().label("usercurve"))
         .add_system_to_stage(
             "main_singlethread",

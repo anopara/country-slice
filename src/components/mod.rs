@@ -18,3 +18,4 @@ pub struct IndirectDraw;
 pub struct RoadComponent;
 
 pub struct UiPrompt;
+pub struct UiPromptDebugPreview; //2D line strip to draw to show the bounding box in screenspace
