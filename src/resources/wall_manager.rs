@@ -6,6 +6,7 @@ pub struct WallManager {
     pub curves: Vec<(Curve, Option<Entity>)>,
     pub walls: Vec<Entity>,
     pub shadows: Vec<Entity>,
+    pub editing_handles: Vec<Entity>,
 }
 
 impl WallManager {
@@ -14,6 +15,7 @@ impl WallManager {
             curves: Vec::new(),
             walls: Vec::new(),
             shadows: Vec::new(),
+            editing_handles: Vec::new(),
         }
     }
 }

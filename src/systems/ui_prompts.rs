@@ -13,11 +13,12 @@ use crate::{
 };
 
 //TODO: next -> walls should have ui prompts on their ends
-// if start drawing from the end, continue thta curve
+// if start drawing from the end, continue that curve
+// REDO THE RENDERING LOOP, make a screen space rendering pass
 
 pub fn ui_prompts(
     mut q: QuerySet<(
-        Query<(&UiPrompt, &Transform, &Handle<Mesh>)>,
+        Query<(&mut UiPrompt, &Transform, &Handle<Mesh>)>,
         Query<&mut Handle<Mesh>>,
     )>,
     mut cursor: EventReader<CursorMoved>,
@@ -25,31 +26,37 @@ pub fn ui_prompts(
     window_size: Res<WindowSize>,
     mut assets_mesh: ResMut<AssetMeshLibrary>,
 ) {
-    // borrow checker workaround
-    let mut prompt_preview = Vec::new();
+    let cursor_latest_position;
+    if let Some(c) = cursor.iter().last() {
+        cursor_latest_position = c.pos;
+    } else {
+        return;
+    }
 
-    for (ui_prompt, transform, mesh_handle) in q.q0().iter() {
+    let mut prompt_preview = Vec::new(); // borrow checker workaround
+
+    // Update UiPrompts
+    for (mut ui_prompt, transform, mesh_handle) in q.q0_mut().iter_mut() {
         let mesh_pos_ss = iter_mesh_ws_vertex_positions(*mesh_handle, transform, &mut assets_mesh)
             .map(|p| from_ws_to_screenspace(p, &window_size, &main_camera.camera));
 
         let mut bbx = bbx_screenspace(mesh_pos_ss);
         bbx.add_padding(ui_prompt.padding);
 
-        if let Some(cursor_latest) = cursor.iter().last() {
-            if cursor_latest.pos.x > bbx.min.x
-                && cursor_latest.pos.x < bbx.max.x
-                && (cursor_latest.pos.y) > bbx.min.y
-                && (cursor_latest.pos.y) < bbx.max.y
-            {
-                println!("Inside~");
-            } else {
-                println!("NOPE~");
-            }
+        if cursor_latest_position.x > bbx.min.x
+            && cursor_latest_position.x < bbx.max.x
+            && (cursor_latest_position.y) > bbx.min.y
+            && (cursor_latest_position.y) < bbx.max.y
+        {
+            ui_prompt.is_mouse_over = true;
+        } else {
+            ui_prompt.is_mouse_over = false;
         }
 
         prompt_preview.push((ui_prompt.debug_preview, bbx));
     }
 
+    // Update Ui Debug Previews
     for (entity, bbx) in prompt_preview {
         update_debug_mesh(
             &q.q1_mut().get_mut(entity).unwrap(),

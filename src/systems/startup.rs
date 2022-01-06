@@ -41,6 +41,10 @@ pub fn startup(ecs: &mut World) {
     terrain_grid.add_color([0.0; 3]);
     let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
 
+    // UI
+    //res_mut::<AssetMeshLibrary>(ecs).add(UiPromptDebugPreview::mesh_asset());
+    //res_mut::<AssetMeshLibrary>(ecs).add(UiPrompt::mesh_asset());
+
     // Load shaders
     let vert_color = load_shader_into_library(
         "shaders/vertex_color.vert",
@@ -141,22 +145,7 @@ pub fn startup(ecs: &mut World) {
         })
         .insert(MousePreviewCube);
 
-    // TODO: make this into a component? and has a custom draw for it in the render loop?
-    let mut _preview = Mesh::new();
-    _preview.set_attribute(
-        Mesh::ATTRIBUTE_POSITION,
-        vec![
-            [0.0, 0.0, 0.0],
-            [1.0, 0.0, 0.0],
-            [1.0, 1.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 0.0],
-        ],
-    );
-    _preview.set_attribute(Mesh::ATTRIBUTE_COLOR, vec![[1.0, 0.0, 0.0]; 4]);
-    _preview.set_indices(vec![0, 1, 2, 3]);
-    let _preview = load_mesh_into_library(_preview, "ui debug", ecs);
-
+    /*
     let debug_preview = ecs
         .spawn()
         .insert_bundle(DrawableMeshBundle {
@@ -175,9 +164,11 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::from_translation(glam::Vec3::new(-2.0, 1.0, 0.0)),
         })
         .insert(UiPrompt {
+            is_mouse_over: false,
             padding: 20,
             debug_preview,
         });
+        */
 
     log::info!("Finished startup");
 }
