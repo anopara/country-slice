@@ -4,11 +4,12 @@ use glam::{Mat4, Vec2, Vec3};
 
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, Handle},
-    components::{Transform, UiPrompt},
+    components::{Transform, TriggerArea},
     render::{
         camera::{Camera, MainCamera},
         mesh::Mesh,
     },
+    resources::LastHoveredTriggerArea,
     window_events::{CursorMoved, WindowSize},
 };
 
@@ -16,9 +17,11 @@ use crate::{
 // if start drawing from the end, continue that curve
 // REDO THE RENDERING LOOP, make a screen space rendering pass
 
-pub fn ui_prompts(
+pub fn trigger_area(
+    mut last_hovered: ResMut<LastHoveredTriggerArea>,
+
     mut q: QuerySet<(
-        Query<(&mut UiPrompt, &Transform, &Handle<Mesh>)>,
+        Query<(Entity, &mut TriggerArea, &Transform, &Handle<Mesh>)>,
         Query<&mut Handle<Mesh>>,
     )>,
     mut cursor: EventReader<CursorMoved>,
@@ -35,25 +38,29 @@ pub fn ui_prompts(
 
     let mut prompt_preview = Vec::new(); // borrow checker workaround
 
-    // Update UiPrompts
-    for (mut ui_prompt, transform, mesh_handle) in q.q0_mut().iter_mut() {
-        let mesh_pos_ss = iter_mesh_ws_vertex_positions(*mesh_handle, transform, &mut assets_mesh)
-            .map(|p| from_ws_to_screenspace(p, &window_size, &main_camera.camera));
+    for (entity, mut trigger_area, transform, mesh_volume_handle) in q.q0_mut().iter_mut() {
+        let mesh_pos_ss =
+            iter_mesh_ws_vertex_positions(*mesh_volume_handle, transform, &mut assets_mesh)
+                .map(|p| from_ws_to_screenspace(p, &window_size, &main_camera.camera));
 
         let mut bbx = bbx_screenspace(mesh_pos_ss);
-        bbx.add_padding(ui_prompt.padding);
+        bbx.add_padding(trigger_area.padding);
 
         if cursor_latest_position.x > bbx.min.x
             && cursor_latest_position.x < bbx.max.x
             && (cursor_latest_position.y) > bbx.min.y
             && (cursor_latest_position.y) < bbx.max.y
         {
-            ui_prompt.is_mouse_over = true;
+            trigger_area.is_mouse_over = true;
+            println!("Sending event...");
+            // TODO: this will not sort if two areas overlap, and will just send an event for both!
+            last_hovered.0 = Some(entity);
         } else {
-            ui_prompt.is_mouse_over = false;
+            trigger_area.is_mouse_over = false;
+            last_hovered.0 = None;
         }
 
-        prompt_preview.push((ui_prompt.debug_preview, bbx));
+        prompt_preview.push((trigger_area.debug_preview, bbx));
     }
 
     // Update Ui Debug Previews

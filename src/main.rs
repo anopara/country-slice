@@ -16,7 +16,7 @@ use render::shaderwatch::*;
 use resources::{ComputeArchesIndirect, ComputePathsMask, CurveSegmentsComputePass, WallManager};
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
-use crate::systems::*;
+use crate::{resources::LastHoveredTriggerArea, systems::*};
 
 mod asset_libraries;
 mod components;
@@ -207,6 +207,7 @@ fn main() {
     app.add_plugin(bevy_core::CorePlugin::default())
         .add_plugin(bevy_input::InputPlugin::default())
         .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
+        .insert_resource(LastHoveredTriggerArea(None)) // TODO: this could be events, but then events should not clear every frame, since trigger updates only on mouse move
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
         .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
         .insert_resource(temp_shaderwatch)
@@ -235,7 +236,7 @@ fn main() {
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
-        .add_system(ui_prompts.system())
+        .add_system(trigger_area.system())
         .add_system(draw_curve.system().label("usercurve"))
         .add_system_to_stage(
             "main_singlethread",

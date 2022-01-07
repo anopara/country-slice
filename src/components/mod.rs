@@ -1,10 +1,10 @@
 pub mod drawable;
 pub mod transform;
-pub mod ui;
+pub mod trigger_area;
 
 pub use drawable::*;
 pub use transform::*;
-pub use ui::*;
+pub use trigger_area::*;
 
 // Mark the cube that is the preview of mouse raycast intersection
 pub struct MousePreviewCube;
