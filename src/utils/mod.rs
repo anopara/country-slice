@@ -43,3 +43,24 @@ pub fn validate_shaders(folder: &str) {
         log::error!("The given path doesn't exist {}", folder);
     }
 }
+
+/*
+pub fn iter_mesh_ws_vertex_positions<'a>(
+    handle: Handle<Mesh>,
+    transform: &'a Transform,
+    assets_mesh: &'a mut ResMut<AssetMeshLibrary>,
+) -> impl Iterator<Item = Vec3> + 'a {
+    let mesh = assets_mesh.get_mut(handle).unwrap();
+    let mesh_ws_pos = mesh.attributes.get(Mesh::ATTRIBUTE_POSITION).unwrap();
+
+    if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = mesh_ws_pos {
+        positions.iter().map(move |p| {
+            transform
+                .compute_matrix()
+                .transform_point3(Vec3::from_slice(p))
+        })
+    } else {
+        panic!()
+    }
+}
+ */

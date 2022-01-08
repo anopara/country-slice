@@ -207,6 +207,7 @@ fn main() {
     app.add_plugin(bevy_core::CorePlugin::default())
         .add_plugin(bevy_input::InputPlugin::default())
         .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
+        .insert_resource(Mode::default())
         .insert_resource(LastHoveredTriggerArea(None)) // TODO: this could be events, but then events should not clear every frame, since trigger updates only on mouse move
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
         .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
@@ -233,20 +234,21 @@ fn main() {
         .add_system_to_stage("opengl", shaderwatch.system().label("reload_shaders"))
         .add_system_to_stage("opengl", build_missing_vaos.system().label("build_vaos"))
         .add_system_to_stage("opengl", rebuild_vaos.system().after("build_vaos"))
+        .add_system(mode_manager.system().label("modemanager"))
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
         .add_system(trigger_area.system())
-        .add_system(draw_curve.system().label("usercurve"))
+        .add_system(draw_curve.system().label("usercurve").after("modemanager"))
         .add_system_to_stage(
             "main_singlethread",
             update_curve_ssbo.system().after("usercurve"),
         )
-        .add_system_to_stage(
-            "main_singlethread",
-            walls_update.system().after("usercurve"),
-        )
-        .add_system_to_stage("main_singlethread", update_terrain.system())
+        //.add_system_to_stage(
+        //    "main_singlethread",
+        //    walls_update.system().after("usercurve"),
+        //)
+        //.add_system_to_stage("main_singlethread", update_terrain.system())
         .add_system_to_stage("main_singlethread", clear_canvas.system());
 
     systems::startup(&mut app.world_mut());

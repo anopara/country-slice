@@ -1,3 +1,5 @@
+use glam::Vec3;
+
 use crate::render::mesh::Mesh;
 
 // From Bevy
@@ -54,6 +56,43 @@ impl Box {
 impl Default for Box {
     fn default() -> Self {
         Box::new(2.0, 1.0, 1.0)
+    }
+}
+
+impl From<Box> for Vec<Vec3> {
+    fn from(sp: Box) -> Self {
+        vec![
+            // Top
+            Vec3::from_slice(&[sp.min_x, sp.min_y, sp.max_z]),
+            Vec3::from_slice(&[sp.max_x, sp.min_y, sp.max_z]),
+            Vec3::from_slice(&[sp.max_x, sp.max_y, sp.max_z]),
+            Vec3::from_slice(&[sp.min_x, sp.max_y, sp.max_z]),
+            // Bottom
+            Vec3::from_slice(&[sp.min_x, sp.max_y, sp.min_z]),
+            Vec3::from_slice(&[sp.max_x, sp.max_y, sp.min_z]),
+            Vec3::from_slice(&[sp.max_x, sp.min_y, sp.min_z]),
+            Vec3::from_slice(&[sp.min_x, sp.min_y, sp.min_z]),
+            // Right
+            Vec3::from_slice(&[sp.max_x, sp.min_y, sp.min_z]),
+            Vec3::from_slice(&[sp.max_x, sp.max_y, sp.min_z]),
+            Vec3::from_slice(&[sp.max_x, sp.max_y, sp.max_z]),
+            Vec3::from_slice(&[sp.max_x, sp.min_y, sp.max_z]),
+            // Left
+            Vec3::from_slice(&[sp.min_x, sp.min_y, sp.max_z]),
+            Vec3::from_slice(&[sp.min_x, sp.max_y, sp.max_z]),
+            Vec3::from_slice(&[sp.min_x, sp.max_y, sp.min_z]),
+            Vec3::from_slice(&[sp.min_x, sp.min_y, sp.min_z]),
+            // Front
+            Vec3::from_slice(&[sp.max_x, sp.max_y, sp.min_z]),
+            Vec3::from_slice(&[sp.min_x, sp.max_y, sp.min_z]),
+            Vec3::from_slice(&[sp.min_x, sp.max_y, sp.max_z]),
+            Vec3::from_slice(&[sp.max_x, sp.max_y, sp.max_z]),
+            // Back
+            Vec3::from_slice(&[sp.max_x, sp.min_y, sp.max_z]),
+            Vec3::from_slice(&[sp.min_x, sp.min_y, sp.max_z]),
+            Vec3::from_slice(&[sp.min_x, sp.min_y, sp.min_z]),
+            Vec3::from_slice(&[sp.max_x, sp.min_y, sp.min_z]),
+        ]
     }
 }
 

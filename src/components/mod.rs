@@ -1,8 +1,10 @@
 pub mod drawable;
+pub mod editing_handle;
 pub mod transform;
 pub mod trigger_area;
 
 pub use drawable::*;
+pub use editing_handle::*;
 pub use transform::*;
 pub use trigger_area::*;
 

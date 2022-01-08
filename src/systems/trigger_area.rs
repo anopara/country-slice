@@ -20,10 +20,8 @@ use crate::{
 pub fn trigger_area(
     mut last_hovered: ResMut<LastHoveredTriggerArea>,
 
-    mut q: QuerySet<(
-        Query<(Entity, &mut TriggerArea, &Transform, &Handle<Mesh>)>,
-        Query<&mut Handle<Mesh>>,
-    )>,
+    mut q1: Query<(Entity, &mut TriggerArea)>,
+    mut q2: Query<&mut Handle<Mesh>>,
     mut cursor: EventReader<CursorMoved>,
     main_camera: Res<MainCamera>,
     window_size: Res<WindowSize>,
@@ -38,12 +36,12 @@ pub fn trigger_area(
 
     let mut prompt_preview = Vec::new(); // borrow checker workaround
 
-    for (entity, mut trigger_area, transform, mesh_volume_handle) in q.q0_mut().iter_mut() {
-        let mesh_pos_ss =
-            iter_mesh_ws_vertex_positions(*mesh_volume_handle, transform, &mut assets_mesh)
-                .map(|p| from_ws_to_screenspace(p, &window_size, &main_camera.camera));
+    for (entity, mut trigger_area) in q1.iter_mut() {
+        let trigger_area_ss = trigger_area
+            .iter_ws_bounds()
+            .map(|p| from_ws_to_screenspace(*p, &window_size, &main_camera.camera));
 
-        let mut bbx = bbx_screenspace(mesh_pos_ss);
+        let mut bbx = bbx_screenspace(trigger_area_ss);
         bbx.add_padding(trigger_area.padding);
 
         if cursor_latest_position.x > bbx.min.x
@@ -52,7 +50,6 @@ pub fn trigger_area(
             && (cursor_latest_position.y) < bbx.max.y
         {
             trigger_area.is_mouse_over = true;
-            println!("Sending event...");
             // TODO: this will not sort if two areas overlap, and will just send an event for both!
             last_hovered.0 = Some(entity);
         } else {
@@ -60,13 +57,18 @@ pub fn trigger_area(
             last_hovered.0 = None;
         }
 
-        prompt_preview.push((trigger_area.debug_preview, bbx));
+        dbg!(trigger_area.ss_preview);
+
+        if let Some(debug_preview) = trigger_area.ss_preview {
+            dbg!("prompt_preview.push");
+            prompt_preview.push((debug_preview, bbx));
+        }
     }
 
     // Update Ui Debug Previews
     for (entity, bbx) in prompt_preview {
         update_debug_mesh(
-            &q.q1_mut().get_mut(entity).unwrap(),
+            &q2.get_mut(entity).unwrap(),
             &bbx,
             &window_size,
             &main_camera.camera,
@@ -92,25 +94,6 @@ pub fn from_screenspace_to_ws(pos_ss: Vec2, screen_size: Vec2, camera: &Camera) 
     let pos_ws = ndc_to_world.project_point3(ndc.extend(0.0));
 
     pos_ws
-}
-
-pub fn iter_mesh_ws_vertex_positions<'a>(
-    handle: Handle<Mesh>,
-    transform: &'a Transform,
-    assets_mesh: &'a mut ResMut<AssetMeshLibrary>,
-) -> impl Iterator<Item = Vec3> + 'a {
-    let mesh = assets_mesh.get_mut(handle).unwrap();
-    let mesh_ws_pos = mesh.attributes.get(Mesh::ATTRIBUTE_POSITION).unwrap();
-
-    if let crate::render::mesh::VertexAttributeValues::Float32x3(positions) = mesh_ws_pos {
-        positions.iter().map(move |p| {
-            transform
-                .compute_matrix()
-                .transform_point3(Vec3::from_slice(p))
-        })
-    } else {
-        panic!()
-    }
 }
 
 pub struct ScreenSpaceBoundingBox {
