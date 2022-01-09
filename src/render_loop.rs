@@ -258,7 +258,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 log_if_error!(shader.set_gl_uniform("terrain_texture", GlUniform::Int(1)));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
-                // TODO: when we used the `instanced_wall.frag` for shading, re-enable this
+                // TODO: when you will use the `instanced_wall.frag` for shading the path, re-enable this
                 //shader.set_gl_uniform("is_arch", GlUniform::Bool(true));
             }
 
@@ -370,7 +370,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let shader = assets_shader
             .get_by_name("ui_shader")
-            .expect("Oops! This Shader handle is invalid");
+            .expect("Oops! No UI shader was found");
         shader.gl_use_program();
 
         log_if_error!(shader.set_gl_uniform("window_size", GlUniform::Vec2(window_size.into_f32())));
