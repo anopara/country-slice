@@ -5,7 +5,6 @@ use asset_libraries::vao_library::AssetVAOLibrary;
 use bevy_app::App;
 use bevy_ecs::prelude::*;
 
-use bracket_noise::prelude::FastNoise;
 use components::CursorRaycast;
 use glam::{Vec2, Vec3};
 use glutin::event_loop::ControlFlow;
@@ -52,6 +51,10 @@ const VALIDATE_SHADERS: bool = false;
 // Other:
 // do trigger areas need to be separate from editing handle concept?
 // maybe worth making events of cursor moved, camera moved - etc - that will dictate the raycast & trigger hover calculation updates? terrain update fits in there nicely too
+
+// OTHER:
+// 1. Esc -> leaks memory atm; free memory from instanced walls when they are deleted (gl::Delete)
+// 2. remove validate shaders from runtime
 
 fn main() {
     simple_logger::SimpleLogger::new().init().unwrap();
