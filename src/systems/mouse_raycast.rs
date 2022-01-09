@@ -5,8 +5,9 @@ use glam::{Mat4, Vec2, Vec3};
 
 use crate::components::transform::Transform;
 use crate::components::MousePreviewCube;
+use crate::resources::TerrainData;
 use crate::window_events::{CursorMoved, WindowSize};
-use crate::{CursorRaycast, TerrainData};
+use crate::CursorRaycast;
 
 use crate::render::camera::{Camera, MainCamera};
 
