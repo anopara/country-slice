@@ -43,7 +43,12 @@ const VALIDATE_SHADERS: bool = false;
 // TODO:
 // 1. Make sure trigger area overlaps do z-depth sort
 // 2. add editing handle for modifying/pulling the curve
-// 3. optional: make sure that editing handles work with terrain (terrain probably needs to send an update event?)
+// 3. add some art for the handles
+// 4. make screenspace flag that renders object in screenspace (so we dont get the frame lag)
+// 5. optional: make sure that editing handles work with terrain (terrain probably needs to send an update event?)
+// Other:
+// do trigger areas need to be separate from editing handle concept?
+// maybe worth making events of cursor moved, camera moved - etc - that will dictate the raycast & trigger hover calculation updates? terrain update fits in there nicely too
 
 pub struct TerrainData {
     perlin: bracket_noise::prelude::FastNoise,
