@@ -115,7 +115,6 @@ pub fn draw_curve(
                 match draw_mode {
                     DrawingCurveMode::AddPointsToEnd => active_curve.add(intersection),
                     DrawingCurveMode::AddPointsToBeginning => {
-                        println!("active_curve.add_to_front");
                         active_curve.add_to_front(intersection)
                     }
                 }
