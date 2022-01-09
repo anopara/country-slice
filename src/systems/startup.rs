@@ -37,6 +37,12 @@ pub fn startup(ecs: &mut World) {
     let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
 
     // Load shaders
+    let _ui = load_shader_into_library(
+        "shaders/vertex_color_2d.vert",
+        "shaders/vertex_color.frag",
+        "ui_shader",
+        ecs,
+    );
     let vert_color = load_shader_into_library(
         "shaders/vertex_color.vert",
         "shaders/vertex_color.frag",

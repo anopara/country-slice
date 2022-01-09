@@ -5,7 +5,7 @@ use crate::{
 use bevy_ecs::prelude::*;
 use glam::Vec3;
 
-use super::{DrawableMeshBundle, Transform};
+use super::{DrawableMeshBundle, Transform, UiRenderPass};
 
 // Screenspace Bounding box check
 #[derive(Clone)]
@@ -94,11 +94,12 @@ impl TriggerArea {
             .spawn()
             .insert_bundle(DrawableMeshBundle {
                 mesh: assets_mesh.add(TriggerAreaPreview::mesh_asset()),
-                shader,
+                shader, // shader doesn't matter, render loop overwrites it
                 transform: Transform::identity(),
             })
             .insert(TriggerAreaPreview)
             .insert(crate::components::GLDrawMode(gl::LINE_STRIP))
+            .insert(UiRenderPass)
             .id();
 
         self.ss_preview = Some(entity);

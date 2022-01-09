@@ -18,3 +18,6 @@ pub struct DrawableMeshBundle {
 pub struct GLDrawMode(pub GLenum);
 
 pub struct TransparencyPass;
+
+// renders the object in screen space
+pub struct UiRenderPass;

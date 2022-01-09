@@ -179,6 +179,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             Option<&InstancedWall>,
             Option<&DisplayTestMask>,
             Option<&TransparencyPass>,
+            Option<&UiRenderPass>,
             Option<&IndirectDraw>,
             Option<&RoadComponent>,
         )>();
@@ -188,6 +189,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let terrain_data = ecs.get_resource::<TerrainData>().unwrap();
 
         let mut transparent_pass = Vec::new();
+        let mut ui_pass = Vec::new();
 
         // --------------------------
         for (
@@ -198,6 +200,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             instanced_wall,
             test,
             transparency,
+            ui,
             indirect_draw,
             road,
         ) in query.iter(ecs)
@@ -210,11 +213,15 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 .get(*shader_handle)
                 .expect("Oops! This Shader handle is invalid");
 
+            // TODO: make the custom render pass into an enum
             if transparency.is_some() {
                 // skip rendering transparent objects
                 // stash them for later
                 transparent_pass.push((vao, shader, model_transform));
 
+                continue;
+            } else if ui.is_some() {
+                ui_pass.push((vao, gl_draw_flag));
                 continue;
             }
 
@@ -356,6 +363,28 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 ptr::null(),
             );
         }
+
+        // UI PASS ---------------------------------------------------------
+
+        let window_size = ecs.get_resource::<WindowSize>().unwrap();
+
+        let shader = assets_shader
+            .get_by_name("ui_shader")
+            .expect("Oops! This Shader handle is invalid");
+        shader.gl_use_program();
+
+        log_if_error!(shader.set_gl_uniform("window_size", GlUniform::Vec2(window_size.into_f32())));
+
+        for (vao, gl_draw_flag) in ui_pass {
+            gl::BindVertexArray(vao.id());
+            gl::DrawElements(
+                gl_draw_flag.map(|c| c.0).unwrap_or(gl::TRIANGLES),
+                vao.indices_count as i32,
+                gl::UNSIGNED_INT,
+                ptr::null(),
+            );
+        }
     }
+
     windowed_context.swap_buffers().unwrap();
 }

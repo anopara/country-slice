@@ -132,22 +132,24 @@ fn update_debug_mesh(
         Vec2::new(bbx.max.x, bbx.min.y),
         bbx.min,
     ];
-    let positions_ws: Vec<_> = debug_ss_pos
-        .iter()
-        .map(|p| from_screenspace_to_ws(*p, window_size.into_vec2(), camera))
-        .collect();
+    //let positions_ws: Vec<_> = debug_ss_pos
+    //    .iter()
+    //    .map(|p| from_screenspace_to_ws(*p, window_size.into_vec2(), camera))
+    //    .collect();
+
+    let positions_ss: Vec<Vec3> = debug_ss_pos.iter().map(|p| p.extend(0.0)).collect();
 
     let mesh = assets_mesh.get_mut(*mesh_handle).expect("MEOW####");
     mesh.set_attribute(
         Mesh::ATTRIBUTE_POSITION,
-        positions_ws
+        positions_ss
             .iter()
             .map(|p| [p.x, p.y, p.z])
             .collect::<Vec<[f32; 3]>>(),
     );
     mesh.set_attribute(
         Mesh::ATTRIBUTE_COLOR,
-        vec![[1.0, 0.0, 0.0]; positions_ws.len()],
+        vec![[1.0, 0.0, 0.0]; positions_ss.len()],
     );
-    mesh.set_indices((0..positions_ws.len()).map(|i| i as u32).collect());
+    mesh.set_indices((0..positions_ss.len()).map(|i| i as u32).collect());
 }

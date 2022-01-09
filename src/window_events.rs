@@ -47,6 +47,10 @@ impl WindowSize {
     pub fn into_vec2(&self) -> Vec2 {
         Vec2::new(self.width as f32, self.height as f32)
     }
+
+    pub fn into_f32(&self) -> [f32; 2] {
+        [self.width as f32, self.height as f32]
+    }
 }
 
 // ------
