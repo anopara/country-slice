@@ -5,12 +5,12 @@ use crate::{
     components::{
         drawable::{DrawableMeshBundle, GLDrawMode},
         transform::Transform,
-        EditingHandle, EditingHandleType, TriggerArea,
+        EditingHandle, HandleLocation, TriggerArea,
     },
     geometry::curve::Curve,
     render::mesh::Mesh,
     resources::WallManager,
-    systems::mode_manager::{ActiveCurve, DrawingCurveMode},
+    systems::mode_manager::{ActiveCurve, AddPointsTo},
     CursorRaycast,
 };
 
@@ -68,7 +68,7 @@ pub fn draw_curve(
                 .spawn()
                 .insert(EditingHandle::new(
                     wall_manager.curves.len() - 1,
-                    EditingHandleType::StartOfCurve,
+                    HandleLocation::StartOfCurve,
                 ))
                 .insert(trigger_area_comp)
                 .id();
@@ -77,7 +77,7 @@ pub fn draw_curve(
                 .spawn()
                 .insert(EditingHandle::new(
                     wall_manager.curves.len() - 1,
-                    EditingHandleType::EndOfCurve,
+                    HandleLocation::EndOfCurve,
                 ))
                 .insert(trigger_area_comp_2)
                 .id();
@@ -101,8 +101,8 @@ pub fn draw_curve(
                 wall_manager.curves.get_mut(active_curve_index).unwrap();
 
             let active_curve_pt = match draw_mode {
-                DrawingCurveMode::AddPointsToEnd => active_curve.points.len() - 1,
-                DrawingCurveMode::AddPointsToBeginning => 0,
+                AddPointsTo::End => active_curve.points.len() - 1,
+                AddPointsTo::Beginning => 0,
             };
 
             let intersection = cursor_ws.0;
@@ -118,10 +118,8 @@ pub fn draw_curve(
                 .unwrap_or(true)
             {
                 match draw_mode {
-                    DrawingCurveMode::AddPointsToEnd => active_curve.add(intersection),
-                    DrawingCurveMode::AddPointsToBeginning => {
-                        active_curve.add_to_front(intersection)
-                    }
+                    AddPointsTo::End => active_curve.add(intersection),
+                    AddPointsTo::Beginning => active_curve.add_to_front(intersection),
                 }
 
                 // Update the curve debug preview mesh, if its present

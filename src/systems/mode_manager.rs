@@ -1,12 +1,15 @@
 use bevy_ecs::prelude::*;
 use bevy_input::{mouse::MouseButton, Input};
 
-use crate::{components::EditingHandle, resources::LastHoveredTriggerArea};
+use crate::{
+    components::{EditingHandle, HandleLocation},
+    resources::LastHoveredTriggerArea,
+};
 
 #[derive(Debug)]
-pub enum DrawingCurveMode {
-    AddPointsToEnd,
-    AddPointsToBeginning,
+pub enum AddPointsTo {
+    End,
+    Beginning,
 }
 
 #[derive(Debug)]
@@ -19,7 +22,7 @@ pub enum ActiveCurve {
 pub enum Mode {
     None,
     StartNewCurve,
-    DrawingCurve(ActiveCurve, DrawingCurveMode),
+    DrawingCurve(ActiveCurve, AddPointsTo),
     #[allow(dead_code)]
     EditingCurve(ActiveCurve),
 }
@@ -45,19 +48,13 @@ pub fn mode_manager(
                     .0
                     .and_then(|trigger_entity| query.get(trigger_entity).ok())
                 {
-                    let drawing_mode = match editing_handle.handle_type {
-                        crate::components::EditingHandleType::StartOfCurve => {
-                            DrawingCurveMode::AddPointsToBeginning
-                        }
-                        crate::components::EditingHandleType::EndOfCurve => {
-                            DrawingCurveMode::AddPointsToEnd
-                        }
-                    };
-
                     // Continue the curve that this editing handle belongs to
                     *mode = Mode::DrawingCurve(
                         ActiveCurve::Index(editing_handle.parent_curve),
-                        drawing_mode,
+                        match editing_handle.location {
+                            HandleLocation::StartOfCurve => AddPointsTo::Beginning,
+                            HandleLocation::EndOfCurve => AddPointsTo::End,
+                        },
                     );
                 } else {
                     *mode = Mode::StartNewCurve;
@@ -66,7 +63,7 @@ pub fn mode_manager(
         }
         Mode::StartNewCurve => {
             // continue the curve we just started
-            *mode = Mode::DrawingCurve(ActiveCurve::Last, DrawingCurveMode::AddPointsToEnd);
+            *mode = Mode::DrawingCurve(ActiveCurve::Last, AddPointsTo::End);
         }
         Mode::DrawingCurve(..) => {
             if mouse_button_input.just_released(MouseButton::Left) {

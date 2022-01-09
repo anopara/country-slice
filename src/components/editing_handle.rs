@@ -1,4 +1,4 @@
-pub enum EditingHandleType {
+pub enum HandleLocation {
     StartOfCurve,
     EndOfCurve,
 }
@@ -6,16 +6,16 @@ pub enum EditingHandleType {
 //#[derive(Bundle)]
 pub struct EditingHandle {
     pub parent_curve: usize, // which curve does it belong
-    pub handle_type: EditingHandleType,
+    pub location: HandleLocation,
     //pub trigger_area: TriggerArea,
     //pub trigger_area_preview: TriggerAreaPreview,
 }
 
 impl EditingHandle {
-    pub fn new(parent_curve: usize, handle_type: EditingHandleType) -> Self {
+    pub fn new(parent_curve: usize, handle_type: HandleLocation) -> Self {
         Self {
             parent_curve,
-            handle_type, //trigger_area: TriggerArea::new(20, Transform::from_translation(position)),
+            location: handle_type, //trigger_area: TriggerArea::new(20, Transform::from_translation(position)),
         }
     }
 
