@@ -100,13 +100,18 @@ pub fn draw_curve(
             let (active_curve, preview_entity) =
                 wall_manager.curves.get_mut(active_curve_index).unwrap();
 
+            let active_curve_pt = match draw_mode {
+                DrawingCurveMode::AddPointsToEnd => active_curve.points.len() - 1,
+                DrawingCurveMode::AddPointsToBeginning => 0,
+            };
+
             let intersection = cursor_ws.0;
 
             const DIST_THRESHOLD: f32 = 0.001;
 
             if active_curve
                 .points
-                .last()
+                .get(active_curve_pt)
                 // if curve  had points, only add if the distance is larger than X
                 .map(|last| intersection.distance(*last) > DIST_THRESHOLD)
                 // if curve  has no points, add this point
