@@ -18,6 +18,8 @@ pub fn mouse_raycast(
     window_size: Res<WindowSize>,
     terrain: Res<TerrainData>,
 ) {
+    // TODO: do it continiously! mouse may not move, but camera might!
+
     if let Some(cursor_latest) = cursor.iter().last() {
         let (cursor_ws, ray) = from_screenspace_to_ws(
             cursor_latest.pos,
