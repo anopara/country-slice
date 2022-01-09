@@ -17,7 +17,7 @@ pub struct TriggerArea {
     pub ws_preview: Option<Entity>,
     pub ss_preview: Option<Entity>, //TODO: make it a component that renders in a special way
 
-    cache_local_space_bounds: Option<Vec<Vec3>>, // cache
+    cache_ws_bounds: Option<Vec<Vec3>>, // cache
 }
 
 impl TriggerArea {
@@ -29,13 +29,18 @@ impl TriggerArea {
             transform,
             ws_preview: None,
             ss_preview: None,
-            cache_local_space_bounds: None,
+            cache_ws_bounds: None,
         }
     }
 
+    pub fn update_transform(&mut self, position: Vec3) {
+        self.transform.translation = position;
+        self.cache_ws_bounds = None;
+    }
+
     pub fn iter_ws_bounds<'a>(&'a mut self) -> impl Iterator<Item = &Vec3> + 'a {
-        if self.cache_local_space_bounds.is_none() {
-            self.cache_local_space_bounds = Some(
+        if self.cache_ws_bounds.is_none() {
+            self.cache_ws_bounds = Some(
                 Vec::<Vec3>::from(crate::geometry::cube::Box::new(
                     self.size.x,
                     self.size.y,
@@ -47,7 +52,7 @@ impl TriggerArea {
             )
         }
 
-        self.cache_local_space_bounds.as_ref().unwrap().iter()
+        self.cache_ws_bounds.as_ref().unwrap().iter()
     }
 
     pub fn add_world_space_preview(

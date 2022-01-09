@@ -23,6 +23,7 @@ pub fn draw_curve(
     mode: Res<Mode>,
 
     mut query: Query<&Handle<Mesh>>,
+    mut query_2: Query<&mut TriggerArea>, // for editing handles
     mut wall_manager: ResMut<WallManager>,
     cursor_ws: Res<CursorRaycast>,
 
@@ -57,11 +58,11 @@ pub fn draw_curve(
                 &assets_shader,
                 &mut commands,
             );
-            trigger_area_comp.add_world_space_preview(
-                &mut assets_mesh,
-                &assets_shader,
-                &mut commands,
-            );
+            //trigger_area_comp.add_world_space_preview(
+            //    &mut assets_mesh,
+            //    &assets_shader,
+            //    &mut commands,
+            //);
 
             let entity = commands
                 .spawn()
@@ -72,10 +73,13 @@ pub fn draw_curve(
             wall_manager.editing_handles.push(entity);
         }
         Mode::DrawingCurve(active_curve) => {
-            let (active_curve, preview_entity) = match active_curve {
-                ActiveCurve::Last => wall_manager.curves.last_mut().unwrap(),
-                ActiveCurve::Index(index) => wall_manager.curves.get_mut(*index).unwrap(),
+            let active_curve_index = match active_curve {
+                ActiveCurve::Last => wall_manager.curves.len() - 1,
+                ActiveCurve::Index(index) => *index,
             };
+
+            let (active_curve, preview_entity) =
+                wall_manager.curves.get_mut(active_curve_index).unwrap();
 
             let intersection = cursor_ws.0;
 
@@ -95,6 +99,16 @@ pub fn draw_curve(
                 if let Some(Ok(mesh_handle)) = preview_entity.map(|ent| query.get_mut(ent)) {
                     update_curve_debug_mesh(&active_curve, mesh_handle, &mut assets_mesh);
                 }
+
+                // Update editing handles
+                let handle_entity = wall_manager
+                    .editing_handles
+                    .get_mut(active_curve_index)
+                    .unwrap();
+
+                // TODO: separate Trigger Area & Transform components
+                let mut handle_trigger = query_2.get_mut(*handle_entity).unwrap();
+                handle_trigger.update_transform(intersection);
             }
         }
 

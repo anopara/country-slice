@@ -57,10 +57,7 @@ pub fn trigger_area(
             last_hovered.0 = None;
         }
 
-        dbg!(trigger_area.ss_preview);
-
         if let Some(debug_preview) = trigger_area.ss_preview {
-            dbg!("prompt_preview.push");
             prompt_preview.push((debug_preview, bbx));
         }
     }

@@ -5,7 +5,7 @@ use crate::asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::Ass
 
 use super::{Transform, TriggerArea};
 
-#[derive(Bundle)]
+//#[derive(Bundle)]
 pub struct EditingHandle {
     pub parent_curve: usize, // which curve does it belong
                              //pub trigger_area: TriggerArea,
