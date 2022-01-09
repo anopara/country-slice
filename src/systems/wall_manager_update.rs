@@ -88,65 +88,6 @@ pub fn walls_update(
         }
         Mode::EditingCurve(_) => todo!(),
     }
-
-    /*
-    if let Some((curve, _)) = wall_manager.curves.last() {
-        if !mouse_button_input.pressed(MouseButton::Left) {
-            return;
-        }
-
-        if curve.points.len() < 2 {
-            return;
-        }
-
-        // Calculate brick transforms
-        let curve = {
-            puffin::profile_scope!("curve");
-            curve.clone().smooth(50).resample(0.2)
-        };
-
-        {
-            puffin::profile_scope!("construct wall");
-            let bricks = WallConstructor::from_curve(&curve);
-
-            if bricks.is_empty() {
-                log::warn!("WallConstructor returned empty wall");
-            }
-
-            if let Some(wall_entity) = wall_manager.walls.get(wall_manager.curves.len() - 1) {
-                // update the wall
-                let mut wall_component = query.get_mut(*wall_entity).unwrap();
-                wall_component.update(curve.length, bricks);
-            } else {
-                //create a wall
-                log::info!("creating wall..");
-                wall_manager.walls.push(create_wall(
-                    curve.length,
-                    bricks,
-                    &assets_mesh,
-                    &assets_shader,
-                    &mut commands,
-                ));
-            }
-        }
-
-        {
-            puffin::profile_scope!("shadow decal");
-            if let Some(shadow_entity) = wall_manager.shadows.get(wall_manager.curves.len() - 1) {
-                let (_shadow_component, mesh_handle) = query3.get_mut(*shadow_entity).unwrap();
-                let mesh = assets_mesh.get_mut(*mesh_handle).unwrap();
-                ShadowDecal::update(&curve, mesh);
-            } else {
-                wall_manager.shadows.push(ShadowDecal::new(
-                    &curve,
-                    &mut assets_mesh,
-                    &assets_shader,
-                    &mut commands,
-                ));
-            }
-        }
-    }
-    */
 }
 
 fn create_wall(
