@@ -7,7 +7,7 @@ use bevy_ecs::prelude::*;
 
 use bracket_noise::prelude::FastNoise;
 use components::CursorRaycast;
-use glam::Vec3;
+use glam::{Vec2, Vec3};
 use glutin::event_loop::ControlFlow;
 
 use render::camera::MainCamera;
@@ -207,6 +207,7 @@ fn main() {
     app.add_plugin(bevy_core::CorePlugin::default())
         .add_plugin(bevy_input::InputPlugin::default())
         .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
+        .insert_resource(CursorLatest(Vec2::ZERO))
         .insert_resource(Mode::default())
         .insert_resource(LastHoveredTriggerArea(None)) // TODO: this could be events, but then events should not clear every frame, since trigger updates only on mouse move
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))

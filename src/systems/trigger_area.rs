@@ -14,33 +14,28 @@ use crate::{
         mesh::Mesh,
     },
     resources::LastHoveredTriggerArea,
-    window_events::{CursorMoved, WindowSize},
+    window_events::WindowSize,
 };
+
+use super::CursorLatest;
 
 //TODO: next -> walls should have ui prompts on their ends
 // if start drawing from the end, continue that curve
 // REDO THE RENDERING LOOP, make a screen space rendering pass
 
 pub fn trigger_area(
-    archetypes: &Archetypes,
-    components: &Components,
-
     mut last_hovered: ResMut<LastHoveredTriggerArea>,
 
     mut q1: Query<(Entity, &mut TriggerArea)>,
     mut q2: Query<&mut Handle<Mesh>>,
-    mut cursor: EventReader<CursorMoved>,
+    cursor_latest_ss: Res<CursorLatest>,
     main_camera: Res<MainCamera>,
     window_size: Res<WindowSize>,
     mut assets_mesh: ResMut<AssetMeshLibrary>,
 ) {
-    let cursor_latest_position;
-    if let Some(c) = cursor.iter().last() {
-        cursor_latest_position = c.pos;
-    } else {
-        return;
-    }
+    puffin::profile_function!();
 
+    let cursor_latest_position = cursor_latest_ss.0;
     // Clear out hovered
     last_hovered.0 = None;
 

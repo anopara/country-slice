@@ -1,6 +1,3 @@
-use bevy_ecs::prelude::*;
-use bevy_input::{mouse::MouseButton, Input};
-
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::AssetShaderLibrary, Handle},
     components::{drawable::DrawableMeshBundle, transform::Transform},
@@ -9,6 +6,7 @@ use crate::{
     resources::WallManager,
     systems::mode_manager::ActiveCurve,
 };
+use bevy_ecs::prelude::*;
 
 use super::mode_manager::Mode;
 
