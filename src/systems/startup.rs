@@ -23,11 +23,6 @@ pub fn startup(ecs: &mut World) {
     let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
     let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
 
-    // testing ui prompts
-    let mut test_cube = Mesh::from(Cube::new(1.0));
-    test_cube.add_color([0.0, 0.5, 0.3]);
-    let test_cube_handle = load_mesh_into_library(test_cube, "test cube", ecs);
-
     let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
     road_pebbles_mesh.add_color([1.0; 3]);
     road_pebbles_mesh.add_uv();
@@ -40,10 +35,6 @@ pub fn startup(ecs: &mut World) {
     let mut terrain_grid = load_json_as_mesh("meshes/grid_10x10.json").unwrap();
     terrain_grid.add_color([0.0; 3]);
     let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
-
-    // UI
-    //res_mut::<AssetMeshLibrary>(ecs).add(UiPromptDebugPreview::mesh_asset());
-    //res_mut::<AssetMeshLibrary>(ecs).add(UiPrompt::mesh_asset());
 
     // Load shaders
     let vert_color = load_shader_into_library(
@@ -144,31 +135,6 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::identity(),
         })
         .insert(MousePreviewCube);
-
-    /*
-    let debug_preview = ecs
-        .spawn()
-        .insert_bundle(DrawableMeshBundle {
-            mesh: _preview,
-            shader: vert_color,
-            transform: Transform::identity(),
-        })
-        .insert(UiPromptDebugPreview)
-        .insert(GLDrawMode(gl::LINE_STRIP))
-        .id();
-
-    ecs.spawn()
-        .insert_bundle(DrawableMeshBundle {
-            mesh: test_cube_handle,
-            shader: vert_color,
-            transform: Transform::from_translation(glam::Vec3::new(-2.0, 1.0, 0.0)),
-        })
-        .insert(UiPrompt {
-            is_mouse_over: false,
-            padding: 20,
-            debug_preview,
-        });
-        */
 
     log::info!("Finished startup");
 }

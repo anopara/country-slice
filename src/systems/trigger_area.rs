@@ -1,14 +1,9 @@
-use bevy_app::EventReader;
-use bevy_ecs::{
-    archetype::Archetypes,
-    component::{ComponentId, Components},
-    prelude::*,
-};
+use bevy_ecs::prelude::*;
 use glam::{Mat4, Vec2, Vec3};
 
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, Handle},
-    components::{Transform, TriggerArea},
+    components::TriggerArea,
     render::{
         camera::{Camera, MainCamera},
         mesh::Mesh,
@@ -19,9 +14,7 @@ use crate::{
 
 use super::CursorLatest;
 
-//TODO: next -> walls should have ui prompts on their ends
-// if start drawing from the end, continue that curve
-// REDO THE RENDERING LOOP, make a screen space rendering pass
+//TODO: REDO THE RENDERING LOOP, make a screen space rendering pass
 
 pub fn trigger_area(
     mut last_hovered: ResMut<LastHoveredTriggerArea>,

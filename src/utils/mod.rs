@@ -46,6 +46,7 @@ pub fn validate_shaders(folder: &str) {
     }
 }
 
+#[allow(dead_code)]
 // from: https://github.com/bevyengine/bevy/discussions/3332
 pub fn get_components_for_entity<'a>(
     entity: &Entity,
