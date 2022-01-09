@@ -16,7 +16,7 @@ use super::CursorLatest;
 
 //TODO: REDO THE RENDERING LOOP, make a screen space rendering pass
 
-pub fn trigger_area(
+pub fn trigger_area_hover(
     mut last_hovered: ResMut<LastHoveredTriggerArea>,
 
     mut q1: Query<(Entity, &mut TriggerArea)>,

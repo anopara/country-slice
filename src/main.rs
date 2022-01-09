@@ -40,14 +40,10 @@ const VALIDATE_SHADERS: bool = false;
 
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
 
-// Uneven terrain
-// CPU side -> mouse raycast
-// * some kind of perlin noise on CPU side
-// * then this img needs to be sent to GPU too
-// GPU side -> update the meshes, just push the vertices up
-
-// TODO: make the walls more straight at the top, but still adapt to the ground
-// maybe make some kind of Y smoothing?
+// TODO:
+// 1. Make sure trigger area overlaps do z-depth sort
+// 2. add editing handle for modifying/pulling the curve
+// 3. optional: make sure that editing handles work with terrain (terrain probably needs to send an update event?)
 
 pub struct TerrainData {
     perlin: bracket_noise::prelude::FastNoise,
@@ -239,7 +235,7 @@ fn main() {
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
-        .add_system(trigger_area.system())
+        .add_system(trigger_area_hover.system())
         .add_system(draw_curve.system().label("usercurve").after("modemanager"))
         .add_system_to_stage(
             "main_singlethread",
