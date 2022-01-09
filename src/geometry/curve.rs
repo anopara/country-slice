@@ -17,6 +17,13 @@ impl Curve {
         }
     }
 
+    pub fn add_to_front(&mut self, pt: Vec3) {
+        self.points.insert(0, pt);
+
+        // TODO: this is slow & lazy
+        *self = Self::from(self.points.clone());
+    }
+
     pub fn add(&mut self, pt: Vec3) {
         self.points.push(pt);
 

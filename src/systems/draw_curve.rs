@@ -1,17 +1,16 @@
 use bevy_ecs::prelude::*;
-use glam::Vec3;
 
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::AssetShaderLibrary, Handle},
     components::{
         drawable::{DrawableMeshBundle, GLDrawMode},
         transform::Transform,
-        EditingHandle, TriggerArea, TriggerAreaPreview,
+        EditingHandle, EditingHandleType, TriggerArea,
     },
     geometry::curve::Curve,
     render::mesh::Mesh,
     resources::WallManager,
-    systems::mode_manager::ActiveCurve,
+    systems::mode_manager::{ActiveCurve, DrawingCurveMode},
     CursorRaycast,
 };
 
@@ -49,8 +48,6 @@ pub fn draw_curve(
                 .curves
                 .push(start_curve(&mut assets_mesh, &assets_shader, &mut commands));
 
-            //TODO: add a second handle for the end, and it should update its transform as we draw the curve
-
             let mut trigger_area_comp =
                 TriggerArea::new(20, Transform::from_translation(cursor_ws.0));
             trigger_area_comp.add_screen_space_preview(
@@ -58,26 +55,48 @@ pub fn draw_curve(
                 &assets_shader,
                 &mut commands,
             );
-            //trigger_area_comp.add_world_space_preview(
-            //    &mut assets_mesh,
-            //    &assets_shader,
-            //    &mut commands,
-            //);
 
-            let entity = commands
+            let mut trigger_area_comp_2 =
+                TriggerArea::new(20, Transform::from_translation(cursor_ws.0));
+            trigger_area_comp_2.add_screen_space_preview(
+                &mut assets_mesh,
+                &assets_shader,
+                &mut commands,
+            );
+
+            let start_handle = commands
                 .spawn()
-                .insert(EditingHandle::new(wall_manager.curves.len() - 1))
+                .insert(EditingHandle::new(
+                    wall_manager.curves.len() - 1,
+                    EditingHandleType::StartOfCurve,
+                ))
                 .insert(trigger_area_comp)
                 .id();
 
-            wall_manager.editing_handles.push(entity);
+            let end_handle = commands
+                .spawn()
+                .insert(EditingHandle::new(
+                    wall_manager.curves.len() - 1,
+                    EditingHandleType::EndOfCurve,
+                ))
+                .insert(trigger_area_comp_2)
+                .id();
+
+            wall_manager
+                .editing_handles
+                .push((start_handle, end_handle));
         }
-        Mode::DrawingCurve(active_curve) => {
+        Mode::DrawingCurve(active_curve, draw_mode) => {
             let active_curve_index = match active_curve {
                 ActiveCurve::Last => wall_manager.curves.len() - 1,
                 ActiveCurve::Index(index) => *index,
             };
 
+            let (start_handle, end_handle) = wall_manager
+                .editing_handles
+                .get(active_curve_index)
+                .unwrap()
+                .clone();
             let (active_curve, preview_entity) =
                 wall_manager.curves.get_mut(active_curve_index).unwrap();
 
@@ -93,7 +112,13 @@ pub fn draw_curve(
                 // if curve  has no points, add this point
                 .unwrap_or(true)
             {
-                active_curve.add(intersection);
+                match draw_mode {
+                    DrawingCurveMode::AddPointsToEnd => active_curve.add(intersection),
+                    DrawingCurveMode::AddPointsToBeginning => {
+                        println!("active_curve.add_to_front");
+                        active_curve.add_to_front(intersection)
+                    }
+                }
 
                 // Update the curve debug preview mesh, if its present
                 if let Some(Ok(mesh_handle)) = preview_entity.map(|ent| query.get_mut(ent)) {
@@ -101,14 +126,15 @@ pub fn draw_curve(
                 }
 
                 // Update editing handles
-                let handle_entity = wall_manager
-                    .editing_handles
-                    .get_mut(active_curve_index)
-                    .unwrap();
+                query_2
+                    .get_mut(start_handle)
+                    .unwrap()
+                    .update_transform(active_curve.points[0]);
 
-                // TODO: separate Trigger Area & Transform components
-                let mut handle_trigger = query_2.get_mut(*handle_entity).unwrap();
-                handle_trigger.update_transform(intersection);
+                query_2
+                    .get_mut(end_handle)
+                    .unwrap()
+                    .update_transform(*active_curve.points.last().unwrap());
             }
         }
 

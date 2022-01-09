@@ -1,22 +1,21 @@
-use bevy_ecs::prelude::*;
-use glam::Vec3;
-
-use crate::asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::AssetShaderLibrary};
-
-use super::{Transform, TriggerArea};
+pub enum EditingHandleType {
+    StartOfCurve,
+    EndOfCurve,
+}
 
 //#[derive(Bundle)]
 pub struct EditingHandle {
     pub parent_curve: usize, // which curve does it belong
-                             //pub trigger_area: TriggerArea,
-                             //pub trigger_area_preview: TriggerAreaPreview,
+    pub handle_type: EditingHandleType,
+    //pub trigger_area: TriggerArea,
+    //pub trigger_area_preview: TriggerAreaPreview,
 }
 
 impl EditingHandle {
-    pub fn new(parent_curve: usize) -> Self {
+    pub fn new(parent_curve: usize, handle_type: EditingHandleType) -> Self {
         Self {
             parent_curve,
-            //trigger_area: TriggerArea::new(20, Transform::from_translation(position)),
+            handle_type, //trigger_area: TriggerArea::new(20, Transform::from_translation(position)),
         }
     }
 

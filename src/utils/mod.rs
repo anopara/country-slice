@@ -14,6 +14,8 @@ pub mod custom_macro {
 
 use std::process::Command;
 
+use bevy_ecs::{archetype::Archetypes, component::ComponentId, prelude::Entity};
+
 pub fn validate_shaders(folder: &str) {
     // check if validator exists
     if !std::path::Path::new("glslangValidator.exe").exists() {
@@ -42,6 +44,19 @@ pub fn validate_shaders(folder: &str) {
     } else {
         log::error!("The given path doesn't exist {}", folder);
     }
+}
+
+// from: https://github.com/bevyengine/bevy/discussions/3332
+pub fn get_components_for_entity<'a>(
+    entity: &Entity,
+    archetypes: &'a Archetypes,
+) -> Option<impl Iterator<Item = ComponentId> + 'a> {
+    for archetype in archetypes.iter() {
+        if archetype.entities().contains(entity) {
+            return Some(archetype.components());
+        }
+    }
+    None
 }
 
 /*

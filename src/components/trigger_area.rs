@@ -8,6 +8,7 @@ use glam::Vec3;
 use super::{DrawableMeshBundle, Transform};
 
 // Screenspace Bounding box check
+#[derive(Clone)]
 pub struct TriggerArea {
     pub is_mouse_over: bool,
     pub padding: usize, // padding of the interaction bounding box in screen-space in pixels
@@ -55,6 +56,7 @@ impl TriggerArea {
         self.cache_ws_bounds.as_ref().unwrap().iter()
     }
 
+    #[allow(dead_code)]
     pub fn add_world_space_preview(
         &mut self,
         assets_mesh: &mut ResMut<AssetMeshLibrary>,

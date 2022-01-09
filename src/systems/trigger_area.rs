@@ -1,5 +1,9 @@
 use bevy_app::EventReader;
-use bevy_ecs::prelude::*;
+use bevy_ecs::{
+    archetype::Archetypes,
+    component::{ComponentId, Components},
+    prelude::*,
+};
 use glam::{Mat4, Vec2, Vec3};
 
 use crate::{
@@ -18,6 +22,9 @@ use crate::{
 // REDO THE RENDERING LOOP, make a screen space rendering pass
 
 pub fn trigger_area(
+    archetypes: &Archetypes,
+    components: &Components,
+
     mut last_hovered: ResMut<LastHoveredTriggerArea>,
 
     mut q1: Query<(Entity, &mut TriggerArea)>,
@@ -34,6 +41,8 @@ pub fn trigger_area(
         return;
     }
 
+    last_hovered.0 = None;
+
     let mut prompt_preview = Vec::new(); // borrow checker workaround
 
     for (entity, mut trigger_area) in q1.iter_mut() {
@@ -49,12 +58,19 @@ pub fn trigger_area(
             && (cursor_latest_position.y) > bbx.min.y
             && (cursor_latest_position.y) < bbx.max.y
         {
+            //println!("Hovering over trigger area {:?}", entity);
+
+            for comp_id in get_components_for_entity(&entity, archetypes).unwrap() {
+                if let Some(comp_info) = components.get_info(comp_id) {
+                    //println!("Component: {:?}", comp_info);
+                }
+            }
+
             trigger_area.is_mouse_over = true;
             // TODO: this will not sort if two areas overlap, and will just send an event for both!
             last_hovered.0 = Some(entity);
         } else {
             trigger_area.is_mouse_over = false;
-            last_hovered.0 = None;
         }
 
         if let Some(debug_preview) = trigger_area.ss_preview {
@@ -153,4 +169,16 @@ fn update_debug_mesh(
         vec![[1.0, 0.0, 0.0]; positions_ws.len()],
     );
     mesh.set_indices((0..positions_ws.len()).map(|i| i as u32).collect());
+}
+
+pub fn get_components_for_entity<'a>(
+    entity: &Entity,
+    archetypes: &'a Archetypes,
+) -> Option<impl Iterator<Item = ComponentId> + 'a> {
+    for archetype in archetypes.iter() {
+        if archetype.entities().contains(entity) {
+            return Some(archetype.components());
+        }
+    }
+    None
 }
