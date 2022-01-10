@@ -38,7 +38,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         gl::DepthMask(gl::TRUE);
 
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
-        let mut compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
+        let compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
         let test = ecs.get_resource::<ComputePathsMask>().unwrap();
         let wall_manager = ecs.get_resource::<WallManager>().unwrap();
         //
