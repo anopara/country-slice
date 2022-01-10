@@ -40,7 +40,6 @@ const VALIDATE_SHADERS: bool = false;
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
 
 // OTHER:
-// 0. move stuff from editing-handles branch
 // 1. Esc -> leaks memory atm; free memory from instanced walls when they are deleted (gl::Delete) - free VAO and instanced SSBO
 // 2. remove validate shaders from runtime
 // 3. move to bevy 0.6
