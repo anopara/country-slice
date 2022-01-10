@@ -41,7 +41,7 @@ const VALIDATE_SHADERS: bool = false;
 
 // OTHER:
 // 0. move stuff from editing-handles branch
-// 1. Esc -> leaks memory atm; free memory from instanced walls when they are deleted (gl::Delete)
+// 1. Esc -> leaks memory atm; free memory from instanced walls when they are deleted (gl::Delete) - free VAO and instanced SSBO
 // 2. remove validate shaders from runtime
 // 3. move to bevy 0.6
 
@@ -71,6 +71,7 @@ fn main() {
     app.add_plugin(bevy_core::CorePlugin::default())
         .add_plugin(bevy_input::InputPlugin::default())
         .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
+        .insert_resource(CursorPosition(glam::Vec2::ZERO))
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
         .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
         .insert_resource(temp_shaderwatch)
