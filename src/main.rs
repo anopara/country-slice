@@ -44,6 +44,7 @@ const VALIDATE_SHADERS: bool = false;
 
 // TODO:
 // 1. Make sure trigger area overlaps do z-depth sort
+// 1.5 make sure that if wall obstructs the visibility of a trigger, its not considered
 // 2. add editing handle for modifying/pulling the curve
 // 3. add some art for the handles
 // 4. optional: make sure that editing handles work with terrain (terrain probably needs to send an update event?)
@@ -54,6 +55,7 @@ const VALIDATE_SHADERS: bool = false;
 // OTHER:
 // 1. Esc -> leaks memory atm; free memory from instanced walls when they are deleted (gl::Delete)
 // 2. remove validate shaders from runtime
+// 3. move to bevy 0.6
 
 fn main() {
     simple_logger::SimpleLogger::new().init().unwrap();
