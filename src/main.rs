@@ -74,6 +74,7 @@ fn main() {
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
         .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
         .insert_resource(temp_shaderwatch)
+        .insert_resource(Mode::default())
         .insert_resource(WallManager::new())
         .insert_resource(CursorRaycast(Vec3::ZERO))
         .insert_resource(AssetMeshLibrary::new())
@@ -99,6 +100,7 @@ fn main() {
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
+        .add_system(mode_manager.system())
         .add_system(draw_curve.system().label("usercurve"))
         .add_system_to_stage(
             "main_singlethread",

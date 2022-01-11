@@ -13,9 +13,13 @@ use crate::{
     CursorRaycast,
 };
 
+use super::mode_manager::Mode;
+
 const CURVE_SHOW_DEBUG: bool = false;
 
 pub fn draw_curve(
+    _mode: Res<Mode>,
+
     mut query: Query<&Handle<Mesh>>,
     mut wall_manager: ResMut<WallManager>,
     cursor_ws: Res<CursorRaycast>,
@@ -27,6 +31,10 @@ pub fn draw_curve(
     assets_shader: Res<AssetShaderLibrary>,
     //mut curve_ssbo_cache: ResMut<CurveSSBOCache>,
 ) {
+    if !matches!(*_mode, Mode::Wall) {
+        return;
+    }
+
     // Remove y component from the cursor-terrain raycast position
     let mut cursor_ws = cursor_ws.0;
     cursor_ws.y = 0.0;

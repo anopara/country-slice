@@ -9,7 +9,11 @@ use crate::{
     resources::WallManager,
 };
 
+use super::mode_manager::Mode;
+
 pub fn walls_update(
+    _mode: Res<Mode>,
+
     mouse_button_input: Res<Input<MouseButton>>,
     mut wall_manager: ResMut<WallManager>,
     mut query: Query<&mut InstancedWall>,
@@ -18,6 +22,10 @@ pub fn walls_update(
     assets_shader: Res<AssetShaderLibrary>,
     mut commands: Commands,
 ) {
+    if !matches!(*_mode, Mode::Wall) {
+        return;
+    }
+
     puffin::profile_function!();
     if let Some((curve, _)) = wall_manager.curves.last() {
         if !mouse_button_input.pressed(MouseButton::Left) {

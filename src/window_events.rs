@@ -108,6 +108,8 @@ pub fn process_window_events(
                     VirtualKeyCode::E => Some(bevy_input::keyboard::KeyCode::E),
                     VirtualKeyCode::Escape => Some(bevy_input::keyboard::KeyCode::Escape),
                     VirtualKeyCode::Back => Some(bevy_input::keyboard::KeyCode::Back),
+                    VirtualKeyCode::Key1 => Some(bevy_input::keyboard::KeyCode::Key1),
+                    VirtualKeyCode::Key2 => Some(bevy_input::keyboard::KeyCode::Key2),
                     _ => None,
                 };
 

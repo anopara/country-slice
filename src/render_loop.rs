@@ -18,6 +18,7 @@ use crate::render::{
     vao::VAO,
 };
 use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand, WallManager};
+use crate::systems::mode_manager::Mode;
 use crate::window_events::WindowSize;
 use crate::{components::*, TerrainData};
 use crate::{ComputeArchesIndirect, ComputePathsMask, CursorRaycast};
@@ -118,8 +119,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let mouse = ecs.get_resource::<CursorRaycast>().unwrap();
         let mouse_button_input = ecs.get_resource::<Input<MouseButton>>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
-        // Only update shader if RMB is pressed
-        if mouse_button_input.pressed(MouseButton::Right) {
+        let _mode = ecs.get_resource::<Mode>().unwrap();
+        // Only update shader if LMB is pressed and we are in Path mode
+        if matches!(_mode, Mode::Path) && mouse_button_input.pressed(MouseButton::Left) {
             let shader = assets_shader.get(test.compute_program).unwrap();
 
             gl::UseProgram(shader.id());
@@ -329,7 +331,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 //DEBUG TERRAIN TEXTURE
                 gl::ActiveTexture(gl::TEXTURE1);
                 gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
-                shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
+                log_if_error!(shader.set_gl_uniform("terrain_texture", GlUniform::Int(1)));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
             }

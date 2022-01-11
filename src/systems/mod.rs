@@ -1,6 +1,7 @@
 pub mod clear_canvas;
 pub mod draw_curve;
 pub mod main_camera;
+pub mod mode_manager;
 pub mod mouse_raycast;
 pub mod shader_update;
 pub mod startup;
@@ -12,6 +13,7 @@ pub mod wall_manager_update;
 pub use clear_canvas::*;
 pub use draw_curve::*;
 pub use main_camera::*;
+pub use mode_manager::*;
 pub use mouse_raycast::*;
 pub use shader_update::*;
 pub use startup::*;
