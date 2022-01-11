@@ -14,8 +14,9 @@ impl MainCamera {
     pub fn new(aspect_ratio: f32) -> Self {
         let camera_rig = CameraRig::builder()
             .with(YawPitch::new().yaw_degrees(45.0).pitch_degrees(-30.0))
+            .with(Position::new(Vec3::Y))
             //.with(YawPitch::new().yaw_degrees(0.0).pitch_degrees(90.0))
-            .with(Smooth::new_rotation(1.5))
+            .with(Smooth::new_position_rotation(1.0, 1.5))
             .with(Arm::new(dolly::glam::Vec3::Z * 9.0))
             //.with(Arm::new(dolly::glam::Vec3::Z * 20.0))
             .build();
