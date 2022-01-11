@@ -13,7 +13,6 @@ use crate::{
 pub fn main_camera_update(
     mouse_button_input: Res<Input<MouseButton>>,
     mut cursor: EventReader<CursorMoved>,
-    window_size: Res<WindowSize>,
 
     keys: Res<Input<KeyCode>>,
     time: Res<Time>,
