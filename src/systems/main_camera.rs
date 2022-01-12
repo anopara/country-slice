@@ -47,6 +47,8 @@ pub fn main_camera_update(
             let mut ws_delta = camera_transform.transform_vector3(local_delta);
 
             // remove Y component TODO:: renormalize
+            // TODO: or, instead, when making a camera rig, make a parent transform that rotates in Yaw, but pitch is separate
+            // TODO: maybe also can be a use case for bevy to insert "checkpoints" of transforms one might want to extract?
             ws_delta.y = 0.0;
 
             main_camera
@@ -59,6 +61,7 @@ pub fn main_camera_update(
     if let Some(mouse_wheel) = mouse_wheel_ev.iter().last() {
         // TODO: longer the wheel is used, it should get exp
         // TODO: add smoothness that only affects the offset of the arm but not the parent stuff, that gets nauseous! (or smoothing that only applies in one axis)
+        // TODO: fork bevy and add ConstranedSmooth? that you can specify the axis of smoothing
         if mouse_wheel.y.abs() > 0.0 {
             main_camera.camera_rig.driver_mut::<Arm>().offset +=
                 dolly::glam::Vec3::Z * mouse_wheel.y * zoom_speed_mult;
