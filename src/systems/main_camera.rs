@@ -2,7 +2,6 @@ use bevy_app::EventReader;
 use bevy_core::Time;
 use bevy_ecs::prelude::*;
 use bevy_input::{
-    //keyboard::KeyCode,
     mouse::{MouseButton, MouseWheel},
     Input,
 };
@@ -16,9 +15,8 @@ pub fn main_camera_update(
     mut mouse_wheel_ev: EventReader<MouseWheel>,
     mut cursor: EventReader<CursorMoved>,
 
-    //keys: Res<Input<KeyCode>>,
     time: Res<Time>,
-    mut main_camera: ResMut<MainCamera>, //mut q: Query<(&mut Camera, &mut CameraRig)>,
+    mut main_camera: ResMut<MainCamera>,
 ) {
     let time_dt = time.delta_seconds();
     let rot_speed_mult = 90.0;
@@ -42,6 +40,8 @@ pub fn main_camera_update(
         if let Some(cursor_latest) = cursor.iter().last() {
             let camera_transform = main_camera.camera.transform;
 
+            // TODO: modulate how much we pan based on how much we are zoomed in
+
             let delta = cursor_latest.delta;
             let local_delta = glam::Vec3::new(delta.x, 0.0, delta.y);
             let mut ws_delta = camera_transform.transform_vector3(local_delta);
@@ -61,28 +61,12 @@ pub fn main_camera_update(
     if let Some(mouse_wheel) = mouse_wheel_ev.iter().last() {
         // TODO: longer the wheel is used, it should get exp
         // TODO: add smoothness that only affects the offset of the arm but not the parent stuff, that gets nauseous! (or smoothing that only applies in one axis)
-        // TODO: fork bevy and add ConstranedSmooth? that you can specify the axis of smoothing
+        // TODO: fork bevy and add ConstranedSmooth? that you can specify the axis of smoothing and ChildSmoothing, which only applies it to children?
         if mouse_wheel.y.abs() > 0.0 {
             main_camera.camera_rig.driver_mut::<Arm>().offset +=
                 dolly::glam::Vec3::Z * mouse_wheel.y * zoom_speed_mult;
         }
     }
-
-    /*
-    if keys.pressed(KeyCode::Left) {
-        camera_driver_rot.rotate_yaw_pitch(-2.0 * time_dt * rot_speed_mult, 0.0);
-    }
-    if keys.pressed(KeyCode::Right) {
-        camera_driver_rot.rotate_yaw_pitch(2.0 * time_dt * rot_speed_mult, 0.0);
-    }
-
-    if keys.pressed(KeyCode::Up) {
-        camera_driver_rot.rotate_yaw_pitch(0.0, -1.0 * time_dt * rot_speed_mult);
-    }
-    if keys.pressed(KeyCode::Down) {
-        camera_driver_rot.rotate_yaw_pitch(0.0, 1.0 * time_dt * rot_speed_mult);
-    }
-    */
 
     let (pos, rot) = main_camera
         .camera_rig
