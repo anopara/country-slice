@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
 use bevy_app::Events;
-use bevy_input::mouse::MouseButtonInput;
+use bevy_input::mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel};
 use glam::{Mat4, Vec2};
 use glutin::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use glutin::event_loop::ControlFlow;
@@ -156,6 +156,20 @@ pub fn process_window_events(
                         ElementState::Released => bevy_input::ElementState::Released,
                     },
                 });
+            }
+            WindowEvent::MouseWheel { delta, .. } => {
+                let mut mousewheel_events = ecs.get_resource_mut::<Events<MouseWheel>>().unwrap();
+
+                match delta {
+                    glutin::event::MouseScrollDelta::LineDelta(x, y) => {
+                        mousewheel_events.send(MouseWheel {
+                            unit: MouseScrollUnit::Line,
+                            x,
+                            y,
+                        })
+                    }
+                    glutin::event::MouseScrollDelta::PixelDelta(_) => todo!(),
+                };
             }
             _ => (),
         },

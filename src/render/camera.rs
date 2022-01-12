@@ -1,5 +1,5 @@
 use dolly::prelude::*;
-use glam::{Mat4, Vec3};
+use glam::{Mat4, Quat, Vec3};
 
 use crate::components::transform::Transform;
 
@@ -14,10 +14,12 @@ impl MainCamera {
     pub fn new(aspect_ratio: f32) -> Self {
         let camera_rig = CameraRig::builder()
             .with(YawPitch::new().yaw_degrees(45.0).pitch_degrees(-30.0))
-            .with(Position::new(Vec3::Y))
+            .with(Position::new(Vec3::ZERO))
+            //.with(Rotation::new(Quat::from_rotation_y(45.0_f32.to_radians()))) //
             //.with(YawPitch::new().yaw_degrees(0.0).pitch_degrees(90.0))
-            .with(Smooth::new_position_rotation(1.0, 1.5))
+            .with(Smooth::new_position_rotation(1.0, 1.0))
             .with(Arm::new(dolly::glam::Vec3::Z * 9.0))
+            //.with(Smooth::new_position(3.0))
             //.with(Arm::new(dolly::glam::Vec3::Z * 20.0))
             .build();
         let camera = Camera::new(
