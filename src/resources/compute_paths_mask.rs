@@ -34,7 +34,8 @@ impl ComputePathsMask {
                 std::ptr::null(),
             );
             // create shader program
-            let shader_program = ShaderProgram::new_compute("shaders/compute_test.comp").unwrap();
+            let shader_program =
+                ShaderProgram::new_compute("shaders/compute_path_mask.comp").unwrap();
 
             shaderwatch.watch(&shader_program);
             let handle = assets_library.add(shader_program.into());

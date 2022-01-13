@@ -122,7 +122,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let _mode = ecs.get_resource::<Mode>().unwrap();
         // Only update shader if LMB is pressed and we are in Path mode
 
-        if (matches!(_mode, Mode::Path) || matches!(_mode, Mode::Delete))
+        if (matches!(_mode, Mode::Path) || matches!(_mode, Mode::Erase))
             && mouse_button_input.pressed(MouseButton::Left)
         {
             let shader = assets_shader.get(test.compute_program).unwrap();
@@ -132,11 +132,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             match _mode {
                 Mode::Wall => panic!(),
                 Mode::Path => {
-                    // Draw path
                     log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(true)))
                 }
-                Mode::Delete => {
-                    // Delete path
+                Mode::Erase => {
                     log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(false)))
                 }
             }

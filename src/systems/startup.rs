@@ -55,7 +55,7 @@ pub fn startup(ecs: &mut World) {
     //    "terrain_shader",
     //    ecs,
     //);
-    // this shader shows the compute_test.comp as a texture
+    // this shader shows the compute_path_mask.comp as a texture
     let _test = load_shader_into_library(
         "shaders/texture_test.vert",
         "shaders/texture_test.frag",
