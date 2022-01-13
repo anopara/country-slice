@@ -18,9 +18,8 @@ pub fn main_camera_update(
     time: Res<Time>,
     mut main_camera: ResMut<MainCamera>,
 ) {
-    let time_dt = time.delta_seconds();
-    let rot_speed_mult = 90.0;
-    let pos_speed_mult = 10.0;
+    let rot_speed_mult = 0.25;
+    let pos_speed_mult = 0.02;
     let zoom_speed_mult = 0.5;
 
     if mouse_button_input.pressed(MouseButton::Right) {
@@ -29,10 +28,7 @@ pub fn main_camera_update(
             main_camera
                 .camera_rig
                 .driver_mut::<YawPitch>()
-                .rotate_yaw_pitch(
-                    1.2 * delta.x * time_dt * rot_speed_mult,
-                    delta.y * time_dt * rot_speed_mult,
-                );
+                .rotate_yaw_pitch(1.2 * delta.x * rot_speed_mult, delta.y * rot_speed_mult);
         }
     }
 
@@ -54,7 +50,7 @@ pub fn main_camera_update(
             main_camera
                 .camera_rig
                 .driver_mut::<Position>()
-                .translate(ws_delta * time_dt * pos_speed_mult);
+                .translate(ws_delta * pos_speed_mult);
         }
     }
 
