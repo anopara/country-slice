@@ -49,12 +49,12 @@ pub fn startup(ecs: &mut World) {
         "road_shader",
         ecs,
     );
-    let terrain_shader = load_shader_into_library(
-        "shaders/vertex_color_terrain.vert",
-        "shaders/vertex_color.frag",
-        "terrain_shader",
-        ecs,
-    );
+    //let terrain_shader = load_shader_into_library(
+    //    "shaders/vertex_color_terrain.vert",
+    //    "shaders/vertex_color.frag",
+    //    "terrain_shader",
+    //    ecs,
+    //);
     // this shader shows the compute_test.comp as a texture
     let _test = load_shader_into_library(
         "shaders/texture_test.vert",

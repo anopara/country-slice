@@ -121,10 +121,25 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
         let _mode = ecs.get_resource::<Mode>().unwrap();
         // Only update shader if LMB is pressed and we are in Path mode
-        if matches!(_mode, Mode::Path) && mouse_button_input.pressed(MouseButton::Left) {
+
+        if (matches!(_mode, Mode::Path) || matches!(_mode, Mode::Delete))
+            && mouse_button_input.pressed(MouseButton::Left)
+        {
             let shader = assets_shader.get(test.compute_program).unwrap();
 
             gl::UseProgram(shader.id());
+
+            match _mode {
+                Mode::Wall => panic!(),
+                Mode::Path => {
+                    // Draw path
+                    log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(true)))
+                }
+                Mode::Delete => {
+                    // Delete path
+                    log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(false)))
+                }
+            }
 
             // connect shader's uniform variable to our texture
             // instead of name can specify in shader the binding, for ex "layout(rgba32f, binding = 0)"

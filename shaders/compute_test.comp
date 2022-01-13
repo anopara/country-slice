@@ -4,6 +4,8 @@ layout(rgba32f) uniform image2D img_output;
 
 uniform vec3 Mouse_Position;
 
+uniform bool is_additive;
+
 void main() {
 
     float MAX_DIST = 0.75;
@@ -28,7 +30,15 @@ void main() {
     d = clamp(d, 0.0, MAX_DIST);
     d = (MAX_DIST -d)/MAX_DIST;
 
-    pixel = max(pixel, vec4(d,d,d, 1.0));
+    if (is_additive) {
+        // draw path mask
+        pixel = max(pixel, vec4(d,d,d, 1.0));
+    } else {
+        // erase path mask
+        float v = max(pixel.x - d, 0.0);
+        pixel = vec4(v.xxx, 1.0);
+    }
+    
 
     //-----------------------------
 

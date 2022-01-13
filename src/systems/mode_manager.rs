@@ -7,6 +7,7 @@ use crate::asset_libraries::mesh_library::AssetMeshLibrary;
 pub enum Mode {
     Wall,
     Path,
+    Delete,
 }
 
 impl Default for Mode {
@@ -33,5 +34,12 @@ pub fn mode_manager(
         let c = assets_mesh.get_handle_by_name("cube").unwrap();
         let m = assets_mesh.get_mut(c).unwrap();
         m.add_color([0.1, 0.7, 0.1]);
+    }
+
+    if keys.just_pressed(KeyCode::Key3) {
+        *mode = Mode::Delete;
+        let c = assets_mesh.get_handle_by_name("cube").unwrap();
+        let m = assets_mesh.get_mut(c).unwrap();
+        m.add_color([0.1, 0.0, 0.0]);
     }
 }

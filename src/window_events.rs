@@ -112,6 +112,10 @@ pub fn process_window_events(
                     VirtualKeyCode::Back => Some(bevy_input::keyboard::KeyCode::Back),
                     VirtualKeyCode::Key1 => Some(bevy_input::keyboard::KeyCode::Key1),
                     VirtualKeyCode::Key2 => Some(bevy_input::keyboard::KeyCode::Key2),
+                    VirtualKeyCode::Key3 => Some(bevy_input::keyboard::KeyCode::Key3),
+                    VirtualKeyCode::Key4 => Some(bevy_input::keyboard::KeyCode::Key4),
+                    VirtualKeyCode::Key5 => Some(bevy_input::keyboard::KeyCode::Key5),
+                    VirtualKeyCode::Key6 => Some(bevy_input::keyboard::KeyCode::Key6),
                     _ => None,
                 };
 
