@@ -112,6 +112,7 @@ fn main() {
         .add_system(mouse_raycast.system())
         .add_system(mode_manager.system())
         .add_system(draw_curve.system().label("usercurve"))
+        .add_system(erase_curve.system().label("usercurve"))
         .add_system(curve_preview.system().after("usercurve"))
         .add_system_to_stage(
             "main_singlethread",
