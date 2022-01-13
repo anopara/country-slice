@@ -41,6 +41,16 @@ impl TerrainData {
         self.perlin.get_noise(self.offset.x + x, self.offset.y + y) * self.amp
     }
 
+    #[allow(dead_code)]
+    pub fn raw_empty_f32(texture_dims: (i32, i32)) -> (Vec<f32>, f32, f32) {
+        (
+            vec![0.0; (texture_dims.1 * texture_dims.0 * 4) as usize],
+            0.0,
+            0.0,
+        )
+    }
+
+    #[allow(dead_code)]
     pub fn raw_pixels_f32(
         noise: &FastNoise,
         texture_dims: (i32, i32),
@@ -93,7 +103,7 @@ impl TerrainData {
         let min_y;
         let max_y;
         let texture = unsafe {
-            let (raw_pixels, min, max) = Self::raw_pixels_f32(&noise, texture_dims, offset, amp);
+            let (raw_pixels, min, max) = Self::raw_empty_f32(texture_dims); //Self::raw_pixels_f32(&noise, texture_dims, offset, amp);
 
             min_y = min;
             max_y = max;
