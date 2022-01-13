@@ -3,13 +3,7 @@ use bevy_ecs::prelude::*;
 use bevy_input::{mouse::MouseButton, Input};
 
 use crate::{
-    asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::AssetShaderLibrary, Handle},
-    components::{
-        drawable::{DrawableMeshBundle, GLDrawMode},
-        transform::Transform,
-    },
     geometry::curve::Curve,
-    render::mesh::Mesh,
     resources::{events::CurveChangedEvent, WallManager},
     CursorRaycast,
 };
