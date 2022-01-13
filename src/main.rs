@@ -12,10 +12,13 @@ use glutin::event_loop::ControlFlow;
 use render::camera::MainCamera;
 
 use render::shaderwatch::*;
-use resources::{ComputeArchesIndirect, ComputePathsMask, CurveSegmentsComputePass, WallManager};
+use resources::*;
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
-use crate::{resources::TerrainData, systems::*};
+use crate::{
+    resources::{CurveChangedEvent, TerrainData},
+    systems::*,
+};
 
 mod asset_libraries;
 mod components;
@@ -76,6 +79,7 @@ fn main() {
     app.add_plugin(bevy_core::CorePlugin::default())
         .add_plugin(bevy_input::InputPlugin::default())
         .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
+        .add_event::<CurveChangedEvent>()
         .insert_resource(CursorPosition(glam::Vec2::ZERO))
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
         .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
@@ -108,14 +112,15 @@ fn main() {
         .add_system(mouse_raycast.system())
         .add_system(mode_manager.system())
         .add_system(draw_curve.system().label("usercurve"))
+        .add_system(curve_preview.system().after("usercurve"))
         .add_system_to_stage(
             "main_singlethread",
             update_curve_ssbo.system().after("usercurve"),
         )
-        .add_system_to_stage(
-            "main_singlethread",
-            walls_update.system().after("usercurve"),
-        )
+        //.add_system_to_stage(
+        //    "main_singlethread",
+        //    walls_update.system().after("usercurve"),
+        //)
         //.add_system_to_stage("main_singlethread", update_terrain.system())
         .add_system_to_stage("main_singlethread", clear_canvas.system());
 

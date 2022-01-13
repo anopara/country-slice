@@ -1,3 +1,4 @@
+use bevy_app::EventWriter;
 use bevy_ecs::prelude::*;
 use bevy_input::{mouse::MouseButton, Input};
 
@@ -9,27 +10,20 @@ use crate::{
     },
     geometry::curve::Curve,
     render::mesh::Mesh,
-    resources::WallManager,
+    resources::{events::CurveChangedEvent, WallManager},
     CursorRaycast,
 };
 
 use super::mode_manager::Mode;
 
-const CURVE_SHOW_DEBUG: bool = false;
-
 pub fn draw_curve(
     _mode: Res<Mode>,
 
-    mut query: Query<&Handle<Mesh>>,
+    mut ev_curve_changed: EventWriter<CurveChangedEvent>,
     mut wall_manager: ResMut<WallManager>,
     cursor_ws: Res<CursorRaycast>,
 
-    mut commands: Commands,
     mouse_button_input: Res<Input<MouseButton>>,
-
-    mut assets_mesh: ResMut<AssetMeshLibrary>,
-    assets_shader: Res<AssetShaderLibrary>,
-    //mut curve_ssbo_cache: ResMut<CurveSSBOCache>,
 ) {
     if !matches!(*_mode, Mode::Wall) {
         return;
@@ -42,13 +36,15 @@ pub fn draw_curve(
     puffin::profile_function!();
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
-        wall_manager
-            .curves
-            .push(start_curve(&mut assets_mesh, &assets_shader, &mut commands));
+        wall_manager.curves.push((Curve::new(), None));
+
+        ev_curve_changed.send(CurveChangedEvent {
+            curve_index: wall_manager.curves.len() - 1,
+        });
     }
     // If LMB is pressed, continue the active curve
     else if mouse_button_input.pressed(MouseButton::Left) {
-        let (active_curve, preview_entity) = wall_manager.curves.last_mut().unwrap();
+        let (active_curve, _) = wall_manager.curves.last_mut().unwrap();
 
         let intersection = cursor_ws;
 
@@ -64,62 +60,9 @@ pub fn draw_curve(
         {
             active_curve.add(intersection);
 
-            // Update the curve debug preview mesh, if its present
-            if let Some(Ok(mesh_handle)) = preview_entity.map(|ent| query.get_mut(ent)) {
-                update_curve_debug_mesh(&active_curve, mesh_handle, &mut assets_mesh);
-            }
+            ev_curve_changed.send(CurveChangedEvent {
+                curve_index: wall_manager.curves.len() - 1,
+            });
         }
     }
-}
-
-fn update_curve_debug_mesh(
-    curve: &Curve,
-    mesh_handle: &Handle<Mesh>,
-    assets_mesh: &mut ResMut<AssetMeshLibrary>,
-) {
-    let mesh = assets_mesh.get_mut(*mesh_handle).expect("MEOW####");
-    mesh.set_attribute(
-        Mesh::ATTRIBUTE_POSITION,
-        curve
-            .points
-            .iter()
-            .map(|p| [p.x, p.y + 0.01, p.z])
-            .collect::<Vec<[f32; 3]>>(),
-    );
-    mesh.set_attribute(
-        Mesh::ATTRIBUTE_COLOR,
-        vec![[1.0, 0.0, 0.0]; curve.points.len()],
-    );
-    mesh.set_indices((0..curve.points.len()).map(|i| i as u32).collect());
-}
-
-fn start_curve(
-    assets_mesh: &mut ResMut<AssetMeshLibrary>,
-    assets_shader: &Res<AssetShaderLibrary>,
-    commands: &mut Commands,
-) -> (Curve, Option<Entity>) {
-    let curve = Curve::new();
-
-    let preview_entity = if CURVE_SHOW_DEBUG {
-        let curve_mesh_handle = assets_mesh.add(Mesh::new().into());
-        let shader = assets_shader
-            .get_handle_by_name("vertex_color_shader")
-            .unwrap();
-
-        Some(
-            commands
-                .spawn()
-                .insert_bundle(DrawableMeshBundle {
-                    mesh: curve_mesh_handle,
-                    shader,
-                    transform: Transform::identity(),
-                })
-                .insert(GLDrawMode(gl::LINE_STRIP))
-                .id(),
-        )
-    } else {
-        None
-    };
-
-    (curve, preview_entity)
 }
