@@ -36,13 +36,8 @@ pub fn walls_update(
             return;
         }
 
-        //println!("wall update");
-
         // Calculate brick transforms
-        let curve = {
-            puffin::profile_scope!("curve");
-            curve.clone().smooth(50).resample(0.2)
-        };
+        let curve = curve.clone(); //TODO: remove this clone
 
         {
             puffin::profile_scope!("construct wall");

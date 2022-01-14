@@ -30,6 +30,7 @@ pub fn draw_curve(
     puffin::profile_function!();
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
+        wall_manager.temp_curve = Some(Curve::new());
         wall_manager.curves.push((Curve::new(), None));
 
         ev_curve_changed.send(CurveChangedEvent {
@@ -38,13 +39,13 @@ pub fn draw_curve(
     }
     // If LMB is pressed, continue the active curve
     else if mouse_button_input.pressed(MouseButton::Left) {
-        let (active_curve, _) = wall_manager.curves.last_mut().unwrap();
+        let temp_curve = wall_manager.temp_curve.as_mut().unwrap();
 
         let intersection = cursor_ws;
 
         const DIST_THRESHOLD: f32 = 0.001;
 
-        if active_curve
+        if temp_curve
             .points
             .last()
             // if curve  had points, only add if the distance is larger than X
@@ -52,7 +53,13 @@ pub fn draw_curve(
             // if curve  has no points, add this point
             .unwrap_or(true)
         {
-            active_curve.add(intersection);
+            temp_curve.add(intersection);
+
+            if temp_curve.points.len() > 2 {
+                let clone_temp_curve = temp_curve.clone();
+                let (active_curve, _) = wall_manager.curves.last_mut().unwrap();
+                *active_curve = clone_temp_curve.smooth(50).resample(0.2);
+            }
 
             ev_curve_changed.send(CurveChangedEvent {
                 curve_index: wall_manager.curves.len() - 1,

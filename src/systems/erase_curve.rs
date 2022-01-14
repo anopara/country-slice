@@ -1,13 +1,19 @@
+use bevy_app::EventWriter;
 use bevy_ecs::prelude::*;
 use bevy_input::{mouse::MouseButton, Input};
 use glam::Vec3;
 
-use crate::{components::CursorRaycast, geometry::curve::Curve, resources::WallManager};
+use crate::{
+    components::CursorRaycast,
+    geometry::curve::Curve,
+    resources::{events::CurveChangedEvent, WallManager},
+};
 
 use super::mode_manager::Mode;
 
 pub fn erase_curve(
     _mode: Res<Mode>,
+    mut ev_curve_changed: EventWriter<CurveChangedEvent>,
     mut wall_manager: ResMut<WallManager>,
     cursor_ws: Res<CursorRaycast>,
     mouse_button_input: Res<Input<MouseButton>>,
@@ -47,6 +53,8 @@ pub fn erase_curve(
         }
     }
 
+    dbg!(curves_to_replace.len());
+
     const DIST_THRESHOLD: f32 = 0.1;
     for (i, mut c, ent) in curves_to_replace {
         // go through every curve, and see if the dist between a point >, then its a new curve and we need to split
@@ -54,11 +62,12 @@ pub fn erase_curve(
         for (i, pt) in c.iter().enumerate() {
             if let Some(next) = c.get(i + 1) {
                 if pt.distance(*next) > DIST_THRESHOLD {
+                    dbg!(pt.distance(*next));
                     splits.push(i);
                 }
             }
         }
-
+        dbg!(splits.clone());
         // split
         let mut last_split_index = 0;
         let mut new_curves = Vec::new();
@@ -69,8 +78,20 @@ pub fn erase_curve(
         new_curves.push(c);
 
         // Update curves
-        wall_manager.curves[i] = (Curve::from(new_curves[0].clone()), ent);
+        for j in 0..new_curves.len() {
+            if j == 0 {
+                wall_manager.curves[i] = (Curve::from(new_curves[0].clone()), ent);
+                ev_curve_changed.send(CurveChangedEvent { curve_index: i });
+            } else {
+                wall_manager
+                    .curves
+                    .push((Curve::from(new_curves[j].clone()), None));
+                ev_curve_changed.send(CurveChangedEvent {
+                    curve_index: wall_manager.curves.len() - 1,
+                });
+            }
 
-        // send event that wall needs to be recalculated
+            // send event that wall needs to be recalculated
+        }
     }
 }
