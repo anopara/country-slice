@@ -4,7 +4,7 @@ use bevy_input::{mouse::MouseButton, Input};
 
 use crate::{
     geometry::curve::Curve,
-    resources::{events::CurveChangedEvent, WallManager},
+    resources::{events::CurveChangedEvent, wall_manager::*},
     CursorRaycast,
 };
 
@@ -58,7 +58,9 @@ pub fn draw_curve(
             if temp_curve.points.len() > 2 {
                 let clone_temp_curve = temp_curve.clone();
                 let (active_curve, _) = wall_manager.curves.last_mut().unwrap();
-                *active_curve = clone_temp_curve.smooth(50).resample(0.2);
+                *active_curve = clone_temp_curve
+                    .smooth(SMOOTHING_STEPS)
+                    .resample(RESAMPLING);
             }
 
             ev_curve_changed.send(CurveChangedEvent {

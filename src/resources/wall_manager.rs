@@ -2,6 +2,9 @@ use bevy_ecs::prelude::Entity;
 
 use crate::geometry::curve::Curve;
 
+pub const RESAMPLING: f32 = 0.2;
+pub const SMOOTHING_STEPS: usize = 50;
+
 pub struct WallManager {
     pub temp_curve: Option<Curve>, // raw curve data being currently drawn by the user without any smoothing or resmapling
     pub curves: Vec<(Curve, Option<Entity>)>,

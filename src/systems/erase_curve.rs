@@ -55,27 +55,44 @@ pub fn erase_curve(
 
     dbg!(curves_to_replace.len());
 
-    const DIST_THRESHOLD: f32 = 0.1;
-    for (i, mut c, ent) in curves_to_replace {
+    const DIST_THRESHOLD: f32 = crate::resources::wall_manager::RESAMPLING * 2.0;
+    for (i, c, ent) in curves_to_replace {
         // go through every curve, and see if the dist between a point >, then its a new curve and we need to split
         let mut splits = Vec::new();
         for (i, pt) in c.iter().enumerate() {
             if let Some(next) = c.get(i + 1) {
+                dbg!(pt.distance(*next));
                 if pt.distance(*next) > DIST_THRESHOLD {
-                    dbg!(pt.distance(*next));
                     splits.push(i);
                 }
             }
         }
+        dbg!(c.len());
         dbg!(splits.clone());
         // split
         let mut last_split_index = 0;
         let mut new_curves = Vec::new();
+        let mut tail = c;
         for s in splits {
-            new_curves.push(c.split_off(s - last_split_index));
+            let new = tail.split_off(s - last_split_index);
+
+            new_curves.push(tail);
+
+            tail = new;
+
             last_split_index = s;
         }
-        new_curves.push(c);
+        new_curves.push(tail);
+        let bla: Vec<_> = new_curves.iter().map(|c| c.len()).collect();
+        dbg!(bla);
+
+        //panic!();
+
+        // check if no degenerate curves
+        new_curves = new_curves
+            .iter()
+            .filter_map(|n| if n.len() > 0 { Some(n.clone()) } else { None })
+            .collect();
 
         // Update curves
         for j in 0..new_curves.len() {
@@ -90,8 +107,6 @@ pub fn erase_curve(
                     curve_index: wall_manager.curves.len() - 1,
                 });
             }
-
-            // send event that wall needs to be recalculated
         }
     }
 }

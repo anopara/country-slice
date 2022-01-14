@@ -21,7 +21,7 @@ pub fn update_curve_ssbo(
         let data = {
             puffin::profile_scope!("curve->SSBO");
             if active_curve.points.len() > 0 {
-                CurveDataSSBO::from(&active_curve.clone().smooth(50).resample(0.2))
+                CurveDataSSBO::from(&active_curve)
             } else {
                 // add empty
                 CurveDataSSBO {
@@ -37,7 +37,7 @@ pub fn update_curve_ssbo(
         puffin::profile_scope!("curve buffer update");
         compute_indirect
             .curves_buffer
-            .update_element(data, wall_manager.curves.len() - 1);
+            .update_element(data, ev.curve_index);
     }
 
     /*

@@ -118,10 +118,10 @@ fn main() {
             "main_singlethread",
             update_curve_ssbo.system().after("usercurve"),
         )
-        .add_system_to_stage(
-            "main_singlethread",
-            walls_update.system().after("usercurve"),
-        )
+        //.add_system_to_stage(
+        //    "main_singlethread",
+        //    walls_update.system().after("usercurve"),
+        //)
         //.add_system_to_stage("main_singlethread", update_terrain.system())
         .add_system_to_stage("main_singlethread", clear_canvas.system());
 
