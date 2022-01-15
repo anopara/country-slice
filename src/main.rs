@@ -125,7 +125,8 @@ fn main() {
             walls_update.system().after("usercurve"),
         )
         .add_system_to_stage("main_singlethread", update_terrain.system())
-        .add_system_to_stage("main_singlethread", clear_canvas.system());
+        .add_system_to_stage("main_singlethread", clear_canvas.system())
+        .add_system_to_stage("main_singlethread", delete_dropped_ssbos.system());
 
     systems::startup(&mut app.world_mut());
 
