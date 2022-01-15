@@ -16,7 +16,7 @@ pub fn update_curve_ssbo(
     puffin::profile_function!();
 
     for ev in ev_curve_changed.iter() {
-        let active_curve = &wall_manager.walls.get(&ev.curve_index).unwrap().curve;
+        let active_curve = &wall_manager.get(ev.curve_index).unwrap().curve;
 
         let data = {
             puffin::profile_scope!("curve->SSBO");

@@ -2,11 +2,8 @@ use bevy_app::EventWriter;
 use bevy_ecs::prelude::*;
 use bevy_input::{keyboard::KeyCode, Input};
 
-use crate::{
-    geometry::instanced_wall::InstancedWall,
-    resources::{
-        events::CurveDeletedEvent, ComputePathsMask, CurveSegmentsComputePass, WallManager,
-    },
+use crate::resources::{
+    events::CurveDeletedEvent, ComputePathsMask, CurveSegmentsComputePass, WallManager,
 };
 
 // Clear walls

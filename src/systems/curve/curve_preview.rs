@@ -27,7 +27,7 @@ pub fn curve_preview(
 
     for ev in ev_curve_changed.iter() {
         // check if there is an entity associated with the curve
-        let wall = wall_manager.walls.get_mut(&ev.curve_index).unwrap();
+        let wall = wall_manager.get_mut(ev.curve_index).unwrap();
         if let Some(ent) = wall.curve_preview_entity {
             // if yes, update the mesh
             let mesh_handle = query.get(ent).unwrap();

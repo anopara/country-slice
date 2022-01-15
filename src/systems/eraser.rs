@@ -93,7 +93,7 @@ pub fn eraser(
         // Update curves
         for j in 0..cc.len() {
             if j == 0 {
-                wall_manager.walls.get_mut(&curve_index).unwrap().curve = cc[0].clone();
+                wall_manager.get_mut(curve_index).unwrap().curve = cc[0].clone();
                 ev_curve_changed.send(CurveChangedEvent {
                     curve_index: curve_index,
                 });
