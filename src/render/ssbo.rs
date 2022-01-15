@@ -94,6 +94,8 @@ impl<T: Copy> GLShaderStorageBuffer<T> {
 
 impl<T> Drop for GLShaderStorageBuffer<T> {
     fn drop(&mut self) {
+        // We cannot guarantee that drop will happen on the main thread, thus this is equivalent to sending a msg to a system
+        // that will later in the tick actually call `gl::DeleteBuffer`, ensuring it runs on the main thread
         log::debug!("SSBO {} has been droppped", self.id);
         SSBO_TO_DELETE.lock().unwrap().push(self.id);
     }
