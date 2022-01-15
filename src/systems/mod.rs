@@ -6,6 +6,7 @@ pub mod mode_manager;
 pub mod mouse_raycast;
 pub mod render;
 pub mod startup;
+pub mod transient_mesh;
 pub mod update_terrain;
 pub mod wall;
 
@@ -17,5 +18,6 @@ pub use mode_manager::*;
 pub use mouse_raycast::*;
 pub use render::*;
 pub use startup::*;
+pub use transient_mesh::*;
 pub use update_terrain::*;
 pub use wall::*;

@@ -3,7 +3,7 @@ use bevy_ecs::prelude::*;
 
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::AssetShaderLibrary, Handle},
-    components::{DrawableMeshBundle, GLDrawMode, Transform},
+    components::{DrawableMeshBundle, GLDrawMode, Transform, TransientMesh},
     geometry::curve::Curve,
     render::mesh::Mesh,
     resources::{wall_manager::WallManager, CurveChangedEvent},
@@ -60,6 +60,7 @@ fn new_curve_entity(
             shader,
             transform: Transform::identity(),
         })
+        .insert(TransientMesh(curve_mesh_handle))
         .insert(GLDrawMode(gl::LINE_STRIP))
         .id()
 }

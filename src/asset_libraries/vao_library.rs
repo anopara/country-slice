@@ -125,4 +125,22 @@ impl AssetVAOLibrary {
 
         Ok(())
     }
+
+    pub fn remove(&mut self, mesh_handle: Handle<Mesh>) {
+        // get affected VAOs
+        if let Some(affected_h) = self.by_mesh.remove(&mesh_handle) {
+            // get affected Mesh-Shader pairs
+            for mesh_shader_h in affected_h {
+                // if this pair has a valid VAO
+                if let Some(vao_h) = self.by_mesh_and_shader.remove(&mesh_shader_h) {
+                    // Delete this VAO from memory and remove the handle
+                    if let Some(vao) = self.vao.remove(&vao_h) {
+                        unsafe {
+                            gl::DeleteVertexArrays(1, &vao.id());
+                        }
+                    }
+                }
+            }
+        }
+    }
 }
