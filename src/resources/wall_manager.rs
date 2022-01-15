@@ -2,10 +2,7 @@ use std::collections::HashMap;
 
 use bevy_ecs::prelude::Entity;
 
-use crate::{
-    asset_libraries::{Handle, HandleId},
-    geometry::curve::Curve,
-};
+use crate::geometry::curve::Curve;
 
 pub const RESAMPLING: f32 = 0.2;
 pub const SMOOTHING_STEPS: usize = 50;

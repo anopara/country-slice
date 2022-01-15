@@ -1,8 +1,3 @@
-use bevy_app::EventWriter;
-use bevy_ecs::prelude::*;
-use bevy_input::{mouse::MouseButton, Input};
-use glam::Vec3;
-
 use crate::{
     components::CursorRaycast,
     geometry::curve::Curve,
@@ -11,18 +6,21 @@ use crate::{
         WallManager,
     },
 };
+use bevy_app::EventWriter;
+use bevy_ecs::prelude::*;
+use bevy_input::{mouse::MouseButton, Input};
 
-use super::mode_manager::Mode;
+use super::mode_manager::BrushMode;
 
 pub fn erase_curve(
-    _mode: Res<Mode>,
+    _mode: Res<BrushMode>,
     mut ev_curve_changed: EventWriter<CurveChangedEvent>,
     mut ev_curve_deleted: EventWriter<CurveDeletedEvent>,
     mut wall_manager: ResMut<WallManager>,
     cursor_ws: Res<CursorRaycast>,
     mouse_button_input: Res<Input<MouseButton>>,
 ) {
-    if !matches!(*_mode, Mode::Erase) {
+    if !matches!(*_mode, BrushMode::Eraser) {
         return;
     }
 

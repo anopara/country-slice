@@ -18,7 +18,7 @@ use crate::render::{
     vao::VAO,
 };
 use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand, WallManager};
-use crate::systems::mode_manager::Mode;
+use crate::systems::mode_manager::BrushMode;
 use crate::window_events::WindowSize;
 use crate::{components::*, TerrainData};
 use crate::{ComputeArchesIndirect, ComputePathsMask, CursorRaycast};
@@ -119,10 +119,10 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let mouse = ecs.get_resource::<CursorRaycast>().unwrap();
         let mouse_button_input = ecs.get_resource::<Input<MouseButton>>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
-        let _mode = ecs.get_resource::<Mode>().unwrap();
+        let _mode = ecs.get_resource::<BrushMode>().unwrap();
         // Only update shader if LMB is pressed and we are in Path mode
 
-        if (matches!(_mode, Mode::Path) || matches!(_mode, Mode::Erase))
+        if (matches!(_mode, BrushMode::Path) || matches!(_mode, BrushMode::Eraser))
             && mouse_button_input.pressed(MouseButton::Left)
         {
             let shader = assets_shader.get(test.compute_program).unwrap();
@@ -130,11 +130,11 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             gl::UseProgram(shader.id());
 
             match _mode {
-                Mode::Wall => panic!(),
-                Mode::Path => {
+                BrushMode::Wall => panic!(),
+                BrushMode::Path => {
                     log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(true)))
                 }
-                Mode::Erase => {
+                BrushMode::Eraser => {
                     log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(false)))
                 }
             }

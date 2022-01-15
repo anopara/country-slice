@@ -5,13 +5,12 @@ use bevy_input::{mouse::MouseButton, Input};
 use crate::{
     geometry::curve::Curve,
     resources::{events::CurveChangedEvent, wall_manager::*},
+    systems::mode_manager::BrushMode,
     CursorRaycast,
 };
 
-use super::mode_manager::Mode;
-
-pub fn draw_curve(
-    _mode: Res<Mode>,
+pub fn draw_wall(
+    _mode: Res<BrushMode>,
 
     mut ev_curve_changed: EventWriter<CurveChangedEvent>,
     mut wall_manager: ResMut<WallManager>,
@@ -19,7 +18,7 @@ pub fn draw_curve(
 
     mouse_button_input: Res<Input<MouseButton>>,
 ) {
-    if !matches!(*_mode, Mode::Wall) {
+    if !matches!(*_mode, BrushMode::Wall) {
         return;
     }
 

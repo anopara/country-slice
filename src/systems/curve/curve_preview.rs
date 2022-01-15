@@ -6,7 +6,7 @@ use crate::{
     components::{DrawableMeshBundle, GLDrawMode, Transform},
     geometry::curve::Curve,
     render::mesh::Mesh,
-    resources::{events::CurveDeletedEvent, wall_manager::WallManager, CurveChangedEvent},
+    resources::{wall_manager::WallManager, CurveChangedEvent},
 };
 
 const CURVE_SHOW_DEBUG: bool = true;

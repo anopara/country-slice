@@ -7,12 +7,11 @@ use crate::{
     geometry::{instanced_wall::*, shadow_decal::ShadowDecal, wall_constructor::*},
     render::mesh::Mesh,
     resources::WallManager,
+    systems::mode_manager::BrushMode,
 };
 
-use super::mode_manager::Mode;
-
 pub fn walls_update(
-    _mode: Res<Mode>,
+    _mode: Res<BrushMode>,
 
     mouse_button_input: Res<Input<MouseButton>>,
     mut wall_manager: ResMut<WallManager>,
