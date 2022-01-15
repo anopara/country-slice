@@ -97,11 +97,9 @@ pub fn eraser(
                 ev_curve_changed.send(CurveChangedEvent {
                     curve_index: curve_index,
                 });
-                log::info!("Event: Curve {} has changed", curve_index);
             } else {
                 let index = wall_manager.new_wall(cc[j].clone());
                 ev_curve_changed.send(CurveChangedEvent { curve_index: index });
-                log::info!("Event: Curve {} has changed", index);
             }
         }
     }

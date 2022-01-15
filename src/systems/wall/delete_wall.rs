@@ -10,6 +10,7 @@ pub fn delete_wall(
     mut commands: Commands,
 ) {
     for ev in ev_curve_deleted.iter() {
+        log::debug!("Wall index {} entry has been removed", ev.curve_index);
         wall_manager.remove_entry(ev.curve_index, &mut commands);
     }
 }

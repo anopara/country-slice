@@ -75,6 +75,8 @@ impl WallManager {
         despawn_if_exists(wall_to_remove.curve_preview_entity, commands);
         despawn_if_exists(wall_to_remove.wall_entity, commands);
         despawn_if_exists(wall_to_remove.shadow_entity, commands);
+
+        self.walls.remove_entry(&index);
     }
 }
 
