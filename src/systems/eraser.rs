@@ -12,7 +12,7 @@ use bevy_input::{mouse::MouseButton, Input};
 
 use super::mode_manager::BrushMode;
 
-pub fn erase_curve(
+pub fn eraser(
     _mode: Res<BrushMode>,
     mut ev_curve_changed: EventWriter<CurveChangedEvent>,
     mut ev_curve_deleted: EventWriter<CurveDeletedEvent>,
@@ -20,7 +20,7 @@ pub fn erase_curve(
     cursor_ws: Res<CursorRaycast>,
     mouse_button_input: Res<Input<MouseButton>>,
 ) {
-    if !matches!(*_mode, BrushMode::Eraser) {
+    if !matches!(*_mode, BrushMode::Eraser(..)) {
         return;
     }
 
@@ -97,9 +97,11 @@ pub fn erase_curve(
                 ev_curve_changed.send(CurveChangedEvent {
                     curve_index: curve_index,
                 });
+                log::info!("Event: Curve {} has changed", curve_index);
             } else {
                 let index = wall_manager.new_wall(cc[j].clone());
                 ev_curve_changed.send(CurveChangedEvent { curve_index: index });
+                log::info!("Event: Curve {} has changed", index);
             }
         }
     }

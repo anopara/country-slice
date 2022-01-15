@@ -122,7 +122,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let _mode = ecs.get_resource::<BrushMode>().unwrap();
         // Only update shader if LMB is pressed and we are in Path mode
 
-        if (matches!(_mode, BrushMode::Path) || matches!(_mode, BrushMode::Eraser))
+        if (matches!(_mode, BrushMode::Path) || matches!(_mode, BrushMode::Eraser(..)))
             && mouse_button_input.pressed(MouseButton::Left)
         {
             let shader = assets_shader.get(test.compute_program).unwrap();
@@ -134,7 +134,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 BrushMode::Path => {
                     log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(true)))
                 }
-                BrushMode::Eraser => {
+                BrushMode::Eraser(..) => {
                     log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(false)))
                 }
             }

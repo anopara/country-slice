@@ -57,4 +57,12 @@ impl WallManager {
     pub fn last_mut(&mut self) -> Option<&mut Wall> {
         self.walls.get_mut(&self.max_index)
     }
+
+    pub fn get(&self, index: usize) -> Option<&Wall> {
+        self.walls.get(&index)
+    }
+
+    pub fn get_mut(&mut self, index: usize) -> Option<&mut Wall> {
+        self.walls.get_mut(&index)
+    }
 }
