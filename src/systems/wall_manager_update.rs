@@ -22,6 +22,7 @@ pub fn walls_update(
     assets_shader: Res<AssetShaderLibrary>,
     mut commands: Commands,
 ) {
+    /*
     if !matches!(*_mode, Mode::Wall) {
         return;
     }
@@ -80,6 +81,7 @@ pub fn walls_update(
             }
         }
     }
+    */
 }
 
 fn create_wall(

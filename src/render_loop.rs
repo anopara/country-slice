@@ -55,7 +55,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             compute_curve_segments.bind(assets_shader, test.texture, _img_unit);
 
             //println!("DispatchCompute");
-            gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
+            gl::DispatchCompute(wall_manager.walls.len() as u32, 1, 1);
             gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
         }
 

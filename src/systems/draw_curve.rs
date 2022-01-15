@@ -30,12 +30,8 @@ pub fn draw_curve(
     puffin::profile_function!();
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
-        wall_manager.temp_curve = Some(Curve::new());
-        wall_manager.curves.push((Curve::new(), None));
-
-        ev_curve_changed.send(CurveChangedEvent {
-            curve_index: wall_manager.curves.len() - 1,
-        });
+        let index = wall_manager.new_wall(Curve::new());
+        ev_curve_changed.send(CurveChangedEvent { curve_index: index });
     }
     // If LMB is pressed, continue the active curve
     else if mouse_button_input.pressed(MouseButton::Left) {
@@ -57,14 +53,13 @@ pub fn draw_curve(
 
             if temp_curve.points.len() > 2 {
                 let clone_temp_curve = temp_curve.clone();
-                let (active_curve, _) = wall_manager.curves.last_mut().unwrap();
-                *active_curve = clone_temp_curve
+                wall_manager.last_mut().unwrap().curve = clone_temp_curve
                     .smooth(SMOOTHING_STEPS)
                     .resample(RESAMPLING);
             }
 
             ev_curve_changed.send(CurveChangedEvent {
-                curve_index: wall_manager.curves.len() - 1,
+                curve_index: wall_manager.max_index,
             });
         }
     }

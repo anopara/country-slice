@@ -35,12 +35,12 @@ pub fn erase_curve(
     const ERASE_BRUSH_SIZE: f32 = 0.75;
     let cursor_ws = cursor_ws.0;
 
-    //for (i, (curve, _ent)) in wall_manager.curves.iter().enumerate() {
-    for i in 0..wall_manager.curves.len() {
+    let mut g_cc = Vec::new(); //new curves
+    for (curve_index, wall) in wall_manager.walls.iter_mut() {
         let mut new_curves = vec![Vec::new()];
         let mut new_curve_last_index = 0;
 
-        let curve = &wall_manager.curves[i].0;
+        let curve = &wall.curve;
         for j in 0..(curve.points.len() - 1) {
             // segment
             let p1 = curve.points[j];
@@ -82,23 +82,26 @@ pub fn erase_curve(
 
         // if no curves left, send an evene to delete this curve completely
         // TODO: clear memory of lefotver VAOs
-        let ent = wall_manager.curves[i].1.clone();
         if cc.is_empty() {
             ev_curve_deleted.send(CurveDeletedEvent {
-                curve_index: wall_manager.curves.len() - 1,
+                curve_index: *curve_index,
             });
         } else {
-            // Update curves
-            for j in 0..cc.len() {
-                if j == 0 {
-                    wall_manager.curves[i] = (cc[0].clone(), ent);
-                    ev_curve_changed.send(CurveChangedEvent { curve_index: i });
-                } else {
-                    wall_manager.curves.push((cc[j].clone(), None));
-                    ev_curve_changed.send(CurveChangedEvent {
-                        curve_index: wall_manager.curves.len() - 1,
-                    });
-                }
+            g_cc.push((*curve_index, cc));
+        }
+    }
+
+    for (curve_index, cc) in g_cc {
+        // Update curves
+        for j in 0..cc.len() {
+            if j == 0 {
+                wall_manager.walls.get_mut(&curve_index).unwrap().curve = cc[0].clone();
+                ev_curve_changed.send(CurveChangedEvent {
+                    curve_index: curve_index,
+                });
+            } else {
+                let index = wall_manager.new_wall(cc[j].clone());
+                ev_curve_changed.send(CurveChangedEvent { curve_index: index });
             }
         }
     }

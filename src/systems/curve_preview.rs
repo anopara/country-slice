@@ -28,14 +28,14 @@ pub fn curve_preview(
 
     for ev in ev_curve_changed.iter() {
         // check if there is an entity associated with the curve
-        let (curve, maybe_ent) = &wall_manager.curves[ev.curve_index];
-        if let Some(ent) = maybe_ent {
+        let wall = wall_manager.walls.get_mut(&ev.curve_index).unwrap();
+        if let Some(ent) = wall.curve_preview_entity {
             // if yes, update the mesh
-            let mesh_handle = query.get(*ent).unwrap();
-            update_curve_debug_mesh(curve, mesh_handle, &mut assets_mesh);
+            let mesh_handle = query.get(ent).unwrap();
+            update_curve_debug_mesh(&wall.curve, mesh_handle, &mut assets_mesh);
         } else {
             // if not, make a new entity
-            wall_manager.curves[ev.curve_index].1 = Some(new_curve_entity(
+            wall.curve_preview_entity = Some(new_curve_entity(
                 &mut assets_mesh,
                 &assets_shader,
                 &mut commands,
@@ -44,21 +44,18 @@ pub fn curve_preview(
     }
 
     // DELETE SYSTEM ---------------------------------------------------------------
-    // This shifts all indices! we need to introduce a hash for curves
-    let mut indices_to_remove = Vec::new();
     for ev in ev_curve_deleted.iter() {
         // Clear out preview entity if there is one
-        if let Some(preview_ent) = &wall_manager.curves[ev.curve_index].1 {
-            commands.entity(*preview_ent).despawn();
+        if let Some(preview_ent) = wall_manager
+            .walls
+            .get_mut(&ev.curve_index)
+            .unwrap()
+            .curve_preview_entity
+        {
+            commands.entity(preview_ent).despawn();
         }
         // Remove the curve entry
-        indices_to_remove.push(ev.curve_index);
-    }
-
-    if !indices_to_remove.is_empty() {
-        indices_to_remove.sort();
-        wall_manager.curves =
-            remove_sorted_indices(std::mem::take(&mut wall_manager.curves), indices_to_remove);
+        wall_manager.walls.remove_entry(&ev.curve_index);
     }
 
     // --------------------------------------------------------------------------

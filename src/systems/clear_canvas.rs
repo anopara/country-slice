@@ -20,6 +20,7 @@ pub fn clear_canvas(
     mut commands: Commands,
 ) {
     if keys.pressed(KeyCode::Back) {
+        /*
         for wall_entity in &wall_manager.walls {
             let _wall_component = query_walls.get_mut(*wall_entity).unwrap();
             //wall_component.free_memory(); // TODO: I can make a single SSBO for all walls, then I don't need to manage individual memory chunks
@@ -39,6 +40,7 @@ pub fn clear_canvas(
             // TODO: remove the mesh from Mesh library and VAO manager
         }
         wall_manager.shadows = Vec::new();
+        */
 
         // Clear our the path mask
         compute_path_mask.clear_texture();
