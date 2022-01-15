@@ -18,7 +18,7 @@ use crate::render::{
     vao::VAO,
 };
 use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand, WallManager};
-use crate::systems::mode_manager::BrushMode;
+use crate::systems::mode_manager::{BrushMode, EraseLayer};
 use crate::window_events::WindowSize;
 use crate::{components::*, TerrainData};
 use crate::{ComputeArchesIndirect, ComputePathsMask, CursorRaycast};
@@ -122,7 +122,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         let _mode = ecs.get_resource::<BrushMode>().unwrap();
         // Only update shader if LMB is pressed and we are in Path mode
 
-        if (matches!(_mode, BrushMode::Path) || matches!(_mode, BrushMode::Eraser(..)))
+        if (matches!(_mode, BrushMode::Path) || matches!(_mode, BrushMode::Eraser(EraseLayer::All)))
             && mouse_button_input.pressed(MouseButton::Left)
         {
             let shader = assets_shader.get(test.compute_program).unwrap();

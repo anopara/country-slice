@@ -7,7 +7,7 @@ use crate::{
     geometry::{instanced_wall::*, shadow_decal::ShadowDecal, wall_constructor::*},
     render::mesh::Mesh,
     resources::{events::CurveChangedEvent, WallManager},
-    systems::mode_manager::BrushMode,
+    systems::mode_manager::{BrushMode, EraseLayer},
 };
 
 pub fn walls_update(
@@ -21,7 +21,7 @@ pub fn walls_update(
     assets_shader: Res<AssetShaderLibrary>,
     mut commands: Commands,
 ) {
-    if !matches!(*_mode, BrushMode::Wall) && !matches!(*_mode, BrushMode::Eraser(..)) {
+    if !matches!(*_mode, BrushMode::Wall) && !matches!(*_mode, BrushMode::Eraser(EraseLayer::All)) {
         return;
     }
 

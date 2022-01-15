@@ -6,6 +6,8 @@ use crate::asset_libraries::mesh_library::AssetMeshLibrary;
 #[derive(Debug)]
 pub enum EraseLayer {
     All,
+    Wall,
+    Path,
 }
 
 #[derive(Debug)]
