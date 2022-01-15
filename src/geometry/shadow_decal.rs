@@ -6,6 +6,7 @@ use crate::{
     components::{
         drawable::{DrawableMeshBundle, TransparencyPass},
         transform::Transform,
+        TransientMesh,
     },
     render::mesh::Mesh,
 };
@@ -29,14 +30,17 @@ impl ShadowDecal {
 
         Self::update(curve, &mut mesh).expect("Shadow Decal: couldn't update shadow mesh");
 
+        let mesh_handle = mesh_assets.add(Asset::new(mesh));
+
         commands
             .spawn_bundle(DrawableMeshBundle {
-                mesh: mesh_assets.add(Asset::new(mesh).name("shadow decal")),
+                mesh: mesh_handle,
                 shader: assets_shader
                     .get_handle_by_name("shadow_shader")
                     .expect("Missing shadow shader"),
                 transform: Transform::identity(),
             })
+            .insert(TransientMesh(mesh_handle))
             .insert(ShadowDecal)
             .insert(TransparencyPass)
             .id()
