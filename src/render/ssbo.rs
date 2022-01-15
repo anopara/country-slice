@@ -12,7 +12,7 @@ pub struct GLShaderStorageBuffer<T> {
     pub instance_num: usize,
     //
     pub binding_point: u32,
-    _marker: PhantomData<T>,
+    _marker: PhantomData<*const T>,
 }
 
 // Storage buffer stores the information about instance transforms
@@ -82,6 +82,15 @@ impl<T: Copy> GLShaderStorageBuffer<T> {
 
     pub fn gl_id(&self) -> u32 {
         self.id
+    }
+}
+
+impl<T> Drop for GLShaderStorageBuffer<T> {
+    fn drop(&mut self) {
+        unsafe {
+            log::debug!("SSBO {} has been droppped", self.id);
+            gl::DeleteBuffers(1, &self.id);
+        }
     }
 }
 

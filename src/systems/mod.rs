@@ -1,5 +1,5 @@
 pub mod clear_canvas;
-pub mod curve;
+pub mod curve_preview;
 pub mod eraser;
 pub mod main_camera;
 pub mod mode_manager;
@@ -10,7 +10,7 @@ pub mod update_terrain;
 pub mod wall;
 
 pub use clear_canvas::*;
-pub use curve::*;
+pub use curve_preview::*;
 pub use eraser::*;
 pub use main_camera::*;
 pub use mode_manager::*;

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use bevy_ecs::prelude::Entity;
+use bevy_ecs::prelude::{Commands, Entity};
 
 use crate::geometry::curve::Curve;
 
@@ -11,7 +11,7 @@ pub struct Wall {
     pub curve: Curve,
     pub curve_preview_entity: Option<Entity>,
     pub wall_entity: Option<Entity>,
-    pub shadow: Option<Entity>,
+    pub shadow_entity: Option<Entity>,
 }
 
 impl Wall {
@@ -20,7 +20,7 @@ impl Wall {
             curve: v,
             curve_preview_entity: None,
             wall_entity: None,
-            shadow: None,
+            shadow_entity: None,
         }
     }
 }
@@ -64,5 +64,22 @@ impl WallManager {
 
     pub fn get_mut(&mut self, index: usize) -> Option<&mut Wall> {
         self.walls.get_mut(&index)
+    }
+
+    pub fn remove_entry(&mut self, index: usize, commands: &mut Commands) {
+        let wall_to_remove = self.get(index).expect(&format!(
+            "Remove entry failed: index {} doesnt exist",
+            index
+        ));
+
+        despawn_if_exists(wall_to_remove.curve_preview_entity, commands);
+        despawn_if_exists(wall_to_remove.wall_entity, commands);
+        despawn_if_exists(wall_to_remove.shadow_entity, commands);
+    }
+}
+
+fn despawn_if_exists(ent: Option<Entity>, commands: &mut Commands) {
+    if let Some(ent) = ent {
+        commands.entity(ent).despawn();
     }
 }

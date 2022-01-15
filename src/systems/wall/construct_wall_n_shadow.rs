@@ -66,12 +66,12 @@ pub fn walls_update(
 
         {
             puffin::profile_scope!("shadow decal");
-            if let Some(shadow_entity) = changed_wall.shadow {
+            if let Some(shadow_entity) = changed_wall.shadow_entity {
                 let (_shadow_component, mesh_handle) = query3.get_mut(shadow_entity).unwrap();
                 let mesh = assets_mesh.get_mut(*mesh_handle).unwrap();
                 ShadowDecal::update(&changed_wall.curve, mesh);
             } else {
-                changed_wall.shadow = Some(ShadowDecal::new(
+                changed_wall.shadow_entity = Some(ShadowDecal::new(
                     &changed_wall.curve,
                     &mut assets_mesh,
                     &assets_shader,
