@@ -136,6 +136,7 @@ impl AssetVAOLibrary {
                     // Delete this VAO from memory and remove the handle
                     if let Some(vao) = self.vao.remove(&vao_h) {
                         unsafe {
+                            log::debug!("VAO {} has been deleted", vao.id());
                             gl::DeleteVertexArrays(1, &vao.id());
                         }
                     }
