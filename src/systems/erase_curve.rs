@@ -6,7 +6,10 @@ use glam::Vec3;
 use crate::{
     components::CursorRaycast,
     geometry::curve::Curve,
-    resources::{events::CurveChangedEvent, WallManager},
+    resources::{
+        events::{CurveChangedEvent, CurveDeletedEvent},
+        WallManager,
+    },
 };
 
 use super::mode_manager::Mode;
@@ -14,6 +17,7 @@ use super::mode_manager::Mode;
 pub fn erase_curve(
     _mode: Res<Mode>,
     mut ev_curve_changed: EventWriter<CurveChangedEvent>,
+    mut ev_curve_deleted: EventWriter<CurveDeletedEvent>,
     mut wall_manager: ResMut<WallManager>,
     cursor_ws: Res<CursorRaycast>,
     mouse_button_input: Res<Input<MouseButton>>,
@@ -31,6 +35,75 @@ pub fn erase_curve(
     const ERASE_BRUSH_SIZE: f32 = 0.75;
     let cursor_ws = cursor_ws.0;
 
+    //for (i, (curve, _ent)) in wall_manager.curves.iter().enumerate() {
+    for i in 0..wall_manager.curves.len() {
+        let mut new_curves = vec![Vec::new()];
+        let mut new_curve_last_index = 0;
+
+        let curve = &wall_manager.curves[i].0;
+        for j in 0..(curve.points.len() - 1) {
+            // segment
+            let p1 = curve.points[j];
+            let p2 = curve.points[j + 1];
+
+            let p1_is_inside = cursor_ws.distance(p1) < ERASE_BRUSH_SIZE;
+            let p2_is_inside = cursor_ws.distance(p2) < ERASE_BRUSH_SIZE;
+
+            match (p1_is_inside, p2_is_inside) {
+                (false, false) => new_curves[new_curve_last_index].push(p1),
+                (false, true) => {
+                    // TODO: find exact intersection
+                    new_curves[new_curve_last_index].push(p1);
+                    // this is the end of the curve outside the brush stroke
+                    new_curves.push(Vec::new());
+                    new_curve_last_index += 1;
+                }
+                (true, false) => {
+                    // this is the beginning of the curve outside the brush stroke
+                    // TODO: find exact intersection
+                }
+                (true, true) => {} // delete segments that are fully inside
+            }
+
+            // if its the last segment
+            if j == curve.points.len() - 2 && !p2_is_inside {
+                new_curves[new_curve_last_index].push(p2);
+            }
+        }
+
+        // check if no degenerate curves
+        let mut cc = Vec::new();
+        for n in new_curves {
+            let c = Curve::from(n);
+            if c.length > 0.0 {
+                cc.push(c);
+            }
+        }
+
+        // if no curves left, send an evene to delete this curve completely
+        // TODO: clear memory of lefotver VAOs
+        let ent = wall_manager.curves[i].1.clone();
+        if cc.is_empty() {
+            ev_curve_deleted.send(CurveDeletedEvent {
+                curve_index: wall_manager.curves.len() - 1,
+            });
+        } else {
+            // Update curves
+            for j in 0..cc.len() {
+                if j == 0 {
+                    wall_manager.curves[i] = (cc[0].clone(), ent);
+                    ev_curve_changed.send(CurveChangedEvent { curve_index: i });
+                } else {
+                    wall_manager.curves.push((cc[j].clone(), None));
+                    ev_curve_changed.send(CurveChangedEvent {
+                        curve_index: wall_manager.curves.len() - 1,
+                    });
+                }
+            }
+        }
+    }
+
+    /*
     // Go through all the curves
     //let mut curves_to_replace = Vec::new();
     let mut stuff = Vec::new();
@@ -119,4 +192,5 @@ pub fn erase_curve(
             }
         }
     }
+    */
 }

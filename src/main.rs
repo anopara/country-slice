@@ -80,6 +80,7 @@ fn main() {
         .add_plugin(bevy_input::InputPlugin::default())
         .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
         .add_event::<CurveChangedEvent>()
+        .add_event::<CurveDeletedEvent>()
         .insert_resource(CursorPosition(glam::Vec2::ZERO))
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
         .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))

@@ -6,13 +6,14 @@ use crate::{
     components::{DrawableMeshBundle, GLDrawMode, Transform},
     geometry::curve::Curve,
     render::mesh::Mesh,
-    resources::{wall_manager::WallManager, CurveChangedEvent},
+    resources::{events::CurveDeletedEvent, wall_manager::WallManager, CurveChangedEvent},
 };
 
 const CURVE_SHOW_DEBUG: bool = true;
 
 pub fn curve_preview(
     mut ev_curve_changed: EventReader<CurveChangedEvent>,
+    mut ev_curve_deleted: EventReader<CurveDeletedEvent>,
     mut wall_manager: ResMut<WallManager>,
 
     query: Query<&Handle<Mesh>>,
@@ -41,6 +42,52 @@ pub fn curve_preview(
             ));
         }
     }
+
+    // DELETE SYSTEM ---------------------------------------------------------------
+    // This shifts all indices! we need to introduce a hash for curves
+    let mut indices_to_remove = Vec::new();
+    for ev in ev_curve_deleted.iter() {
+        // Clear out preview entity if there is one
+        if let Some(preview_ent) = &wall_manager.curves[ev.curve_index].1 {
+            commands.entity(*preview_ent).despawn();
+        }
+        // Remove the curve entry
+        indices_to_remove.push(ev.curve_index);
+    }
+
+    if !indices_to_remove.is_empty() {
+        indices_to_remove.sort();
+        wall_manager.curves =
+            remove_sorted_indices(std::mem::take(&mut wall_manager.curves), indices_to_remove);
+    }
+
+    // --------------------------------------------------------------------------
+}
+
+fn remove_sorted_indices<T>(
+    v: impl IntoIterator<Item = T>,
+    indices: impl IntoIterator<Item = usize>,
+) -> Vec<T> {
+    let v = v.into_iter();
+    let mut indices = indices.into_iter();
+    let mut i = match indices.next() {
+        None => return v.collect(),
+        Some(i) => i,
+    };
+    let (min, max) = v.size_hint();
+    let mut result = Vec::with_capacity(max.unwrap_or(min));
+
+    for (j, x) in v.into_iter().enumerate() {
+        if j == i {
+            if let Some(idx) = indices.next() {
+                i = idx;
+            }
+        } else {
+            result.push(x);
+        }
+    }
+
+    result
 }
 
 fn new_curve_entity(
