@@ -10,24 +10,6 @@ use crate::{
 pub const RESAMPLING: f32 = 0.2;
 pub const SMOOTHING_STEPS: usize = 50;
 
-pub struct OldWallManager {
-    pub temp_curve: Option<Curve>, // raw curve data being currently drawn by the user without any smoothing or resmapling
-    pub curves: Vec<(Curve, Option<Entity>)>,
-    pub walls: Vec<Entity>,
-    pub shadows: Vec<Entity>,
-}
-
-impl OldWallManager {
-    pub fn new() -> Self {
-        Self {
-            temp_curve: None,
-            curves: Vec::new(),
-            walls: Vec::new(),
-            shadows: Vec::new(),
-        }
-    }
-}
-
 pub struct Wall {
     pub curve: Curve,
     pub curve_preview_entity: Option<Entity>,
@@ -71,9 +53,9 @@ impl WallManager {
         self.max_index
     }
 
-    pub fn last(&self) -> Option<&Wall> {
-        self.walls.get(&self.max_index)
-    }
+    //pub fn last(&self) -> Option<&Wall> {
+    //    self.walls.get(&self.max_index)
+    //}
 
     pub fn last_mut(&mut self) -> Option<&mut Wall> {
         self.walls.get_mut(&self.max_index)
