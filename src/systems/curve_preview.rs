@@ -13,7 +13,6 @@ const CURVE_SHOW_DEBUG: bool = true;
 
 pub fn curve_preview(
     mut ev_curve_changed: EventReader<CurveChangedEvent>,
-    mut ev_curve_deleted: EventReader<CurveDeletedEvent>,
     mut wall_manager: ResMut<WallManager>,
 
     query: Query<&Handle<Mesh>>,
@@ -42,49 +41,6 @@ pub fn curve_preview(
             ));
         }
     }
-
-    // DELETE SYSTEM ---------------------------------------------------------------
-    for ev in ev_curve_deleted.iter() {
-        // Clear out preview entity if there is one
-        if let Some(preview_ent) = wall_manager
-            .walls
-            .get_mut(&ev.curve_index)
-            .unwrap()
-            .curve_preview_entity
-        {
-            commands.entity(preview_ent).despawn();
-        }
-        // Remove the curve entry
-        wall_manager.walls.remove_entry(&ev.curve_index);
-    }
-
-    // --------------------------------------------------------------------------
-}
-
-fn remove_sorted_indices<T>(
-    v: impl IntoIterator<Item = T>,
-    indices: impl IntoIterator<Item = usize>,
-) -> Vec<T> {
-    let v = v.into_iter();
-    let mut indices = indices.into_iter();
-    let mut i = match indices.next() {
-        None => return v.collect(),
-        Some(i) => i,
-    };
-    let (min, max) = v.size_hint();
-    let mut result = Vec::with_capacity(max.unwrap_or(min));
-
-    for (j, x) in v.into_iter().enumerate() {
-        if j == i {
-            if let Some(idx) = indices.next() {
-                i = idx;
-            }
-        } else {
-            result.push(x);
-        }
-    }
-
-    result
 }
 
 fn new_curve_entity(

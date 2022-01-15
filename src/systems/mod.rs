@@ -1,5 +1,6 @@
 pub mod clear_canvas;
 pub mod curve_preview;
+pub mod delete_curve;
 pub mod draw_curve;
 pub mod erase_curve;
 pub mod main_camera;
@@ -14,6 +15,7 @@ pub mod wall_manager_update;
 
 pub use clear_canvas::*;
 pub use curve_preview::*;
+pub use delete_curve::*;
 pub use draw_curve::*;
 pub use erase_curve::*;
 pub use main_camera::*;
