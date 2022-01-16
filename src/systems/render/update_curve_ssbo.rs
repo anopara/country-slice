@@ -3,12 +3,14 @@ use bevy_ecs::prelude::*;
 //use bevy_input::{mouse::MouseButton, Input};
 
 use crate::resources::{
-    events::CurveChangedEvent, CurveDataSSBO, CurveSegmentsComputePass, WallManager,
+    events::{CurveChangedEvent, CurveDeletedEvent},
+    CurveDataSSBO, CurveSegmentsComputePass, WallManager,
 };
 
 // pass curve ssbo data to compute_indirect
 pub fn update_curve_ssbo(
     mut ev_curve_changed: EventReader<CurveChangedEvent>,
+    mut ev_curve_deleted: EventReader<CurveDeletedEvent>,
     wall_manager: Res<WallManager>,
     //mouse_button_input: Res<Input<MouseButton>>,
     mut compute_indirect: ResMut<CurveSegmentsComputePass>,
@@ -23,14 +25,7 @@ pub fn update_curve_ssbo(
             if active_curve.points.len() > 0 {
                 CurveDataSSBO::from(&active_curve)
             } else {
-                // add empty
-                CurveDataSSBO {
-                    points_count: 0,
-                    pad0: 0,
-                    pad1: 0,
-                    pad2: 0,
-                    positions: [[0.0; 4]; 1000],
-                }
+                CurveDataSSBO::empty()
             }
         };
 
@@ -38,6 +33,12 @@ pub fn update_curve_ssbo(
         compute_indirect
             .curves_buffer
             .update_element(data, ev.curve_index);
+    }
+
+    for ev in ev_curve_deleted.iter() {
+        compute_indirect
+            .curves_buffer
+            .update_element(CurveDataSSBO::empty(), ev.curve_index);
     }
 
     /*

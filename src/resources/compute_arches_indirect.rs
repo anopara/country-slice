@@ -152,4 +152,14 @@ impl CurveDataSSBO {
             positions,
         }
     }
+
+    pub fn empty() -> Self {
+        CurveDataSSBO {
+            points_count: 0,
+            pad0: 0,
+            pad1: 0,
+            pad2: 0,
+            positions: [[0.0; 4]; 1000],
+        }
+    }
 }

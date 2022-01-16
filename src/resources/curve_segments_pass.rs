@@ -14,6 +14,7 @@ use crate::{
 use super::CurveDataSSBO;
 
 const COMMAND_BUFFER_SIZE: usize = 1000;
+pub const CURVE_BUFFER_SIZE: usize = 1000;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -65,7 +66,11 @@ impl CurveSegmentsComputePass {
                 compute_program: handle,
                 compute_indirect_cmd_buffer: id,
                 cmd_buffer_binding_point: 5,
-                curves_buffer: GLShaderStorageBuffer::<CurveDataSSBO>::new(&vec![], 1000, 3),
+                curves_buffer: GLShaderStorageBuffer::<CurveDataSSBO>::new(
+                    &vec![],
+                    CURVE_BUFFER_SIZE,
+                    3,
+                ),
                 segments_buffer: GLShaderStorageBuffer::<ArchSegmentDataSSBO>::new(
                     &vec![],
                     1000,
