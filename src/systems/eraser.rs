@@ -9,6 +9,7 @@ use crate::{
 use bevy_app::EventWriter;
 use bevy_ecs::prelude::*;
 use bevy_input::{mouse::MouseButton, Input};
+use glam::{Vec2, Vec3};
 
 use super::mode_manager::BrushMode;
 
@@ -44,21 +45,36 @@ pub fn eraser(
             let p1 = curve.points[j];
             let p2 = curve.points[j + 1];
 
+            // TODO: intersect not just with the latest mouse position withi radius, but an interpolation from the previous frame
             let p1_is_inside = cursor_ws.distance(p1) < ERASE_BRUSH_SIZE;
             let p2_is_inside = cursor_ws.distance(p2) < ERASE_BRUSH_SIZE;
 
             match (p1_is_inside, p2_is_inside) {
                 (false, false) => new_curves[new_curve_last_index].push(p1),
                 (false, true) => {
-                    // TODO: find exact intersection
                     new_curves[new_curve_last_index].push(p1);
+
+                    let intersection = circle_segment_intersection(
+                        vec3_xz(p1),
+                        vec3_xz(p2),
+                        vec3_xz(cursor_ws),
+                        ERASE_BRUSH_SIZE,
+                    );
+                    new_curves[new_curve_last_index].push(vec2_x0y(intersection));
+
                     // this is the end of the curve outside the brush stroke
                     new_curves.push(Vec::new());
                     new_curve_last_index += 1;
                 }
                 (true, false) => {
                     // this is the beginning of the curve outside the brush stroke
-                    // TODO: find exact intersection
+                    let intersection = circle_segment_intersection(
+                        vec3_xz(p1),
+                        vec3_xz(p2),
+                        vec3_xz(cursor_ws),
+                        ERASE_BRUSH_SIZE,
+                    );
+                    new_curves[new_curve_last_index].push(vec2_x0y(intersection));
                 }
                 (true, true) => {} // delete segments that are fully inside
             }
@@ -102,4 +118,77 @@ pub fn eraser(
             }
         }
     }
+}
+
+fn vec2_x0y(v: Vec2) -> Vec3 {
+    Vec3::new(v.x, 0.0, v.y)
+}
+
+fn vec3_xz(v: Vec3) -> Vec2 {
+    Vec2::new(v.x, v.z)
+}
+
+// TODO: replace with an analytical solution (same for `arch_layout_bricks`)
+fn circle_segment_intersection(
+    seg_start: Vec2,
+    seg_end: Vec2,
+    circle_center: Vec2,
+    circle_radius: f32,
+) -> Vec2 {
+    let subdivs = 50;
+
+    let mut min_d = (circle_radius - seg_start.distance(circle_center)).abs();
+
+    for i in 1..(subdivs + 1) {
+        let t = (i as f32) / (subdivs as f32);
+        let p = seg_start.lerp(seg_end, t);
+
+        let d = (circle_radius - p.distance(circle_center)).abs();
+        //dbg!(t);
+        //dbg!(circle_radius);
+        //dbg!(p.distance(circle_center));
+
+        if d < min_d {
+            min_d = d;
+        } else {
+            // if distance started growing, then its the closest we are to intersection
+            return p;
+        }
+    }
+
+    seg_end
+
+    /*
+    let d = seg_end - seg_start;
+    let f = seg_start - circle_center;
+    let r = circle_radius;
+
+    let a = d.dot(d);
+    let b = 2.0 * f.dot(d);
+    let c = f.dot(f) - r * r;
+
+    let discriminant = b * b - 4.0 * a * c;
+
+    dbg!(discriminant);
+
+    if discriminant < 0.0 {
+        return None;
+    } else {
+        let t1 = (-b - discriminant) / (2.0 * a);
+        let t2 = (-b + discriminant) / (2.0 * a);
+
+        dbg!(t1);
+        dbg!(t2);
+
+        if t1 >= 0.0 && t1 <= 1.0 {
+            return Some(t1 * f);
+        }
+
+        if t2 >= 0.0 && t2 <= 1.0 {
+            return Some(t2 * f);
+        }
+
+        return None;
+    }
+    */
 }
