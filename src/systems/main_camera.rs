@@ -60,7 +60,7 @@ pub fn main_camera_update(
         // TODO: fork bevy and add ConstranedSmooth? that you can specify the axis of smoothing and ChildSmoothing, which only applies it to children?
         if mouse_wheel.y.abs() > 0.0 {
             main_camera.camera_rig.driver_mut::<Arm>().offset +=
-                dolly::glam::Vec3::Z * mouse_wheel.y * zoom_speed_mult;
+                -dolly::glam::Vec3::Z * mouse_wheel.y * zoom_speed_mult;
         }
     }
 
