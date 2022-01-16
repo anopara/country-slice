@@ -3,7 +3,7 @@ use crate::{
     geometry::curve::Curve,
     resources::{
         events::{CurveChangedEvent, CurveDeletedEvent},
-        wall_manager::{RESAMPLING, SMOOTHING_STEPS},
+        wall_manager::RESAMPLING,
         WallManager,
     },
 };

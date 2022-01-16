@@ -18,7 +18,7 @@ use crate::render::{
     vao::VAO,
 };
 use crate::resources::curve_segments_pass::CURVE_BUFFER_SIZE;
-use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand, WallManager};
+use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand};
 use crate::systems::mode_manager::{BrushMode, EraseLayer};
 use crate::window_events::WindowSize;
 use crate::{components::*, TerrainData};
