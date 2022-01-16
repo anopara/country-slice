@@ -3,6 +3,7 @@ use bevy_ecs::prelude::*;
 //use bevy_input::{mouse::MouseButton, Input};
 
 use crate::resources::{
+    curve_segments_pass::CURVE_BUFFER_SIZE,
     events::{CurveChangedEvent, CurveDeletedEvent},
     CurveDataSSBO, CurveSegmentsComputePass, WallManager,
 };
@@ -18,6 +19,13 @@ pub fn update_curve_ssbo(
     puffin::profile_function!();
 
     for ev in ev_curve_changed.iter() {
+        if ev.curve_index >= CURVE_BUFFER_SIZE {
+            // TODO: atm curve index = SSBO layout index, however CURVE_BUFFER_SIZE is only allocated for 1000 elememnts,
+            // and we keep adding to the end of the buffer without ever checking if new spots became available
+            // Need to do some kind of manager, that makes sure to re-use indices that were freed if the curve was deleted
+            panic!("Curve index is > CURVE_BUFFER_SIZE");
+        }
+
         let active_curve = &wall_manager.get(ev.curve_index).unwrap().curve;
 
         let data = {
