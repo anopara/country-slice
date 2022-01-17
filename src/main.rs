@@ -67,7 +67,10 @@ fn main() {
     let mut temp_assets_shader = AssetShaderLibrary::new();
 
     // COMPUTE SHADERS -------------------------------------------
-    let compute_paths_mask = ComputePathMask::init(&mut temp_shaderwatch, &mut temp_assets_shader);
+    let compute_paths_mask = ComputePathMask(ComputeTexture::init(
+        &mut temp_shaderwatch,
+        &mut temp_assets_shader,
+    ));
     let compute_curve_segments =
         CurveSegmentsComputePass::init(&mut temp_shaderwatch, &mut temp_assets_shader);
     let compute_arches_indirect =

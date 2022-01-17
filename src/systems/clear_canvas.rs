@@ -24,7 +24,7 @@ pub fn clear_canvas(
         }
 
         // Clear our the path mask
-        compute_path_mask.texture.clear();
+        compute_path_mask.0.texture.clear();
 
         // Clear our the curve segments SSBO
         compute_indirect.reset_segments_buffer();

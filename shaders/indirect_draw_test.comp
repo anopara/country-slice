@@ -31,7 +31,7 @@ layout (std430, binding=3) buffer curves_buffer {
     CurveData curves[];
 };
 
-layout(rgba32f) uniform image2D road_mask;
+layout(rgba32f) uniform image2D path_mask;
 
 ivec2 ws_pos_to_pixel_coord(vec3 ws_pos, ivec2 img_dims) {
     // the img is from -10 to 10 in world space TODO: this should be a uniform coming from a struct on CPU side...
@@ -41,7 +41,7 @@ ivec2 ws_pos_to_pixel_coord(vec3 ws_pos, ivec2 img_dims) {
 
 float position_ws_to_roadmask_value(vec3 position, ivec2 dims) {
     ivec2 pixel_coord = ws_pos_to_pixel_coord(position, dims);
-    return imageLoad(road_mask, pixel_coord).x;
+    return imageLoad(path_mask, pixel_coord).x;
 }
 
 // Find "exact" value where derivative of img starts changing along the segment
@@ -57,8 +57,8 @@ float find_t_change(vec3 p1, vec3 p2) {
         vec3 subdiv_p2 = mix(p1, p2, t2);
 
         // find where derivative starts changing & one of the elements is 0
-        float h1 = position_ws_to_roadmask_value(subdiv_p1, imageSize(road_mask));
-        float h2 = position_ws_to_roadmask_value(subdiv_p2, imageSize(road_mask));
+        float h1 = position_ws_to_roadmask_value(subdiv_p1, imageSize(path_mask));
+        float h2 = position_ws_to_roadmask_value(subdiv_p2, imageSize(path_mask));
 
         if (abs(h1-h2) > 0.001 && (h1 < 0.0001 || h2 < 0.0001)) {
 
@@ -75,7 +75,7 @@ float arch_function(float h) {
 }
 
 vec3 curve_ws_to_arch_ws(vec3 curve_ws) {
-    curve_ws.y = position_ws_to_roadmask_value(curve_ws, imageSize(road_mask));
+    curve_ws.y = position_ws_to_roadmask_value(curve_ws, imageSize(path_mask));
     curve_ws.y = arch_function(curve_ws.y);//pow(curve_ws.y, 0.3);
     return curve_ws;
 }
@@ -138,7 +138,7 @@ void main() {
     float BRICK_WIDTH = 0.2;
     uint DEBUG_RESAMPLE = 3;
 
-    ivec2 dims = imageSize(road_mask);
+    ivec2 dims = imageSize(path_mask);
     const uint idx = gl_GlobalInvocationID.x;
     uint curve_npt = curves[idx].points_count;
 

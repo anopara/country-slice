@@ -41,7 +41,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
         let compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
-        let test = ecs.get_resource::<ComputePathMask>().unwrap();
+        let path_mask = &ecs.get_resource::<ComputePathMask>().unwrap().0;
         //let wall_manager = ecs.get_resource::<WallManager>().unwrap();
         //
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -53,7 +53,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             //println!("reset_segments_buffer");
             compute_curve_segments.reset_segments_buffer();
             //println!("bind");
-            compute_curve_segments.bind(assets_shader, test.texture.id, _img_unit);
+            compute_curve_segments.bind(assets_shader, path_mask.texture.id, _img_unit);
 
             //println!("DispatchCompute");
             gl::DispatchCompute(CURVE_BUFFER_SIZE as u32, 1, 1);
@@ -104,7 +104,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         indirect_test.bind(
             assets_shader,
             &compute_curve_segments.segments_buffer,
-            test.texture.id,
+            path_mask.texture.id,
             _img_unit,
         ); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
@@ -114,9 +114,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         //gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
 
-        // COMPUTE SHADER PASS -----------------------------------------------------------------------
+        // COMPUTE PATHS PASS -----------------------------------------------------------------------
 
-        let test = ecs.get_resource::<ComputePathMask>().unwrap();
+        let path_mask = &ecs.get_resource::<ComputePathMask>().unwrap().0;
         let mouse = ecs.get_resource::<CursorRaycast>().unwrap();
         let mouse_button_input = ecs.get_resource::<Input<MouseButton>>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -126,7 +126,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         if (matches!(_mode, BrushMode::Path) || matches!(_mode, BrushMode::Eraser(EraseLayer::All)))
             && mouse_button_input.pressed(MouseButton::Left)
         {
-            let shader = assets_shader.get(test.compute_program).unwrap();
+            let shader = assets_shader.get(path_mask.compute_program).unwrap();
 
             gl::UseProgram(shader.id());
 
@@ -149,7 +149,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             // bind texture
             gl::BindImageTexture(
                 _img_unit,
-                test.texture.id,
+                path_mask.texture.id,
                 0,
                 gl::FALSE,
                 0,
@@ -160,7 +160,11 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             log_if_error!(
                 shader.set_gl_uniform("Mouse_Position", GlUniform::Vec3(mouse.0.to_array()))
             );
-            gl::DispatchCompute(test.texture.dims.0 as u32, test.texture.dims.1 as u32, 1);
+            gl::DispatchCompute(
+                path_mask.texture.dims.0 as u32,
+                path_mask.texture.dims.1 as u32,
+                1,
+            );
 
             _img_unit += 1;
         }
@@ -168,7 +172,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         // make sure writing to image has finished before read
         gl::MemoryBarrier(gl::SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        let texture_buffer = test.texture.id;
+        let texture_buffer = path_mask.texture.id;
 
         // MAIN PASS --------------------------------------------------------------------------------
 
@@ -212,7 +216,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             model_transform,
             gl_draw_flag,
             instanced_wall,
-            test,
+            debug_display_path_mask,
             transparency,
             indirect_draw,
             road,
@@ -251,7 +255,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             }
 
             // MEOWMEOWcheckforspecialtexture
-            if test.is_some() {
+            if debug_display_path_mask.is_some() {
                 gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
             }
 

@@ -57,8 +57,8 @@ impl ComputeArchesIndirect {
         &self,
         assets_shader: &AssetShaderLibrary,
         segments_buffer: &GLShaderStorageBuffer<super::ArchSegmentDataSSBO>,
-        road_mask: u32,
-        road_mask_img_unit: u32,
+        path_mask: u32,
+        path_mask_img_unit: u32,
     ) {
         unsafe {
             // bind compute shader
@@ -87,13 +87,13 @@ impl ComputeArchesIndirect {
 
             // bind road mask
             log_if_error!(shader.set_gl_uniform(
-                "road_mask",
-                render::shader::GlUniform::Int(road_mask_img_unit as i32),
+                "path_mask",
+                render::shader::GlUniform::Int(path_mask_img_unit as i32),
             ));
             // bind texture
             gl::BindImageTexture(
-                road_mask_img_unit,
-                road_mask,
+                path_mask_img_unit,
+                path_mask,
                 0,
                 gl::FALSE,
                 0,
