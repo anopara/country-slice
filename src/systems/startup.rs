@@ -97,6 +97,7 @@ pub fn startup(ecs: &mut World) {
         transform: Transform::identity(),
     });
 
+    /*
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
             mesh: road_pebbles,
@@ -104,6 +105,7 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::identity(),
         })
         .insert(RoadComponent);
+        */
 
     /*
     ecs.spawn().insert_bundle(DrawableMeshBundle {
@@ -119,15 +121,13 @@ pub fn startup(ecs: &mut World) {
     });
     */
 
-    /*
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
-            mesh: plane,
-            shader: test,
-            transform: Transform::from_translation(Vec3::new(0.0, 0.005, 0.0)),
+            mesh: _plane,
+            shader: _test,
+            transform: Transform::from_translation(glam::Vec3::new(0.0, 0.005, 0.0)),
         })
         .insert(DisplayTestMask);
-        */
 
     // preview cube
     ecs.spawn()

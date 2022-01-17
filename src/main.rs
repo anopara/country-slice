@@ -67,7 +67,7 @@ fn main() {
     let mut temp_assets_shader = AssetShaderLibrary::new();
 
     // COMPUTE SHADERS -------------------------------------------
-    let compute_paths_mask = ComputePathsMask::init(&mut temp_shaderwatch, &mut temp_assets_shader);
+    let compute_paths_mask = ComputePathMask::init(&mut temp_shaderwatch, &mut temp_assets_shader);
     let compute_curve_segments =
         CurveSegmentsComputePass::init(&mut temp_shaderwatch, &mut temp_assets_shader);
     let compute_arches_indirect =
@@ -120,10 +120,10 @@ fn main() {
             "main_singlethread",
             update_curve_ssbo.system().after("usercurve"),
         )
-        .add_system_to_stage(
-            "main_singlethread",
-            walls_update.system().after("usercurve"),
-        )
+        //.add_system_to_stage(
+        //    "main_singlethread",
+        //    walls_update.system().after("usercurve"),
+        //)
         .add_system_to_stage("main_singlethread", update_terrain.system())
         .add_system_to_stage("main_singlethread", clear_canvas.system())
         .add_system_to_stage("main_singlethread", delete_dropped_ssbos.system())

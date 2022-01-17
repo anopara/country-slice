@@ -22,7 +22,7 @@ use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand};
 use crate::systems::mode_manager::{BrushMode, EraseLayer};
 use crate::window_events::WindowSize;
 use crate::{components::*, TerrainData};
-use crate::{ComputeArchesIndirect, ComputePathsMask, CursorRaycast};
+use crate::{ComputeArchesIndirect, ComputePathMask, CursorRaycast};
 
 use crate::utils::custom_macro::log_if_error;
 
@@ -41,7 +41,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
         let compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
-        let test = ecs.get_resource::<ComputePathsMask>().unwrap();
+        let test = ecs.get_resource::<ComputePathMask>().unwrap();
         //let wall_manager = ecs.get_resource::<WallManager>().unwrap();
         //
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -53,7 +53,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             //println!("reset_segments_buffer");
             compute_curve_segments.reset_segments_buffer();
             //println!("bind");
-            compute_curve_segments.bind(assets_shader, test.texture, _img_unit);
+            compute_curve_segments.bind(assets_shader, test.texture.id, _img_unit);
 
             //println!("DispatchCompute");
             gl::DispatchCompute(CURVE_BUFFER_SIZE as u32, 1, 1);
@@ -104,7 +104,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         indirect_test.bind(
             assets_shader,
             &compute_curve_segments.segments_buffer,
-            test.texture,
+            test.texture.id,
             _img_unit,
         ); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
@@ -116,7 +116,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         // COMPUTE SHADER PASS -----------------------------------------------------------------------
 
-        let test = ecs.get_resource::<ComputePathsMask>().unwrap();
+        let test = ecs.get_resource::<ComputePathMask>().unwrap();
         let mouse = ecs.get_resource::<CursorRaycast>().unwrap();
         let mouse_button_input = ecs.get_resource::<Input<MouseButton>>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -149,7 +149,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             // bind texture
             gl::BindImageTexture(
                 _img_unit,
-                test.texture,
+                test.texture.id,
                 0,
                 gl::FALSE,
                 0,
@@ -160,7 +160,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             log_if_error!(
                 shader.set_gl_uniform("Mouse_Position", GlUniform::Vec3(mouse.0.to_array()))
             );
-            gl::DispatchCompute(test.texture_dims.0 as u32, test.texture_dims.1 as u32, 1);
+            gl::DispatchCompute(test.texture.dims.0 as u32, test.texture.dims.1 as u32, 1);
 
             _img_unit += 1;
         }
@@ -168,7 +168,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         // make sure writing to image has finished before read
         gl::MemoryBarrier(gl::SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        let texture_buffer = test.texture;
+        let texture_buffer = test.texture.id;
 
         // MAIN PASS --------------------------------------------------------------------------------
 
@@ -244,7 +244,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             {
                 //DEBUG TERRAIN TEXTURE
                 gl::ActiveTexture(gl::TEXTURE1);
-                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
                 shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
@@ -263,7 +263,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 log_if_error!(shader.set_gl_uniform("path_texture", GlUniform::Int(0)));
 
                 gl::ActiveTexture(gl::TEXTURE1);
-                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
                 log_if_error!(shader.set_gl_uniform("terrain_texture", GlUniform::Int(1)));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
@@ -344,7 +344,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             {
                 //DEBUG TERRAIN TEXTURE
                 gl::ActiveTexture(gl::TEXTURE1);
-                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
                 log_if_error!(shader.set_gl_uniform("terrain_texture", GlUniform::Int(1)));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
