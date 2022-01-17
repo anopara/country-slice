@@ -17,6 +17,7 @@ use crate::render::{
     shader::{GlUniform, ShaderProgram},
     vao::VAO,
 };
+use crate::resources::compute_textures::ComputePathBlur;
 use crate::resources::curve_segments_pass::CURVE_BUFFER_SIZE;
 use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand};
 use crate::systems::mode_manager::{BrushMode, EraseLayer};
@@ -117,6 +118,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         // COMPUTE PATHS PASS -----------------------------------------------------------------------
 
         let path_mask = &ecs.get_resource::<ComputePathMask>().unwrap().0;
+        let path_blur = &ecs.get_resource::<ComputePathBlur>().unwrap().0;
         let mouse = ecs.get_resource::<CursorRaycast>().unwrap();
         let mouse_button_input = ecs.get_resource::<Input<MouseButton>>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
@@ -145,7 +147,12 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             let uniform_name = CString::new("img_output").unwrap();
             let tex_location =
                 gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
-            gl::Uniform1ui(tex_location, _img_unit);
+            gl::Uniform1i(tex_location, _img_unit as i32);
+
+            dbg!("path mask");
+            dbg!(path_mask.texture.id);
+            dbg!(_img_unit);
+
             // bind texture
             gl::BindImageTexture(
                 _img_unit,
@@ -172,7 +179,64 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         // make sure writing to image has finished before read
         gl::MemoryBarrier(gl::SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
+        // BLUR PATH MASK -------------------------------------
+        {
+            _img_unit = 0;
+            let shader = assets_shader.get(path_blur.compute_program).unwrap();
+            gl::UseProgram(shader.id());
+
+            let uniform_name = CString::new("img_in").unwrap();
+            let tex_location =
+                gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
+            gl::Uniform1i(tex_location, _img_unit as i32);
+
+            dbg!(tex_location);
+
+            // bind texture
+            gl::BindImageTexture(
+                _img_unit,
+                path_mask.texture.id,
+                0,
+                gl::FALSE,
+                0,
+                gl::READ_WRITE,
+                gl::RGBA32F,
+            );
+            _img_unit += 1;
+
+            let uniform_name = CString::new("img_out").unwrap();
+            let tex_location =
+                gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
+            gl::Uniform1i(tex_location, _img_unit as i32);
+
+            dbg!(tex_location);
+
+            // bind texture
+            gl::BindImageTexture(
+                _img_unit,
+                path_blur.texture.id,
+                0,
+                gl::FALSE,
+                0,
+                gl::READ_WRITE,
+                gl::RGBA32F,
+            );
+            _img_unit += 1;
+
+            gl::DispatchCompute(
+                path_mask.texture.dims.0 as u32,
+                path_mask.texture.dims.1 as u32,
+                1,
+            );
+
+            // make sure writing to image has finished before read
+            gl::MemoryBarrier(gl::SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        }
+
+        // -----------------------------------------------------------------------
+
         let texture_buffer = path_mask.texture.id;
+        let texture_buffer_blur = path_blur.texture.id;
 
         // MAIN PASS --------------------------------------------------------------------------------
 
@@ -256,7 +320,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             // MEOWMEOWcheckforspecialtexture
             if debug_display_path_mask.is_some() {
-                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+                gl::BindTexture(gl::TEXTURE_2D, texture_buffer_blur);
             }
 
             // check if its a road

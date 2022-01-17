@@ -12,9 +12,13 @@ pub struct ComputeTexture {
 }
 
 impl ComputeTexture {
-    pub fn init(shaderwatch: &mut ShaderWatch, assets_library: &mut AssetShaderLibrary) -> Self {
+    pub fn init(
+        compute_shader: &str,
+        shaderwatch: &mut ShaderWatch,
+        assets_library: &mut AssetShaderLibrary,
+    ) -> Self {
         let texture = GlTextureRGBAf32::new((512, 512), None);
-        let shader_program = ShaderProgram::new_compute("shaders/compute_path_mask.comp").unwrap();
+        let shader_program = ShaderProgram::new_compute(compute_shader).unwrap();
 
         shaderwatch.watch(&shader_program);
         let handle = assets_library.add(shader_program.into());

@@ -68,6 +68,12 @@ fn main() {
 
     // COMPUTE SHADERS -------------------------------------------
     let compute_paths_mask = ComputePathMask(ComputeTexture::init(
+        "shaders/compute_path_mask.comp",
+        &mut temp_shaderwatch,
+        &mut temp_assets_shader,
+    ));
+    let compute_paths_blur = ComputePathBlur(ComputeTexture::init(
+        "shaders/blur.comp",
         &mut temp_shaderwatch,
         &mut temp_assets_shader,
     ));
@@ -95,6 +101,7 @@ fn main() {
         .insert_resource(AssetVAOLibrary::new())
         .insert_resource(temp_assets_shader)
         .insert_resource(compute_paths_mask)
+        .insert_resource(compute_paths_blur)
         .insert_resource(compute_arches_indirect)
         .insert_resource(compute_curve_segments)
         .insert_resource(TerrainData::new())
