@@ -149,10 +149,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
             gl::Uniform1i(tex_location, _img_unit as i32);
 
-            dbg!("path mask");
-            dbg!(path_mask.texture.id);
-            dbg!(_img_unit);
-
             // bind texture
             gl::BindImageTexture(
                 _img_unit,
@@ -190,8 +186,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
             gl::Uniform1i(tex_location, _img_unit as i32);
 
-            dbg!(tex_location);
-
             // bind texture
             gl::BindImageTexture(
                 _img_unit,
@@ -208,8 +202,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             let tex_location =
                 gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
             gl::Uniform1i(tex_location, _img_unit as i32);
-
-            dbg!(tex_location);
 
             // bind texture
             gl::BindImageTexture(
