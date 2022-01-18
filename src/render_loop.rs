@@ -42,9 +42,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
         let compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
-        let path_mask = &ecs.get_resource::<ComputePathMask>().unwrap().0;
-        //let wall_manager = ecs.get_resource::<WallManager>().unwrap();
-        //
+        let path_mask = &ecs.get_resource::<ComputePathBlur>().unwrap().0; // &ecs.get_resource::<ComputePathMask>().unwrap().0;
+                                                                           //let wall_manager = ecs.get_resource::<WallManager>().unwrap();
+                                                                           //
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
 
         // CURVE SEGMNETS COMPUTE
@@ -227,7 +227,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         // -----------------------------------------------------------------------
 
-        let texture_buffer = path_mask.texture.id;
+        let texture_buffer = path_blur.texture.id; //path_mask.texture.id;
         let texture_buffer_blur = path_blur.texture.id;
 
         // MAIN PASS --------------------------------------------------------------------------------

@@ -91,13 +91,14 @@ pub fn startup(ecs: &mut World) {
         .insert(IndirectDraw);
 
     // Create the starting scene
-    ecs.spawn().insert_bundle(DrawableMeshBundle {
-        mesh: floor,
-        shader: vert_color,
-        transform: Transform::identity(),
-    });
-
     /*
+        ecs.spawn().insert_bundle(DrawableMeshBundle {
+            mesh: floor,
+            shader: vert_color,
+            transform: Transform::identity(),
+        });
+    */
+
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
             mesh: road_pebbles,
@@ -105,7 +106,6 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::identity(),
         })
         .insert(RoadComponent);
-        */
 
     /*
     ecs.spawn().insert_bundle(DrawableMeshBundle {

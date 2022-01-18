@@ -137,25 +137,26 @@ fn circle_segment_intersection(
     circle_center: Vec2,
     circle_radius: f32,
 ) -> Option<Vec2> {
-    let ray = (seg_end - seg_start).normalize();
-    let f = seg_start - circle_center;
-    let r = circle_radius;
-
-    let a = ray.dot(ray);
-    let b = 2.0 * f.dot(ray);
-    let c = f.dot(f) - r * r;
-
-    let discriminant = b * b - 4.0 * a * c;
-
-    if discriminant < 0.0 {
-        None
-    } else {
-        let t = (-b - discriminant.sqrt()) / (2.0 * a);
-        Some(seg_start + ray * t)
-    }
-
     /*
-        let subdivs = 50;
+       let ray = (seg_end - seg_start).normalize();
+       let f = seg_start - circle_center;
+       let r = circle_radius;
+
+       let a = ray.dot(ray);
+       let b = 2.0 * f.dot(ray);
+       let c = f.dot(f) - r * r;
+
+       let discriminant = b * b - 4.0 * a * c;
+
+       if discriminant < 0.0 {
+           None
+       } else {
+           let t = (-b - discriminant.sqrt()) / (2.0 * a);
+           Some(seg_start + ray * t)
+       }
+    */
+
+    let subdivs = 50;
 
     let mut min_d = (circle_radius - seg_start.distance(circle_center)).abs();
 
@@ -172,10 +173,9 @@ fn circle_segment_intersection(
             min_d = d;
         } else {
             // if distance started growing, then its the closest we are to intersection
-            return p;
+            return Some(p);
         }
     }
 
-    seg_end
-    */
+    Some(seg_end)
 }

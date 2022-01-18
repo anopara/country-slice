@@ -4,6 +4,31 @@ layout(local_size_x = 1, local_size_y = 1) in;
 layout(rgba32f) uniform image2D img_in;
 layout(rgba32f) uniform image2D img_out;
 
+
+vec4 get_img_in_pixel(ivec2 coord) {
+
+    ivec2 dims = imageSize(img_in); 
+
+    if (coord.x < 0 || coord.x >= dims.x ) {
+        return vec4(0.0, 0.0, 0.0, 1.0);
+    }
+
+    if (coord.y < 0 || coord.y >= dims.y ) {
+        return vec4(0.0, 0.0, 0.0, 1.0);
+    }
+
+    vec4 v = imageLoad(img_in, coord);
+
+    return v;
+}
+
+float normpdf(in float x, in float sigma)
+{
+	return 0.39894*exp(-0.5*x*x/(sigma*sigma))/sigma;
+}
+
+
+
 void main() {
     // get index in global work group i.e x,y position
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
@@ -11,6 +36,123 @@ void main() {
 
     vec4 pixel = imageLoad(img_in, pixel_coords);
 
+    // --------------------------------------------
+
+    vec4 sum = vec4(0.0);
+
+    float Pi = 6.28318530718; // Pi*2
+    // GAUSSIAN BLUR SETTINGS {{{
+    float Directions = 30.0; // BLUR DIRECTIONS (Default 16.0 - More is better but slower)
+    float Quality = 10.0; // BLUR QUALITY (Default 4.0 - More is better but slower)
+    float Size = 10.0; // BLUR SIZE (Radius)
+    // GAUSSIAN BLUR SETTINGS }}}
+
+    vec2 Radius = Size/dims;
+
+    // Normalized pixel coordinates (from 0 to 1)
+    vec2 uv = vec2(pixel_coords.x / float(dims.x), pixel_coords.y / float(dims.y));
+    // Pixel colour
+    vec4 Color = imageLoad(img_in, pixel_coords);
+
+    // Blur calculations
+    for( float d=0.0; d<Pi; d+=Pi/Directions)
+    {
+		for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality)
+        {
+
+            vec2 uv = uv + vec2(cos(d),sin(d))*Radius*i;
+
+            ivec2 coord = ivec2(uv.x * dims.x, uv.y * dims.y);
+
+			Color += imageLoad(img_in, coord);	
+        }
+    }
+
+    Color /= Quality * Directions - 15.0;
+
+    /*
+    int w = 5;
+    float sigma = 1;
+
+    float weight_sum = 0.0;
+
+    for (int kx = -w; kx <= w; kx++) {
+         for (int ky = -w; ky <= w; ky++) {
+            ivec2 pc = pixel_coords + ivec2(kx, ky);
+
+            float y = ky / dims.y;
+            float x = kx / dims.x;
+
+            float dst = sqrt(x*x + y*y);
+
+            float weight = normpdf(dst, sigma);//(1.0 / (sigma * sqrt(2.0 * 3.14))) *  exp( -0.5 * (dst / sigma) * (dst / sigma));
+
+            sum += get_img_in_pixel(pc) * weight;// / ((w*2+1) * (w*2+1));
+
+         }
+    }
+    */
+
+
+
+    /*
+    ivec2 pc = pixel_coords;
+    sum += get_img_in_pixel(pc) * 0.1964825501511404;
+
+    pc.x = pixel_coords.x + 1;
+    sum += get_img_in_pixel(pc) * 0.2969069646728344;
+    pc.x = pixel_coords.x - 1;
+    sum += get_img_in_pixel(pc) * 0.2969069646728344;
+
+    pc.x = pixel_coords.x + 2;
+    sum += get_img_in_pixel(pc) * 0.09447039785044732;
+    pc.x = pixel_coords.x - 2;
+    sum += get_img_in_pixel(pc) * 0.09447039785044732;
+    
+    pc.x = pixel_coords.x + 3;
+    sum += get_img_in_pixel(pc) * 0.010381362401148057;
+    pc.x = pixel_coords.x - 3;
+    sum += get_img_in_pixel(pc) * 0.010381362401148057;
+    */
+
+    vec4 out_pixel = sum;//get_img_in_pixel(pixel_coords);
+    
+
+    // ---------------------------------------------
+
     // output to a specific pixel in the image
-    imageStore(img_out, pixel_coords, vec4(pixel.x, 0.0, 0.0, 1.0));
+    imageStore(img_out, pixel_coords, vec4(Color.xxx, 1.0));
 }
+
+
+// from https://www.shadertoy.com/view/Xltfzj
+/*
+    float Pi = 6.28318530718; // Pi*2
+    
+    // GAUSSIAN BLUR SETTINGS {{{
+    float Directions = 16.0; // BLUR DIRECTIONS (Default 16.0 - More is better but slower)
+    float Quality = 3.0; // BLUR QUALITY (Default 4.0 - More is better but slower)
+    float Size = 8.0; // BLUR SIZE (Radius)
+    // GAUSSIAN BLUR SETTINGS }}}
+   
+    vec2 Radius = Size/iResolution.xy;
+    
+    // Normalized pixel coordinates (from 0 to 1)
+    vec2 uv = fragCoord/iResolution.xy;
+    // Pixel colour
+    vec4 Color = texture(iChannel0, uv);
+    
+    // Blur calculations
+    for( float d=0.0; d<Pi; d+=Pi/Directions)
+    {
+		for(float i=1.0/Quality; i<=1.0; i+=1.0/Quality)
+        {
+			Color += texture( iChannel0, uv+vec2(cos(d),sin(d))*Radius*i);		
+        }
+    }
+    
+    // Output to screen
+    Color /= Quality * Directions - 15.0;
+    fragColor =  Color;
+}
+*/

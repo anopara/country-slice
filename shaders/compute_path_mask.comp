@@ -8,7 +8,12 @@ uniform bool is_additive;
 
 void main() {
 
-    float BRUSH_SIZE = 0.75;
+    float BRUSH_SIZE = 0.5; // DEFAULT 0.75;
+
+// HACK
+    if (!is_additive) {
+        BRUSH_SIZE = 1.25;
+    }
     
     // get index in global work group i.e x,y position
     ivec2 pixel_coords = ivec2(gl_GlobalInvocationID.xy);
@@ -29,6 +34,12 @@ void main() {
     float d = distance(pixel_ws, Mouse_Position);
     d = clamp(d, 0.0, BRUSH_SIZE);
     d = (BRUSH_SIZE -d)/BRUSH_SIZE;
+
+    if (d > 0.0) {
+        d = 1.0;
+    } else {
+        d = 0.0;
+    }
 
     if (is_additive) {
         // draw path mask
