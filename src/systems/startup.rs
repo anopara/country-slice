@@ -91,13 +91,12 @@ pub fn startup(ecs: &mut World) {
         .insert(IndirectDraw);
 
     // Create the starting scene
-    /*
-        ecs.spawn().insert_bundle(DrawableMeshBundle {
-            mesh: floor,
-            shader: vert_color,
-            transform: Transform::identity(),
-        });
-    */
+
+    ecs.spawn().insert_bundle(DrawableMeshBundle {
+        mesh: floor,
+        shader: vert_color,
+        transform: Transform::identity(),
+    });
 
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
@@ -121,6 +120,7 @@ pub fn startup(ecs: &mut World) {
     });
     */
 
+    /*
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
             mesh: _plane,
@@ -128,6 +128,7 @@ pub fn startup(ecs: &mut World) {
             transform: Transform::from_translation(glam::Vec3::new(0.0, 0.005, 0.0)),
         })
         .insert(DisplayTestMask);
+        */
 
     // preview cube
     ecs.spawn()

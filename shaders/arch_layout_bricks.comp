@@ -32,7 +32,7 @@ layout (std430, binding=4) buffer segments_buffer {
 //------------------------------------
 
 float arch_function(float h) {
-    return 1.0 - pow(1.0 - h, 4.0);
+    return 1.0 - pow(1.0-h, 8.0);
 }
 
 ivec2 ws_pos_to_pixel_coord(vec3 ws_pos, ivec2 img_dims) {
