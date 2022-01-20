@@ -19,7 +19,7 @@ use crate::render::{
 };
 use crate::resources::compute_path_mask::*;
 use crate::resources::curve_segments_pass::CURVE_BUFFER_SIZE;
-use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand};
+use crate::resources::CurveSegmentsComputePass;
 use crate::systems::mode_manager::{BrushMode, EraseLayer};
 use crate::window_events::WindowSize;
 use crate::{components::*, TerrainData};
@@ -91,7 +91,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             && mouse_button_input.pressed(MouseButton::Left)
         {
             let shader = assets_shader.get(path_mask.compute_program).unwrap();
-
             gl::UseProgram(shader.id());
 
             match _mode {
