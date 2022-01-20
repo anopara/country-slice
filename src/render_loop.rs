@@ -50,14 +50,13 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         // CURVE SEGMNETS COMPUTE
         {
             compute_curve_segments.reset_cmd_buffer();
-            //println!("reset_segments_buffer");
             compute_curve_segments.reset_segments_buffer();
-            //println!("bind");
-            compute_curve_segments.bind(assets_shader, path_mask.texture.id, _img_unit);
-            let shader = assets_shader
-                .get(compute_curve_segments.compute_program)
-                .unwrap();
-            log_if_error!(shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2([20.0, 20.0])));
+            compute_curve_segments.bind(
+                assets_shader,
+                path_mask.texture.id,
+                PATH_MASK_WS_DIMS,
+                _img_unit,
+            );
 
             //println!("DispatchCompute");
             gl::DispatchCompute(CURVE_BUFFER_SIZE as u32, 1, 1);
@@ -109,10 +108,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             assets_shader,
             &compute_curve_segments.segments_buffer,
             path_mask.texture.id,
+            PATH_MASK_WS_DIMS,
             _img_unit,
         ); // use shader & bind command buffer & bind transforms buffer & bind road mask
-        let shader = assets_shader.get(indirect_test.compute_program).unwrap();
-        log_if_error!(shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2([20.0, 20.0])));
 
         // bind compute road texture
         gl::DispatchComputeIndirect(0);
