@@ -17,7 +17,7 @@ use crate::render::{
     shader::{GlUniform, ShaderProgram},
     vao::VAO,
 };
-use crate::resources::compute_textures::ComputePathBlur;
+use crate::resources::compute_path_mask::*;
 use crate::resources::curve_segments_pass::CURVE_BUFFER_SIZE;
 use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand};
 use crate::systems::mode_manager::{BrushMode, EraseLayer};
@@ -49,7 +49,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         // CURVE SEGMNETS COMPUTE
         {
-            //println!("reset_cmd_buffer");
             compute_curve_segments.reset_cmd_buffer();
             //println!("reset_segments_buffer");
             compute_curve_segments.reset_segments_buffer();
