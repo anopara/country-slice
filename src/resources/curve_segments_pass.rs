@@ -7,7 +7,11 @@ use gl::types::GLsizeiptr;
 
 use crate::{
     asset_libraries::{shader_library::AssetShaderLibrary, Handle},
-    render::{self, shader::ShaderProgram, shaderwatch::ShaderWatch, ssbo::GLShaderStorageBuffer},
+    render::{
+        shader::{GlUniform, ShaderProgram},
+        shaderwatch::ShaderWatch,
+        ssbo::GLShaderStorageBuffer,
+    },
     utils::custom_macro::log_if_error,
 };
 
@@ -84,6 +88,7 @@ impl CurveSegmentsComputePass {
         &self,
         assets_shader: &AssetShaderLibrary,
         path_mask: u32,
+        path_mask_ws_dims: [f32; 2],
         path_mask_img_unit: u32,
     ) {
         unsafe {
@@ -109,10 +114,12 @@ impl CurveSegmentsComputePass {
             );
 
             // bind road mask
-            log_if_error!(shader.set_gl_uniform(
-                "path_mask",
-                render::shader::GlUniform::Int(path_mask_img_unit as i32),
-            ));
+            log_if_error!(
+                shader.set_gl_uniform("path_mask", GlUniform::Int(path_mask_img_unit as i32),)
+            );
+            log_if_error!(
+                shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2(path_mask_ws_dims))
+            );
             // bind texture
             gl::BindImageTexture(
                 path_mask_img_unit,
