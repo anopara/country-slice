@@ -26,7 +26,7 @@ impl Wall {
 }
 
 pub struct WallManager {
-    pub temp_curve: Option<Curve>,
+    pub temp_curve: Option<InProgressCurve>,
     pub walls: HashMap<usize, Wall>,
 
     pub max_index: usize,
@@ -44,7 +44,11 @@ impl WallManager {
     pub fn new_wall(&mut self, curve: Curve) -> usize {
         self.max_index += 1;
 
-        self.temp_curve = Some(Curve::new());
+        self.temp_curve = Some(InProgressCurve::new(
+            Curve::new(),
+            self.max_index,
+            AddPointsTo::End,
+        ));
         self.walls.insert(self.max_index, Wall::from(curve));
 
         self.max_index
@@ -53,10 +57,6 @@ impl WallManager {
     //pub fn last(&self) -> Option<&Wall> {
     //    self.walls.get(&self.max_index)
     //}
-
-    pub fn last_mut(&mut self) -> Option<&mut Wall> {
-        self.walls.get_mut(&self.max_index)
-    }
 
     pub fn get(&self, index: usize) -> Option<&Wall> {
         self.walls.get(&index)
@@ -83,5 +83,26 @@ impl WallManager {
 fn despawn_if_exists(ent: Option<Entity>, commands: &mut Commands) {
     if let Some(ent) = ent {
         commands.entity(ent).despawn();
+    }
+}
+
+pub enum AddPointsTo {
+    End,
+    Beginning,
+}
+
+pub struct InProgressCurve {
+    pub curve: Curve,
+    pub index: usize,
+    pub mode: AddPointsTo,
+}
+
+impl InProgressCurve {
+    pub fn new(from: Curve, index: usize, mode: AddPointsTo) -> Self {
+        Self {
+            curve: from,
+            index,
+            mode,
+        }
     }
 }
