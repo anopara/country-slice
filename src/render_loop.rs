@@ -138,6 +138,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         gl::MemoryBarrier(gl::SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         // BLUR PATH MASK -------------------------------------
+
         {
             _img_unit = 0;
             let shader = assets_shader.get(path_blur.compute_program).unwrap();
@@ -265,9 +266,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             {
                 //DEBUG TERRAIN TEXTURE
-                gl::ActiveTexture(gl::TEXTURE1);
+                gl::ActiveTexture(gl::TEXTURE0);
                 gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
-                shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
+                shader.set_gl_uniform("terrain_texture", GlUniform::Int(0));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
             }
