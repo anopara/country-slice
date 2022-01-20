@@ -55,6 +55,10 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             compute_curve_segments.reset_segments_buffer();
             //println!("bind");
             compute_curve_segments.bind(assets_shader, path_mask.texture.id, _img_unit);
+            let shader = assets_shader
+                .get(compute_curve_segments.compute_program)
+                .unwrap();
+            log_if_error!(shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2([20.0, 20.0])));
 
             //println!("DispatchCompute");
             gl::DispatchCompute(CURVE_BUFFER_SIZE as u32, 1, 1);
@@ -108,6 +112,8 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             path_mask.texture.id,
             _img_unit,
         ); // use shader & bind command buffer & bind transforms buffer & bind road mask
+        let shader = assets_shader.get(indirect_test.compute_program).unwrap();
+        log_if_error!(shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2([20.0, 20.0])));
 
         // bind compute road texture
         gl::DispatchComputeIndirect(0);
@@ -163,6 +169,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             log_if_error!(
                 shader.set_gl_uniform("Mouse_Position", GlUniform::Vec3(mouse.0.to_array()))
             );
+            log_if_error!(shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2([20.0, 20.0])));
             gl::DispatchCompute(
                 path_mask.texture.dims.0 as u32,
                 path_mask.texture.dims.1 as u32,
