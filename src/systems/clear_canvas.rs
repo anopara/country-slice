@@ -3,7 +3,8 @@ use bevy_ecs::prelude::*;
 use bevy_input::{keyboard::KeyCode, Input};
 
 use crate::resources::{
-    events::CurveDeletedEvent, ComputePathMask, CurveSegmentsComputePass, WallManager,
+    compute_path_mask::PathMaskComputePass, events::CurveDeletedEvent, CurveSegmentsComputePass,
+    WallManager,
 };
 
 // Clear walls
@@ -16,7 +17,7 @@ pub fn clear_canvas(
     wall_manager: Res<WallManager>,
     mut ev_curve_deleted: EventWriter<CurveDeletedEvent>,
     compute_indirect: ResMut<CurveSegmentsComputePass>,
-    mut compute_path_mask: ResMut<ComputePathMask>,
+    mut compute_path_mask: ResMut<PathMaskComputePass>,
 ) {
     if keys.pressed(KeyCode::Back) {
         for (k, _) in &wall_manager.walls {
@@ -24,7 +25,7 @@ pub fn clear_canvas(
         }
 
         // Clear our the path mask
-        compute_path_mask.0.texture.clear();
+        compute_path_mask.path_mask.texture.clear();
 
         // Clear our the curve segments SSBO
         compute_indirect.reset_segments_buffer();
