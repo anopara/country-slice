@@ -12,7 +12,6 @@ pub enum GlUniform {
     Bool(bool),
     Int(i32),
     Float(f32),
-    Vec2([f32; 2]),
     Vec3([f32; 3]),
     Vec4([f32; 4]),
     Mat4([f32; 16]),
@@ -130,7 +129,6 @@ impl ShaderProgram {
                 GlUniform::Bool(value) => gl::Uniform1i(location, value as i32),
                 GlUniform::Int(value) => gl::Uniform1i(location, value),
                 GlUniform::Float(value) => gl::Uniform1f(location, value),
-                GlUniform::Vec2(v) => gl::Uniform2f(location, v[0], v[1]),
                 GlUniform::Vec3(v) => gl::Uniform3f(location, v[0], v[1], v[2]),
                 GlUniform::Vec4(v) => gl::Uniform4f(location, v[0], v[1], v[2], v[3]),
                 GlUniform::Mat4(matrix) => {

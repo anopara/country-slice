@@ -3,6 +3,9 @@ use crate::{
     render::{shader::ShaderProgram, shaderwatch::ShaderWatch, texture::GlTextureRGBAf32},
 };
 
+pub struct ComputePathMask(pub ComputeTexture);
+pub struct ComputePathBlur(pub ComputeTexture);
+
 pub struct ComputeTexture {
     pub compute_program: Handle<ShaderProgram>,
     pub texture: GlTextureRGBAf32,
