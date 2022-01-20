@@ -4,7 +4,6 @@ use glam::Vec3;
 use crate::{
     asset_libraries::{shader_library::AssetShaderLibrary, Handle},
     render::{
-        self,
         shader::{GlUniform, ShaderProgram},
         shaderwatch::ShaderWatch,
         ssbo::GLShaderStorageBuffer,
@@ -114,6 +113,39 @@ impl ComputeArchesIndirect {
 
             // bind segments buffer
             segments_buffer.bind(&shader, "segments_buffer");
+        }
+    }
+
+    pub fn reset_draw_command_buffer(&self) {
+        unsafe {
+            gl::BindBuffer(gl::DRAW_INDIRECT_BUFFER, self.draw_indirect_cmd_buffer);
+            let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
+
+            assert!(!ptr.is_null());
+
+            let dst = std::slice::from_raw_parts_mut(ptr as *mut DrawElementsIndirectCommand, 1);
+            dst.copy_from_slice(&[DrawElementsIndirectCommand {
+                _count: 312, // number of vertices of brick.glb
+                _instance_count: 0,
+                _first_index: 0,
+                _base_vertex: 0,
+                _base_instance: 0,
+            }]);
+            gl::UnmapBuffer(gl::DRAW_INDIRECT_BUFFER);
+        }
+    }
+
+    pub fn reset_transform_buffer(&self) {
+        unsafe {
+            let data = &[glam::Mat4::IDENTITY; 10000];
+            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.transforms_buffer.gl_id());
+            let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
+
+            assert!(!ptr.is_null());
+
+            let dst = std::slice::from_raw_parts_mut(ptr as *mut glam::Mat4, data.len());
+            dst.copy_from_slice(data);
+            gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
         }
     }
 }

@@ -42,9 +42,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
         let compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
-        let path_mask = &ecs.get_resource::<ComputePathBlur>().unwrap().0; // &ecs.get_resource::<ComputePathMask>().unwrap().0;
-                                                                           //let wall_manager = ecs.get_resource::<WallManager>().unwrap();
-                                                                           //
+        let path_mask = &ecs.get_resource::<ComputePathBlur>().unwrap().0;
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
 
         // CURVE SEGMNETS COMPUTE
@@ -58,51 +56,14 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 _img_unit,
             );
 
-            //println!("DispatchCompute");
             gl::DispatchCompute(CURVE_BUFFER_SIZE as u32, 1, 1);
             gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
         }
 
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
 
-        // Reset draw command buffer to its default
-        {
-            //log::debug!("Resetting draw command buffer...");
-            gl::BindBuffer(
-                gl::DRAW_INDIRECT_BUFFER,
-                indirect_test.draw_indirect_cmd_buffer,
-            );
-            let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
-
-            assert!(!ptr.is_null());
-
-            let dst = std::slice::from_raw_parts_mut(ptr as *mut DrawElementsIndirectCommand, 1);
-            dst.copy_from_slice(&[DrawElementsIndirectCommand {
-                _count: 312, // number of vertices of brick.glb
-                _instance_count: 0,
-                _first_index: 0,
-                _base_vertex: 0,
-                _base_instance: 0,
-            }]);
-            gl::UnmapBuffer(gl::DRAW_INDIRECT_BUFFER);
-        }
-
-        // For debugging, reset the transform buffer
-        {
-            //log::debug!("Resetting transform buffer...");
-            let data = &[glam::Mat4::IDENTITY; 10000];
-            gl::BindBuffer(
-                gl::SHADER_STORAGE_BUFFER,
-                indirect_test.transforms_buffer.gl_id(),
-            );
-            let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
-
-            assert!(!ptr.is_null());
-
-            let dst = std::slice::from_raw_parts_mut(ptr as *mut glam::Mat4, data.len());
-            dst.copy_from_slice(data);
-            gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
-        }
+        indirect_test.reset_draw_command_buffer();
+        indirect_test.reset_transform_buffer();
 
         indirect_test.bind(
             assets_shader,
@@ -114,8 +75,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         // bind compute road texture
         gl::DispatchComputeIndirect(0);
-        //gl::DispatchCompute(1, 1, 1);
-        //gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
 
         // COMPUTE PATHS PASS -----------------------------------------------------------------------
