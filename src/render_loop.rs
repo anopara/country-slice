@@ -17,9 +17,9 @@ use crate::render::{
     shader::{GlUniform, ShaderProgram},
     vao::VAO,
 };
-use crate::resources::compute_textures::ComputePathBlur;
+use crate::resources::compute_path_mask::*;
 use crate::resources::curve_segments_pass::CURVE_BUFFER_SIZE;
-use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand};
+use crate::resources::CurveSegmentsComputePass;
 use crate::systems::mode_manager::{BrushMode, EraseLayer};
 use crate::window_events::WindowSize;
 use crate::{components::*, TerrainData};
@@ -42,77 +42,39 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
         let compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
-        let path_mask = &ecs.get_resource::<ComputePathBlur>().unwrap().0; // &ecs.get_resource::<ComputePathMask>().unwrap().0;
-                                                                           //let wall_manager = ecs.get_resource::<WallManager>().unwrap();
-                                                                           //
+        let path_mask = &ecs.get_resource::<ComputePathBlur>().unwrap().0;
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
 
         // CURVE SEGMNETS COMPUTE
         {
-            //println!("reset_cmd_buffer");
             compute_curve_segments.reset_cmd_buffer();
-            //println!("reset_segments_buffer");
             compute_curve_segments.reset_segments_buffer();
-            //println!("bind");
-            compute_curve_segments.bind(assets_shader, path_mask.texture.id, _img_unit);
+            compute_curve_segments.bind(
+                assets_shader,
+                path_mask.texture.id,
+                PATH_MASK_WS_DIMS,
+                _img_unit,
+            );
 
-            //println!("DispatchCompute");
             gl::DispatchCompute(CURVE_BUFFER_SIZE as u32, 1, 1);
             gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
         }
 
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
 
-        // Reset draw command buffer to its default
-        {
-            //log::debug!("Resetting draw command buffer...");
-            gl::BindBuffer(
-                gl::DRAW_INDIRECT_BUFFER,
-                indirect_test.draw_indirect_cmd_buffer,
-            );
-            let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
-
-            assert!(!ptr.is_null());
-
-            let dst = std::slice::from_raw_parts_mut(ptr as *mut DrawElementsIndirectCommand, 1);
-            dst.copy_from_slice(&[DrawElementsIndirectCommand {
-                _count: 312, // number of vertices of brick.glb
-                _instance_count: 0,
-                _first_index: 0,
-                _base_vertex: 0,
-                _base_instance: 0,
-            }]);
-            gl::UnmapBuffer(gl::DRAW_INDIRECT_BUFFER);
-        }
-
-        // For debugging, reset the transform buffer
-        {
-            //log::debug!("Resetting transform buffer...");
-            let data = &[glam::Mat4::IDENTITY; 10000];
-            gl::BindBuffer(
-                gl::SHADER_STORAGE_BUFFER,
-                indirect_test.transforms_buffer.gl_id(),
-            );
-            let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
-
-            assert!(!ptr.is_null());
-
-            let dst = std::slice::from_raw_parts_mut(ptr as *mut glam::Mat4, data.len());
-            dst.copy_from_slice(data);
-            gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
-        }
+        indirect_test.reset_draw_command_buffer();
+        indirect_test.reset_transform_buffer();
 
         indirect_test.bind(
             assets_shader,
             &compute_curve_segments.segments_buffer,
             path_mask.texture.id,
+            PATH_MASK_WS_DIMS,
             _img_unit,
         ); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
         // bind compute road texture
         gl::DispatchComputeIndirect(0);
-        //gl::DispatchCompute(1, 1, 1);
-        //gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
 
         // COMPUTE PATHS PASS -----------------------------------------------------------------------
@@ -129,7 +91,6 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             && mouse_button_input.pressed(MouseButton::Left)
         {
             let shader = assets_shader.get(path_mask.compute_program).unwrap();
-
             gl::UseProgram(shader.id());
 
             match _mode {
@@ -163,6 +124,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             log_if_error!(
                 shader.set_gl_uniform("Mouse_Position", GlUniform::Vec3(mouse.0.to_array()))
             );
+            log_if_error!(shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2([20.0, 20.0])));
             gl::DispatchCompute(
                 path_mask.texture.dims.0 as u32,
                 path_mask.texture.dims.1 as u32,
@@ -176,6 +138,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         gl::MemoryBarrier(gl::SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
         // BLUR PATH MASK -------------------------------------
+
         {
             _img_unit = 0;
             let shader = assets_shader.get(path_blur.compute_program).unwrap();
@@ -303,9 +266,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             {
                 //DEBUG TERRAIN TEXTURE
-                gl::ActiveTexture(gl::TEXTURE1);
+                gl::ActiveTexture(gl::TEXTURE0);
                 gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
-                shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
+                shader.set_gl_uniform("terrain_texture", GlUniform::Int(0));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
             }
