@@ -30,11 +30,26 @@ pub fn startup(ecs: &mut World) {
 
     // Load brush previews
     let brush_arrow = load_mesh_into_library(
-        load_json_as_mesh("meshes/brush_arrow.json").unwrap(),
+        load_json_as_mesh("meshes/brush_arrow.json")
+            .unwrap()
+            .add_color_self([1.0; 3]),
         "brush_arrow",
         ecs,
     );
-    let brush_circle = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "brush_circle", ecs);
+    let brush_circle = load_mesh_into_library(
+        load_json_as_mesh("meshes/brush_circle.json")
+            .unwrap()
+            .add_color_self([1.0; 3]), //[0.6, 0.7, 0.2]
+        "brush_circle",
+        ecs,
+    );
+    let brush_circle_cross = load_mesh_into_library(
+        load_json_as_mesh("meshes/brush_circle_cross.json")
+            .unwrap()
+            .add_color_self([0.1, 0.0, 0.0]),
+        "brush_circle_cross",
+        ecs,
+    );
 
     //let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
     //terrain_test.add_color([0.35; 3]);
@@ -155,7 +170,7 @@ pub fn startup(ecs: &mut World) {
         .insert(FollowMouse);
 
     ecs.spawn()
-        .insert(brush_circle)
+        .insert(brush_circle_cross)
         .insert(vert_color)
         .insert(BrushPreview::Eraser)
         .insert(FollowMouse);

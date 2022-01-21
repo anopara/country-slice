@@ -9,7 +9,7 @@ use crate::{
     resources::{wall_manager::WallManager, CurveChangedEvent},
 };
 
-const CURVE_SHOW_DEBUG: bool = true;
+const CURVE_SHOW_DEBUG: bool = false;
 
 pub fn curve_preview(
     mut ev_curve_changed: EventReader<CurveChangedEvent>,
