@@ -3,6 +3,7 @@ use bevy_ecs::{component::Component, prelude::*};
 use crate::asset_libraries::Handle;
 use crate::components::*;
 use crate::geometry::cube::Cube;
+use crate::systems::brush_preview::BrushPreview;
 use crate::utils::load_json::load_json_as_mesh;
 
 use crate::geometry::plane::Plane;
@@ -20,13 +21,20 @@ pub fn startup(ecs: &mut World) {
     // Load meshes
     let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
-    let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
     let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
 
     let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
     road_pebbles_mesh.add_color([1.0; 3]);
     road_pebbles_mesh.add_uv();
     let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
+
+    // Load brush previews
+    let brush_arrow = load_mesh_into_library(
+        load_json_as_mesh("meshes/brush_arrow.json").unwrap(),
+        "brush_arrow",
+        ecs,
+    );
+    let brush_circle = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "brush_circle", ecs);
 
     //let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
     //terrain_test.add_color([0.35; 3]);
@@ -130,14 +138,27 @@ pub fn startup(ecs: &mut World) {
         .insert(DisplayTestMask);
         */
 
-    // preview cube
+    // Preview brushes
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
-            mesh: cube,
+            mesh: brush_arrow,
             shader: vert_color,
             transform: Transform::identity(),
         })
-        .insert(MousePreviewCube);
+        .insert(BrushPreview::Wall)
+        .insert(FollowMouse);
+
+    ecs.spawn()
+        .insert(brush_circle)
+        .insert(vert_color)
+        .insert(BrushPreview::Path)
+        .insert(FollowMouse);
+
+    ecs.spawn()
+        .insert(brush_circle)
+        .insert(vert_color)
+        .insert(BrushPreview::Eraser)
+        .insert(FollowMouse);
 
     log::info!("Finished startup");
 }

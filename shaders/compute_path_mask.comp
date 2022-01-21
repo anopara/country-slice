@@ -14,7 +14,7 @@ void main() {
 
 // HACK
     if (!is_additive) {
-        BRUSH_SIZE = 1.25;
+        BRUSH_SIZE = 0.75;
     }
     
     // get index in global work group i.e x,y position

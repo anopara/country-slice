@@ -1,3 +1,4 @@
+pub mod brush_preview;
 pub mod clear_canvas;
 pub mod curve_preview;
 pub mod eraser;
@@ -10,6 +11,7 @@ pub mod transient_mesh;
 pub mod update_terrain;
 pub mod wall;
 
+pub use brush_preview::*;
 pub use clear_canvas::*;
 pub use curve_preview::*;
 pub use eraser::*;

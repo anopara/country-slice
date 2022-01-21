@@ -90,6 +90,7 @@ fn main() {
         .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
         .add_event::<CurveChangedEvent>()
         .add_event::<CurveDeletedEvent>()
+        .add_event::<BrushModeJustChanged>()
         .insert_resource(CursorPosition(glam::Vec2::ZERO))
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
         .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
@@ -122,6 +123,7 @@ fn main() {
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
         .add_system(mode_manager.system())
+        .add_system(brush_preview.system())
         .add_system(draw_wall.system().label("usercurve"))
         .add_system(eraser.system().label("usercurve"))
         .add_system(curve_preview.system().after("usercurve"))

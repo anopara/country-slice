@@ -1,7 +1,8 @@
+use bevy_app::EventWriter;
 use bevy_ecs::prelude::*;
 use bevy_input::{keyboard::KeyCode, Input};
 
-use crate::asset_libraries::mesh_library::AssetMeshLibrary;
+use crate::resources::events::BrushModeJustChanged;
 
 #[derive(Debug)]
 pub enum EraseLayer {
@@ -25,28 +26,28 @@ impl Default for BrushMode {
 
 pub fn mode_manager(
     mut mode: ResMut<BrushMode>,
+    mut ev_mode_changed: EventWriter<BrushModeJustChanged>,
     keys: Res<Input<KeyCode>>,
-    mut assets_mesh: ResMut<AssetMeshLibrary>,
+    //mut assets_mesh: ResMut<AssetMeshLibrary>,
 ) {
     if keys.just_pressed(KeyCode::Key1) {
         *mode = BrushMode::Wall;
-
-        let c = assets_mesh.get_handle_by_name("cube").unwrap();
-        let m = assets_mesh.get_mut(c).unwrap();
-        m.add_color([1.0, 1.0, 1.0]);
+        ev_mode_changed.send(BrushModeJustChanged {
+            to: BrushMode::Wall,
+        });
     }
 
     if keys.just_pressed(KeyCode::Key2) {
         *mode = BrushMode::Path;
-        let c = assets_mesh.get_handle_by_name("cube").unwrap();
-        let m = assets_mesh.get_mut(c).unwrap();
-        m.add_color([0.1, 0.7, 0.1]);
+        ev_mode_changed.send(BrushModeJustChanged {
+            to: BrushMode::Path,
+        });
     }
 
     if keys.just_pressed(KeyCode::Key3) {
         *mode = BrushMode::Eraser(EraseLayer::All);
-        let c = assets_mesh.get_handle_by_name("cube").unwrap();
-        let m = assets_mesh.get_mut(c).unwrap();
-        m.add_color([0.1, 0.0, 0.0]);
+        ev_mode_changed.send(BrushModeJustChanged {
+            to: BrushMode::Eraser(EraseLayer::All),
+        });
     }
 }

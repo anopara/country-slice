@@ -7,7 +7,7 @@ pub use transform::*;
 pub use transient_mesh::*;
 
 // Mark the cube that is the preview of mouse raycast intersection
-pub struct MousePreviewCube;
+pub struct FollowMouse;
 
 pub struct CursorRaycast(pub glam::Vec3);
 

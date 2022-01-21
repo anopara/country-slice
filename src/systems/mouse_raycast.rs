@@ -4,7 +4,7 @@ use bevy_ecs::prelude::*;
 use glam::{Mat4, Vec2, Vec3};
 
 use crate::components::transform::Transform;
-use crate::components::MousePreviewCube;
+use crate::components::FollowMouse;
 use crate::resources::TerrainData;
 use crate::window_events::{CursorMoved, WindowSize};
 use crate::CursorRaycast;
@@ -14,7 +14,7 @@ use crate::render::camera::{Camera, MainCamera};
 pub struct CursorPosition(pub Vec2);
 
 pub fn mouse_raycast(
-    mut cube_query: Query<(&mut MousePreviewCube, &mut Transform)>,
+    mut query: Query<(&mut FollowMouse, &mut Transform)>,
     mut cursor: EventReader<CursorMoved>,
     mut cursor_ss_cache: ResMut<CursorPosition>,
     mut cursor_ws_cache: ResMut<CursorRaycast>,
@@ -58,7 +58,7 @@ pub fn mouse_raycast(
     *cursor_ws_cache = CursorRaycast(p);
 
     // Update preview cube
-    for (_, mut transform) in cube_query.iter_mut() {
+    for (_, mut transform) in query.iter_mut() {
         transform.translation = p;
     }
 }
