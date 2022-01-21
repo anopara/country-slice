@@ -266,9 +266,9 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
             {
                 //DEBUG TERRAIN TEXTURE
-                gl::ActiveTexture(gl::TEXTURE0);
+                gl::ActiveTexture(gl::TEXTURE1);
                 gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
-                shader.set_gl_uniform("terrain_texture", GlUniform::Int(0));
+                shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
             }
