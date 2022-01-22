@@ -10,11 +10,11 @@ uniform vec2 path_mask_ws_dims;
 
 void main() {
 
-    float BRUSH_SIZE = 0.5; // DEFAULT 0.75;
+    float BRUSH_SIZE = 0.4; // DEFAULT 0.75;
 
 // HACK
     if (!is_additive) {
-        BRUSH_SIZE = 0.75;
+        BRUSH_SIZE = 0.75 * 0.8;
     }
     
     // get index in global work group i.e x,y position
