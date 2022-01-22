@@ -2,7 +2,8 @@ use bevy_ecs::{component::Component, prelude::*};
 
 use crate::asset_libraries::Handle;
 use crate::components::*;
-use crate::geometry::cube::Cube;
+use crate::systems::brush_preview::BrushPreview;
+use crate::systems::signifiers::SignfierContinueWall;
 use crate::utils::load_json::load_json_as_mesh;
 
 use crate::geometry::plane::Plane;
@@ -18,23 +19,52 @@ pub fn res_mut<T: Component>(ecs: &mut World) -> Mut<'_, T> {
 pub fn startup(ecs: &mut World) {
     puffin::profile_function!();
     // Load meshes
-    //let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
+    let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
-    let cube = load_mesh_into_library(Mesh::from(Cube::new(0.1)), "cube", ecs);
     let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
+    let circle = load_mesh_into_library(
+        load_json_as_mesh("meshes/circle.json") // sphere of 1.0
+            .unwrap()
+            .add_color_self([0.7; 3]),
+        "circle",
+        ecs,
+    );
 
     let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
     road_pebbles_mesh.add_color([1.0; 3]);
     road_pebbles_mesh.add_uv();
     let road_pebbles = load_mesh_into_library(road_pebbles_mesh, "road", ecs);
 
-    let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
-    terrain_test.add_color([0.35; 3]);
-    let terrain_test_handle = load_mesh_into_library(terrain_test, "terrain", ecs);
+    // Load brush previews
+    let brush_arrow = load_mesh_into_library(
+        load_json_as_mesh("meshes/brush_arrow.json")
+            .unwrap()
+            .add_color_self([1.0; 3]),
+        "brush_arrow",
+        ecs,
+    );
+    let brush_circle = load_mesh_into_library(
+        load_json_as_mesh("meshes/brush_circle.json")
+            .unwrap()
+            .add_color_self([1.0; 3]), //[0.6, 0.7, 0.2]
+        "brush_circle",
+        ecs,
+    );
+    let brush_circle_cross = load_mesh_into_library(
+        load_json_as_mesh("meshes/brush_circle_cross.json")
+            .unwrap()
+            .add_color_self([0.1, 0.0, 0.0]),
+        "brush_circle_cross",
+        ecs,
+    );
 
-    let mut terrain_grid = load_json_as_mesh("meshes/grid_10x10.json").unwrap();
-    terrain_grid.add_color([0.0; 3]);
-    let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
+    //let mut terrain_test = load_json_as_mesh("meshes/plane.json").unwrap();
+    //terrain_test.add_color([0.35; 3]);
+    //let terrain_test_handle = load_mesh_into_library(terrain_test, "terrain", ecs);
+
+    //let mut terrain_grid = load_json_as_mesh("meshes/grid_10x10.json").unwrap();
+    //terrain_grid.add_color([0.0; 3]);
+    //let terrain_grid_handle = load_mesh_into_library(terrain_grid, "terrain_grod", ecs);
 
     // Load shaders
     let vert_color = load_shader_into_library(
@@ -49,13 +79,13 @@ pub fn startup(ecs: &mut World) {
         "road_shader",
         ecs,
     );
-    let terrain_shader = load_shader_into_library(
-        "shaders/vertex_color_terrain.vert",
-        "shaders/vertex_color.frag",
-        "terrain_shader",
-        ecs,
-    );
-    // this shader shows the compute_test.comp as a texture
+    //let terrain_shader = load_shader_into_library(
+    //    "shaders/vertex_color_terrain.vert",
+    //    "shaders/vertex_color.frag",
+    //    "terrain_shader",
+    //    ecs,
+    //);
+    // this shader shows the compute_path_mask.comp as a texture
     let _test = load_shader_into_library(
         "shaders/texture_test.vert",
         "shaders/texture_test.frag",
@@ -91,11 +121,12 @@ pub fn startup(ecs: &mut World) {
         .insert(IndirectDraw);
 
     // Create the starting scene
-    //ecs.spawn().insert_bundle(DrawableMeshBundle {
-    //    mesh: floor,
-    //    shader: vert_color,
-    //    transform: Transform::identity(),
-    //});
+
+    ecs.spawn().insert_bundle(DrawableMeshBundle {
+        mesh: floor,
+        shader: vert_color,
+        transform: Transform::identity(),
+    });
 
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
@@ -105,6 +136,7 @@ pub fn startup(ecs: &mut World) {
         })
         .insert(RoadComponent);
 
+    /*
     ecs.spawn().insert_bundle(DrawableMeshBundle {
         mesh: terrain_test_handle,
         shader: terrain_shader,
@@ -116,25 +148,51 @@ pub fn startup(ecs: &mut World) {
         shader: terrain_shader,
         transform: Transform::from_translation(glam::Vec3::new(0.0, 0.0, 0.0)),
     });
+    */
 
     /*
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
-            mesh: plane,
-            shader: test,
-            transform: Transform::from_translation(Vec3::new(0.0, 0.005, 0.0)),
+            mesh: _plane,
+            shader: _test,
+            transform: Transform::from_translation(glam::Vec3::new(0.0, 0.005, 0.0)),
         })
         .insert(DisplayTestMask);
         */
 
-    // preview cube
+    // Preview brushes
     ecs.spawn()
         .insert_bundle(DrawableMeshBundle {
-            mesh: cube,
+            mesh: brush_arrow,
             shader: vert_color,
             transform: Transform::identity(),
         })
-        .insert(MousePreviewCube);
+        .insert(BrushPreview::Wall)
+        .insert(FollowMouse);
+
+    ecs.spawn()
+        .insert(brush_circle)
+        .insert(vert_color)
+        .insert(BrushPreview::Path)
+        .insert(FollowMouse);
+
+    ecs.spawn()
+        .insert(brush_circle_cross)
+        .insert(vert_color)
+        .insert(BrushPreview::Eraser)
+        .insert(FollowMouse);
+
+    // signifiers
+    ecs.spawn()
+        .insert_bundle(DrawableMeshBundle {
+            mesh: circle,
+            shader: vert_color,
+            transform: Transform::from_translation_scale(
+                glam::Vec3::Y * -1.0,
+                glam::Vec3::splat(0.1),
+            ),
+        })
+        .insert(SignfierContinueWall);
 
     log::info!("Finished startup");
 }

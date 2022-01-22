@@ -49,6 +49,18 @@ impl Mesh {
         self.set_attribute(Mesh::ATTRIBUTE_COLOR, color_values);
     }
 
+    pub fn add_color_self(mut self, color: [f32; 3]) -> Self {
+        let color_values = vec![
+            color;
+            self.attributes
+                .get("Vertex_Position")
+                .unwrap()
+                .array_length()
+        ];
+        self.set_attribute(Mesh::ATTRIBUTE_COLOR, color_values);
+        self
+    }
+
     pub fn add_uv(&mut self) {
         let values = vec![
             [0.0, 0.0];

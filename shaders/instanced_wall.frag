@@ -154,7 +154,8 @@ vec3 reinhard_luminance(vec3 color) {
 }
 
 float arch_function(float h) {
-    return 1.0 - pow(1.0 - h, 4.0);
+    return 1.0 - exp(-5.0 * h);
+    //return 1.0 - pow(1.0 - h, 8.0);
 }
 
 

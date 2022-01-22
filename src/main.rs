@@ -12,10 +12,13 @@ use glutin::event_loop::ControlFlow;
 use render::camera::MainCamera;
 
 use render::shaderwatch::*;
-use resources::{ComputeArchesIndirect, ComputePathsMask, CurveSegmentsComputePass, WallManager};
+use resources::*;
 use window_events::{process_window_events, CursorMoved, WindowSize};
 
-use crate::{resources::TerrainData, systems::*};
+use crate::{
+    resources::{CurveChangedEvent, TerrainData},
+    systems::*,
+};
 
 mod asset_libraries;
 mod components;
@@ -39,6 +42,12 @@ const VALIDATE_SHADERS: bool = false;
 
 // TODO: make the walls realistic size.. atm wall height is 1.4m that's very low & arches look out of proportion
 
+// UX TEST ---- TODO:
+// 1. camera controls (rotation + translation)
+// 2. middle mouse wheel for brush size
+// 3. ui element for zoom in / out (can be a key binding for now)
+// 4. ui element for switching brushes (can be a key binding for now)
+
 // OTHER:
 // 1. Esc -> leaks memory atm; free memory from instanced walls when they are deleted (gl::Delete) - free VAO and instanced SSBO
 // 2. remove validate shaders from runtime
@@ -58,7 +67,16 @@ fn main() {
     let mut temp_assets_shader = AssetShaderLibrary::new();
 
     // COMPUTE SHADERS -------------------------------------------
-    let compute_paths_mask = ComputePathsMask::init(&mut temp_shaderwatch, &mut temp_assets_shader);
+    let compute_paths_mask = ComputePathMask(ComputeTexture::init(
+        "shaders/compute_path_mask.comp",
+        &mut temp_shaderwatch,
+        &mut temp_assets_shader,
+    ));
+    let compute_paths_blur = ComputePathBlur(ComputeTexture::init(
+        "shaders/blur.comp",
+        &mut temp_shaderwatch,
+        &mut temp_assets_shader,
+    ));
     let compute_curve_segments =
         CurveSegmentsComputePass::init(&mut temp_shaderwatch, &mut temp_assets_shader);
     let compute_arches_indirect =
@@ -70,16 +88,21 @@ fn main() {
     app.add_plugin(bevy_core::CorePlugin::default())
         .add_plugin(bevy_input::InputPlugin::default())
         .add_event::<CursorMoved>() // add these events, to avoid loading the whole bevy_window plugin
+        .add_event::<CurveChangedEvent>()
+        .add_event::<CurveDeletedEvent>()
+        .add_event::<BrushModeJustChanged>()
         .insert_resource(CursorPosition(glam::Vec2::ZERO))
         .insert_resource(WindowSize::new(SCR_WIDTH, SCR_HEIGHT))
         .insert_resource(MainCamera::new(SCR_WIDTH as f32 / SCR_HEIGHT as f32))
         .insert_resource(temp_shaderwatch)
+        .insert_resource(BrushMode::default())
         .insert_resource(WallManager::new())
         .insert_resource(CursorRaycast(Vec3::ZERO))
         .insert_resource(AssetMeshLibrary::new())
         .insert_resource(AssetVAOLibrary::new())
         .insert_resource(temp_assets_shader)
         .insert_resource(compute_paths_mask)
+        .insert_resource(compute_paths_blur)
         .insert_resource(compute_arches_indirect)
         .insert_resource(compute_curve_segments)
         .insert_resource(TerrainData::new())
@@ -99,7 +122,13 @@ fn main() {
         //.add_system(draw_curve.system().label("usercurve"))
         .add_system(main_camera_update.system())
         .add_system(mouse_raycast.system())
-        .add_system(draw_curve.system().label("usercurve"))
+        .add_system(mode_manager.system())
+        .add_system(brush_preview.system())
+        .add_system(draw_wall.system().label("usercurve"))
+        .add_system(eraser.system().label("usercurve"))
+        .add_system(curve_preview.system().after("usercurve"))
+        .add_system(delete_wall.system().label("usercurve"))
+        .add_system(signifier_continue_wall.system())
         .add_system_to_stage(
             "main_singlethread",
             update_curve_ssbo.system().after("usercurve"),
@@ -109,7 +138,12 @@ fn main() {
             walls_update.system().after("usercurve"),
         )
         .add_system_to_stage("main_singlethread", update_terrain.system())
-        .add_system_to_stage("main_singlethread", clear_canvas.system());
+        .add_system_to_stage("main_singlethread", clear_canvas.system())
+        .add_system_to_stage("main_singlethread", delete_dropped_ssbos.system())
+        .add_system_to_stage(
+            "main_singlethread",
+            delete_dropped_transient_meshes.system(),
+        );
 
     systems::startup(&mut app.world_mut());
 

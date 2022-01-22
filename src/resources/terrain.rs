@@ -1,46 +1,41 @@
 use bracket_noise::prelude::FastNoise;
 
+use crate::render::texture::GlTextureRGBAf32;
+
 pub struct TerrainData {
     perlin: bracket_noise::prelude::FastNoise,
     pub amp: f32,
     pub offset: glam::Vec2,
     pub min_y: f32,
     pub max_y: f32,
-    pub texture: u32,
-    pub texture_dims: (i32, i32),
+    pub texture: GlTextureRGBAf32,
 }
 
 impl TerrainData {
     pub fn recalculate_texture(&mut self) {
-        unsafe {
-            gl::BindTexture(gl::TEXTURE_2D, self.texture);
+        let (raw_pixels, min, max) =
+            Self::raw_pixels_f32(&self.perlin, self.texture.dims, self.offset, self.amp);
 
-            let (raw_pixels, min, max) =
-                Self::raw_pixels_f32(&self.perlin, self.texture_dims, self.offset, self.amp);
+        self.min_y = min;
+        self.max_y = max;
 
-            self.min_y = min;
-            self.max_y = max;
-
-            gl::TexSubImage2D(
-                gl::TEXTURE_2D,
-                0,
-                0,
-                0,
-                self.texture_dims.0,
-                self.texture_dims.1,
-                gl::RGBA,
-                gl::FLOAT,
-                &raw_pixels[0] as *const f32 as *const std::ffi::c_void,
-            );
-
-            gl::BindTexture(gl::TEXTURE_2D, 0);
-        }
+        self.texture.update(&raw_pixels);
     }
 
     pub fn height_at(&self, x: f32, y: f32) -> f32 {
         self.perlin.get_noise(self.offset.x + x, self.offset.y + y) * self.amp
     }
 
+    #[allow(dead_code)]
+    pub fn raw_empty_f32(texture_dims: (i32, i32)) -> (Vec<f32>, f32, f32) {
+        (
+            vec![0.0; (texture_dims.1 * texture_dims.0 * 4) as usize],
+            0.0,
+            0.0,
+        )
+    }
+
+    #[allow(dead_code)]
     pub fn raw_pixels_f32(
         noise: &FastNoise,
         texture_dims: (i32, i32),
@@ -92,33 +87,13 @@ impl TerrainData {
         // generate texture
         let min_y;
         let max_y;
-        let texture = unsafe {
-            let (raw_pixels, min, max) = Self::raw_pixels_f32(&noise, texture_dims, offset, amp);
 
-            min_y = min;
-            max_y = max;
-            // Create texture
-            let mut texture = 0;
-            gl::GenTextures(1, &mut texture);
-            gl::ActiveTexture(gl::TEXTURE0);
-            gl::BindTexture(gl::TEXTURE_2D, texture);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_S, gl::CLAMP_TO_EDGE as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_WRAP_T, gl::CLAMP_TO_EDGE as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MAG_FILTER, gl::LINEAR as i32);
-            gl::TexParameteri(gl::TEXTURE_2D, gl::TEXTURE_MIN_FILTER, gl::LINEAR as i32);
-            gl::TexImage2D(
-                gl::TEXTURE_2D,
-                0,
-                gl::RGBA32F as i32,
-                texture_dims.0,
-                texture_dims.1,
-                0,
-                gl::RGBA,
-                gl::FLOAT,
-                &raw_pixels[0] as *const f32 as *const std::ffi::c_void,
-            );
-            texture
-        };
+        let (raw_pixels, min, max) = Self::raw_empty_f32(texture_dims); //Self::raw_pixels_f32(&noise, texture_dims, offset, amp);
+
+        min_y = min;
+        max_y = max;
+
+        let texture = GlTextureRGBAf32::new(texture_dims, Some(&raw_pixels));
 
         Self {
             perlin: noise,
@@ -127,7 +102,6 @@ impl TerrainData {
             texture,
             amp,
             offset,
-            texture_dims,
         }
     }
 }

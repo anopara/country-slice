@@ -56,4 +56,13 @@ impl AssetMeshLibrary {
     pub fn is_dirty(&self, handle: Handle<Mesh>) -> bool {
         self.marked_as_dirty.contains(&handle)
     }
+
+    pub fn remove(&mut self, handle: Handle<Mesh>) {
+        self.mesh.remove(&handle);
+
+        self.by_name = std::mem::take(&mut self.by_name)
+            .into_iter()
+            .filter(|(_, v)| *v != handle)
+            .collect();
+    }
 }

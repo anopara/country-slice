@@ -536,6 +536,7 @@ dependencies = [
  "gltf",
  "glutin",
  "hotwatch",
+ "lazy_static",
  "log",
  "puffin",
  "puffin_http",

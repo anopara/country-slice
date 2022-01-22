@@ -31,7 +31,8 @@ pub fn build_missing_vaos(
                 log::warn!("Couldn't build VAO: {}", error)
             }
             Ok(vao_handle) => {
-                log::debug!("Built VAO {:?} for {:?}", vao_handle, mesh_handle);
+                let vao_id = assets_vao.get(vao_handle).unwrap();
+                log::debug!("New VAO {:?}", vao_id.id());
                 // add component
                 commands.entity(ent).insert(vao_handle);
             }

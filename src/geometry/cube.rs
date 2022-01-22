@@ -8,6 +8,7 @@ pub struct Cube {
     pub size: f32,
 }
 
+#[allow(dead_code)]
 impl Cube {
     pub fn new(size: f32) -> Cube {
         Cube { size }

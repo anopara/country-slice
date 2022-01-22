@@ -17,10 +17,13 @@ use crate::render::{
     shader::{GlUniform, ShaderProgram},
     vao::VAO,
 };
-use crate::resources::{CurveSegmentsComputePass, DrawElementsIndirectCommand, WallManager};
+use crate::resources::compute_path_mask::*;
+use crate::resources::curve_segments_pass::CURVE_BUFFER_SIZE;
+use crate::resources::CurveSegmentsComputePass;
+use crate::systems::mode_manager::{BrushMode, EraseLayer};
 use crate::window_events::WindowSize;
 use crate::{components::*, TerrainData};
-use crate::{ComputeArchesIndirect, ComputePathsMask, CursorRaycast};
+use crate::{ComputeArchesIndirect, ComputePathMask, CursorRaycast};
 
 use crate::utils::custom_macro::log_if_error;
 
@@ -39,101 +42,78 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
 
         let indirect_test = ecs.get_resource::<ComputeArchesIndirect>().unwrap();
         let compute_curve_segments = ecs.get_resource::<CurveSegmentsComputePass>().unwrap();
-        let test = ecs.get_resource::<ComputePathsMask>().unwrap();
-        let wall_manager = ecs.get_resource::<WallManager>().unwrap();
-        //
+        let path_mask = &ecs.get_resource::<ComputePathBlur>().unwrap().0;
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
 
         // CURVE SEGMNETS COMPUTE
         {
-            //println!("reset_cmd_buffer");
             compute_curve_segments.reset_cmd_buffer();
-            //println!("reset_segments_buffer");
             compute_curve_segments.reset_segments_buffer();
-            //println!("bind");
-            compute_curve_segments.bind(assets_shader, test.texture, _img_unit);
+            compute_curve_segments.bind(
+                assets_shader,
+                path_mask.texture.id,
+                PATH_MASK_WS_DIMS,
+                _img_unit,
+            );
 
-            //println!("DispatchCompute");
-            gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
+            gl::DispatchCompute(CURVE_BUFFER_SIZE as u32, 1, 1);
             gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
         }
 
         // INDIRECT COMPUTE SHADER PASS -----------------------------------------------------------------------
 
-        // Reset draw command buffer to its default
-        {
-            //log::debug!("Resetting draw command buffer...");
-            gl::BindBuffer(
-                gl::DRAW_INDIRECT_BUFFER,
-                indirect_test.draw_indirect_cmd_buffer,
-            );
-            let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
-
-            assert!(!ptr.is_null());
-
-            let dst = std::slice::from_raw_parts_mut(ptr as *mut DrawElementsIndirectCommand, 1);
-            dst.copy_from_slice(&[DrawElementsIndirectCommand {
-                _count: 312, // number of vertices of brick.glb
-                _instance_count: 0,
-                _first_index: 0,
-                _base_vertex: 0,
-                _base_instance: 0,
-            }]);
-            gl::UnmapBuffer(gl::DRAW_INDIRECT_BUFFER);
-        }
-
-        // For debugging, reset the transform buffer
-        {
-            //log::debug!("Resetting transform buffer...");
-            let data = &[glam::Mat4::IDENTITY; 10000];
-            gl::BindBuffer(
-                gl::SHADER_STORAGE_BUFFER,
-                indirect_test.transforms_buffer.gl_id(),
-            );
-            let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
-
-            assert!(!ptr.is_null());
-
-            let dst = std::slice::from_raw_parts_mut(ptr as *mut glam::Mat4, data.len());
-            dst.copy_from_slice(data);
-            gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
-        }
+        indirect_test.reset_draw_command_buffer();
+        indirect_test.reset_transform_buffer();
 
         indirect_test.bind(
             assets_shader,
             &compute_curve_segments.segments_buffer,
-            test.texture,
+            path_mask.texture.id,
+            PATH_MASK_WS_DIMS,
             _img_unit,
         ); // use shader & bind command buffer & bind transforms buffer & bind road mask
 
         // bind compute road texture
         gl::DispatchComputeIndirect(0);
-        //gl::DispatchCompute(1, 1, 1);
-        //gl::DispatchCompute(wall_manager.curves.len() as u32, 1, 1);
         gl::MemoryBarrier(gl::COMMAND_BARRIER_BIT | gl::SHADER_STORAGE_BARRIER_BIT);
 
-        // COMPUTE SHADER PASS -----------------------------------------------------------------------
+        // COMPUTE PATHS PASS -----------------------------------------------------------------------
 
-        let test = ecs.get_resource::<ComputePathsMask>().unwrap();
+        let path_mask = &ecs.get_resource::<ComputePathMask>().unwrap().0;
+        let path_blur = &ecs.get_resource::<ComputePathBlur>().unwrap().0;
         let mouse = ecs.get_resource::<CursorRaycast>().unwrap();
         let mouse_button_input = ecs.get_resource::<Input<MouseButton>>().unwrap();
         let assets_shader = ecs.get_resource::<AssetShaderLibrary>().unwrap();
-        // Only update shader if RMB is pressed
-        if mouse_button_input.pressed(MouseButton::Right) {
-            let shader = assets_shader.get(test.compute_program).unwrap();
+        let _mode = ecs.get_resource::<BrushMode>().unwrap();
+        // Only update shader if LMB is pressed and we are in Path mode
 
+        if (matches!(_mode, BrushMode::Path) || matches!(_mode, BrushMode::Eraser(EraseLayer::All)))
+            && mouse_button_input.pressed(MouseButton::Left)
+        {
+            let shader = assets_shader.get(path_mask.compute_program).unwrap();
             gl::UseProgram(shader.id());
+
+            match _mode {
+                BrushMode::Wall => panic!(),
+                BrushMode::Path => {
+                    log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(true)))
+                }
+                BrushMode::Eraser(..) => {
+                    log_if_error!(shader.set_gl_uniform("is_additive", GlUniform::Bool(false)))
+                }
+            }
 
             // connect shader's uniform variable to our texture
             // instead of name can specify in shader the binding, for ex "layout(rgba32f, binding = 0)"
             let uniform_name = CString::new("img_output").unwrap();
             let tex_location =
                 gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
-            gl::Uniform1ui(tex_location, _img_unit);
+            gl::Uniform1i(tex_location, _img_unit as i32);
+
             // bind texture
             gl::BindImageTexture(
                 _img_unit,
-                test.texture,
+                path_mask.texture.id,
                 0,
                 gl::FALSE,
                 0,
@@ -144,7 +124,12 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             log_if_error!(
                 shader.set_gl_uniform("Mouse_Position", GlUniform::Vec3(mouse.0.to_array()))
             );
-            gl::DispatchCompute(test.texture_dims.0 as u32, test.texture_dims.1 as u32, 1);
+            log_if_error!(shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2([20.0, 20.0])));
+            gl::DispatchCompute(
+                path_mask.texture.dims.0 as u32,
+                path_mask.texture.dims.1 as u32,
+                1,
+            );
 
             _img_unit += 1;
         }
@@ -152,7 +137,61 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
         // make sure writing to image has finished before read
         gl::MemoryBarrier(gl::SHADER_IMAGE_ACCESS_BARRIER_BIT);
 
-        let texture_buffer = test.texture;
+        // BLUR PATH MASK -------------------------------------
+
+        {
+            _img_unit = 0;
+            let shader = assets_shader.get(path_blur.compute_program).unwrap();
+            gl::UseProgram(shader.id());
+
+            let uniform_name = CString::new("img_in").unwrap();
+            let tex_location =
+                gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
+            gl::Uniform1i(tex_location, _img_unit as i32);
+
+            // bind texture
+            gl::BindImageTexture(
+                _img_unit,
+                path_mask.texture.id,
+                0,
+                gl::FALSE,
+                0,
+                gl::READ_WRITE,
+                gl::RGBA32F,
+            );
+            _img_unit += 1;
+
+            let uniform_name = CString::new("img_out").unwrap();
+            let tex_location =
+                gl::GetUniformLocation(shader.id(), uniform_name.as_ptr() as *const i8);
+            gl::Uniform1i(tex_location, _img_unit as i32);
+
+            // bind texture
+            gl::BindImageTexture(
+                _img_unit,
+                path_blur.texture.id,
+                0,
+                gl::FALSE,
+                0,
+                gl::READ_WRITE,
+                gl::RGBA32F,
+            );
+            _img_unit += 1;
+
+            gl::DispatchCompute(
+                path_mask.texture.dims.0 as u32,
+                path_mask.texture.dims.1 as u32,
+                1,
+            );
+
+            // make sure writing to image has finished before read
+            gl::MemoryBarrier(gl::SHADER_IMAGE_ACCESS_BARRIER_BIT);
+        }
+
+        // -----------------------------------------------------------------------
+
+        let texture_buffer = path_blur.texture.id; //path_mask.texture.id;
+        let texture_buffer_blur = path_blur.texture.id;
 
         // MAIN PASS --------------------------------------------------------------------------------
 
@@ -196,7 +235,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             model_transform,
             gl_draw_flag,
             instanced_wall,
-            test,
+            debug_display_path_mask,
             transparency,
             indirect_draw,
             road,
@@ -228,15 +267,15 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             {
                 //DEBUG TERRAIN TEXTURE
                 gl::ActiveTexture(gl::TEXTURE1);
-                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
                 shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
             }
 
             // MEOWMEOWcheckforspecialtexture
-            if test.is_some() {
-                gl::BindTexture(gl::TEXTURE_2D, texture_buffer);
+            if debug_display_path_mask.is_some() {
+                gl::BindTexture(gl::TEXTURE_2D, texture_buffer_blur);
             }
 
             // check if its a road
@@ -247,7 +286,7 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
                 log_if_error!(shader.set_gl_uniform("path_texture", GlUniform::Int(0)));
 
                 gl::ActiveTexture(gl::TEXTURE1);
-                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
                 log_if_error!(shader.set_gl_uniform("terrain_texture", GlUniform::Int(1)));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
@@ -328,8 +367,8 @@ pub fn render(ecs: &mut World, windowed_context: &mut ContextWrapper<PossiblyCur
             {
                 //DEBUG TERRAIN TEXTURE
                 gl::ActiveTexture(gl::TEXTURE1);
-                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture);
-                shader.set_gl_uniform("terrain_texture", GlUniform::Int(1));
+                gl::BindTexture(gl::TEXTURE_2D, terrain_data.texture.id);
+                log_if_error!(shader.set_gl_uniform("terrain_texture", GlUniform::Int(1)));
                 //reset
                 gl::ActiveTexture(gl::TEXTURE0);
             }

@@ -7,13 +7,18 @@ use gl::types::GLsizeiptr;
 
 use crate::{
     asset_libraries::{shader_library::AssetShaderLibrary, Handle},
-    render::{self, shader::ShaderProgram, shaderwatch::ShaderWatch, ssbo::GLShaderStorageBuffer},
+    render::{
+        shader::{GlUniform, ShaderProgram},
+        shaderwatch::ShaderWatch,
+        ssbo::GLShaderStorageBuffer,
+    },
     utils::custom_macro::log_if_error,
 };
 
 use super::CurveDataSSBO;
 
 const COMMAND_BUFFER_SIZE: usize = 1000;
+pub const CURVE_BUFFER_SIZE: usize = 1000;
 
 #[derive(Clone, Copy)]
 #[repr(C)]
@@ -65,7 +70,11 @@ impl CurveSegmentsComputePass {
                 compute_program: handle,
                 compute_indirect_cmd_buffer: id,
                 cmd_buffer_binding_point: 5,
-                curves_buffer: GLShaderStorageBuffer::<CurveDataSSBO>::new(&vec![], 1000, 3),
+                curves_buffer: GLShaderStorageBuffer::<CurveDataSSBO>::new(
+                    &vec![],
+                    CURVE_BUFFER_SIZE,
+                    3,
+                ),
                 segments_buffer: GLShaderStorageBuffer::<ArchSegmentDataSSBO>::new(
                     &vec![],
                     1000,
@@ -78,8 +87,9 @@ impl CurveSegmentsComputePass {
     pub fn bind(
         &self,
         assets_shader: &AssetShaderLibrary,
-        road_mask: u32,
-        road_mask_img_unit: u32,
+        path_mask: u32,
+        path_mask_ws_dims: [f32; 2],
+        path_mask_img_unit: u32,
     ) {
         unsafe {
             // bind compute shader
@@ -104,14 +114,16 @@ impl CurveSegmentsComputePass {
             );
 
             // bind road mask
-            log_if_error!(shader.set_gl_uniform(
-                "road_mask",
-                render::shader::GlUniform::Int(road_mask_img_unit as i32),
-            ));
+            log_if_error!(
+                shader.set_gl_uniform("path_mask", GlUniform::Int(path_mask_img_unit as i32),)
+            );
+            log_if_error!(
+                shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2(path_mask_ws_dims))
+            );
             // bind texture
             gl::BindImageTexture(
-                road_mask_img_unit,
-                road_mask,
+                path_mask_img_unit,
+                path_mask,
                 0,
                 gl::FALSE,
                 0,

@@ -4,6 +4,13 @@ use gl::types::GLsizeiptr;
 
 use super::shader::ShaderProgram;
 
+use lazy_static::lazy_static; // 1.4.0
+use std::sync::Mutex;
+
+lazy_static! {
+    pub static ref SSBO_TO_DELETE: Mutex<Vec<u32>> = Mutex::new(vec![]);
+}
+
 pub struct GLShaderStorageBuffer<T> {
     id: u32,
     buffer_size: usize,
@@ -12,7 +19,7 @@ pub struct GLShaderStorageBuffer<T> {
     pub instance_num: usize,
     //
     pub binding_point: u32,
-    _marker: PhantomData<T>,
+    _marker: PhantomData<T>, // *const
 }
 
 // Storage buffer stores the information about instance transforms
@@ -82,6 +89,15 @@ impl<T: Copy> GLShaderStorageBuffer<T> {
 
     pub fn gl_id(&self) -> u32 {
         self.id
+    }
+}
+
+impl<T> Drop for GLShaderStorageBuffer<T> {
+    fn drop(&mut self) {
+        // We cannot guarantee that drop will happen on the main thread, thus this is equivalent to sending a msg to a system
+        // that will later in the tick actually call `gl::DeleteBuffer`, ensuring it runs on the main thread
+        log::debug!("SSBO {} has been droppped", self.id);
+        SSBO_TO_DELETE.lock().unwrap().push(self.id);
     }
 }
 

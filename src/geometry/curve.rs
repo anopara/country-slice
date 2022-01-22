@@ -24,6 +24,13 @@ impl Curve {
         *self = Self::from(self.points.clone());
     }
 
+    pub fn add_to_front(&mut self, pt: Vec3) {
+        self.points.insert(0, pt);
+
+        // TODO: this is slow & lazy
+        *self = Self::from(self.points.clone());
+    }
+
     pub fn from(points: Vec<Vec3>) -> Self {
         let length = points
             .iter()

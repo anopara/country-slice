@@ -1,16 +1,19 @@
+use bevy_app::EventReader;
 use bevy_ecs::prelude::*;
-use bevy_input::{mouse::MouseButton, Input};
 
 use crate::{
     asset_libraries::{mesh_library::AssetMeshLibrary, shader_library::AssetShaderLibrary, Handle},
     components::{drawable::DrawableMeshBundle, transform::Transform},
     geometry::{instanced_wall::*, shadow_decal::ShadowDecal, wall_constructor::*},
     render::mesh::Mesh,
-    resources::WallManager,
+    resources::{events::CurveChangedEvent, WallManager},
+    systems::mode_manager::{BrushMode, EraseLayer},
 };
 
 pub fn walls_update(
-    mouse_button_input: Res<Input<MouseButton>>,
+    _mode: Res<BrushMode>,
+    mut ev_curve_changed: EventReader<CurveChangedEvent>,
+
     mut wall_manager: ResMut<WallManager>,
     mut query: Query<&mut InstancedWall>,
     mut query3: Query<(&mut ShadowDecal, &mut Handle<Mesh>)>,
@@ -18,41 +21,41 @@ pub fn walls_update(
     assets_shader: Res<AssetShaderLibrary>,
     mut commands: Commands,
 ) {
+    if !matches!(*_mode, BrushMode::Wall) && !matches!(*_mode, BrushMode::Eraser(EraseLayer::All)) {
+        return;
+    }
+
     puffin::profile_function!();
-    if let Some((curve, _)) = wall_manager.curves.last() {
-        if !mouse_button_input.pressed(MouseButton::Left) {
-            return;
-        }
 
-        if curve.points.len() < 2 {
-            return;
-        }
+    for ev in ev_curve_changed.iter() {
+        let changed_wall = wall_manager.get_mut(ev.curve_index).expect(&format!(
+            "Wall construction failed: couldn't get Wall index {}",
+            ev.curve_index,
+        ));
 
-        //println!("wall update");
+        if changed_wall.curve.points.len() < 2 {
+            continue;
+        }
 
         // Calculate brick transforms
-        let curve = {
-            puffin::profile_scope!("curve");
-            curve.clone().smooth(50).resample(0.2)
-        };
-
         {
             puffin::profile_scope!("construct wall");
-            let bricks = WallConstructor::from_curve(&curve);
+            let bricks = WallConstructor::from_curve(&changed_wall.curve);
 
             if bricks.is_empty() {
                 log::warn!("WallConstructor returned empty wall");
             }
 
-            if let Some(wall_entity) = wall_manager.walls.get(wall_manager.curves.len() - 1) {
+            if let Some(wall_entity) = changed_wall.wall_entity {
                 // update the wall
-                let mut wall_component = query.get_mut(*wall_entity).unwrap();
-                wall_component.update(curve.length, bricks);
+                let mut wall_component = query.get_mut(wall_entity).unwrap();
+                wall_component.update(changed_wall.curve.length, bricks);
             } else {
                 //create a wall
                 log::info!("creating wall..");
-                wall_manager.walls.push(create_wall(
-                    curve.length,
+
+                changed_wall.wall_entity = Some(create_wall(
+                    changed_wall.curve.length,
                     bricks,
                     &assets_mesh,
                     &assets_shader,
@@ -63,13 +66,13 @@ pub fn walls_update(
 
         {
             puffin::profile_scope!("shadow decal");
-            if let Some(shadow_entity) = wall_manager.shadows.get(wall_manager.curves.len() - 1) {
-                let (_shadow_component, mesh_handle) = query3.get_mut(*shadow_entity).unwrap();
+            if let Some(shadow_entity) = changed_wall.shadow_entity {
+                let (_shadow_component, mesh_handle) = query3.get_mut(shadow_entity).unwrap();
                 let mesh = assets_mesh.get_mut(*mesh_handle).unwrap();
-                ShadowDecal::update(&curve, mesh);
+                ShadowDecal::update(&changed_wall.curve, mesh);
             } else {
-                wall_manager.shadows.push(ShadowDecal::new(
-                    &curve,
+                changed_wall.shadow_entity = Some(ShadowDecal::new(
+                    &changed_wall.curve,
                     &mut assets_mesh,
                     &assets_shader,
                     &mut commands,

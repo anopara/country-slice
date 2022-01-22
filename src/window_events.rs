@@ -1,7 +1,7 @@
 use std::convert::TryInto;
 
 use bevy_app::Events;
-use bevy_input::mouse::MouseButtonInput;
+use bevy_input::mouse::{MouseButtonInput, MouseScrollUnit, MouseWheel};
 use glam::{Mat4, Vec2};
 use glutin::event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent};
 use glutin::event_loop::ControlFlow;
@@ -12,11 +12,13 @@ use glutin::{ContextWrapper, PossiblyCurrent};
 use crate::render::camera::MainCamera;
 
 use crate::render_loop::render;
+use crate::systems::CursorPosition;
 
 // Bevy Events
 
 pub struct CursorMoved {
     pub pos: Vec2,
+    pub delta: Vec2,
 }
 
 pub struct WindowSize {
@@ -108,6 +110,12 @@ pub fn process_window_events(
                     VirtualKeyCode::E => Some(bevy_input::keyboard::KeyCode::E),
                     VirtualKeyCode::Escape => Some(bevy_input::keyboard::KeyCode::Escape),
                     VirtualKeyCode::Back => Some(bevy_input::keyboard::KeyCode::Back),
+                    VirtualKeyCode::Key1 => Some(bevy_input::keyboard::KeyCode::Key1),
+                    VirtualKeyCode::Key2 => Some(bevy_input::keyboard::KeyCode::Key2),
+                    VirtualKeyCode::Key3 => Some(bevy_input::keyboard::KeyCode::Key3),
+                    VirtualKeyCode::Key4 => Some(bevy_input::keyboard::KeyCode::Key4),
+                    VirtualKeyCode::Key5 => Some(bevy_input::keyboard::KeyCode::Key5),
+                    VirtualKeyCode::Key6 => Some(bevy_input::keyboard::KeyCode::Key6),
                     _ => None,
                 };
 
@@ -125,9 +133,12 @@ pub fn process_window_events(
                 keyboard_events.send(event);
             }
             WindowEvent::CursorMoved { position, .. } => {
+                let cursor_prev_position = ecs.get_resource::<CursorPosition>().unwrap().0.clone();
                 let mut cursor_events = ecs.get_resource_mut::<Events<CursorMoved>>().unwrap();
+                let cursor_current_position = Vec2::new(position.x as f32, position.y as f32);
                 cursor_events.send(CursorMoved {
-                    pos: Vec2::new(position.x as f32, position.y as f32),
+                    pos: cursor_current_position,
+                    delta: cursor_prev_position - cursor_current_position,
                 });
             }
             WindowEvent::MouseInput { state, button, .. } => {
@@ -149,6 +160,20 @@ pub fn process_window_events(
                         ElementState::Released => bevy_input::ElementState::Released,
                     },
                 });
+            }
+            WindowEvent::MouseWheel { delta, .. } => {
+                let mut mousewheel_events = ecs.get_resource_mut::<Events<MouseWheel>>().unwrap();
+
+                match delta {
+                    glutin::event::MouseScrollDelta::LineDelta(x, y) => {
+                        mousewheel_events.send(MouseWheel {
+                            unit: MouseScrollUnit::Line,
+                            x,
+                            y,
+                        })
+                    }
+                    glutin::event::MouseScrollDelta::PixelDelta(_) => todo!(),
+                };
             }
             _ => (),
         },

@@ -3,7 +3,11 @@ use glam::Vec3;
 
 use crate::{
     asset_libraries::{shader_library::AssetShaderLibrary, Handle},
-    render::{self, shader::ShaderProgram, shaderwatch::ShaderWatch, ssbo::GLShaderStorageBuffer},
+    render::{
+        shader::{GlUniform, ShaderProgram},
+        shaderwatch::ShaderWatch,
+        ssbo::GLShaderStorageBuffer,
+    },
     utils::custom_macro::log_if_error,
 };
 
@@ -57,8 +61,9 @@ impl ComputeArchesIndirect {
         &self,
         assets_shader: &AssetShaderLibrary,
         segments_buffer: &GLShaderStorageBuffer<super::ArchSegmentDataSSBO>,
-        road_mask: u32,
-        road_mask_img_unit: u32,
+        path_mask: u32,
+        path_mask_ws_dims: [f32; 2],
+        path_mask_img_unit: u32,
     ) {
         unsafe {
             // bind compute shader
@@ -86,14 +91,16 @@ impl ComputeArchesIndirect {
             self.transforms_buffer.bind(&shader, "transforms_buffer");
 
             // bind road mask
-            log_if_error!(shader.set_gl_uniform(
-                "road_mask",
-                render::shader::GlUniform::Int(road_mask_img_unit as i32),
-            ));
+            log_if_error!(
+                shader.set_gl_uniform("path_mask", GlUniform::Int(path_mask_img_unit as i32),)
+            );
+            log_if_error!(
+                shader.set_gl_uniform("path_mask_ws_dims", GlUniform::Vec2(path_mask_ws_dims))
+            );
             // bind texture
             gl::BindImageTexture(
-                road_mask_img_unit,
-                road_mask,
+                path_mask_img_unit,
+                path_mask,
                 0,
                 gl::FALSE,
                 0,
@@ -106,6 +113,39 @@ impl ComputeArchesIndirect {
 
             // bind segments buffer
             segments_buffer.bind(&shader, "segments_buffer");
+        }
+    }
+
+    pub fn reset_draw_command_buffer(&self) {
+        unsafe {
+            gl::BindBuffer(gl::DRAW_INDIRECT_BUFFER, self.draw_indirect_cmd_buffer);
+            let ptr = gl::MapBuffer(gl::DRAW_INDIRECT_BUFFER, gl::WRITE_ONLY);
+
+            assert!(!ptr.is_null());
+
+            let dst = std::slice::from_raw_parts_mut(ptr as *mut DrawElementsIndirectCommand, 1);
+            dst.copy_from_slice(&[DrawElementsIndirectCommand {
+                _count: 312, // number of vertices of brick.glb
+                _instance_count: 0,
+                _first_index: 0,
+                _base_vertex: 0,
+                _base_instance: 0,
+            }]);
+            gl::UnmapBuffer(gl::DRAW_INDIRECT_BUFFER);
+        }
+    }
+
+    pub fn reset_transform_buffer(&self) {
+        unsafe {
+            let data = &[glam::Mat4::IDENTITY; 10000];
+            gl::BindBuffer(gl::SHADER_STORAGE_BUFFER, self.transforms_buffer.gl_id());
+            let ptr = gl::MapBuffer(gl::SHADER_STORAGE_BUFFER, gl::WRITE_ONLY);
+
+            assert!(!ptr.is_null());
+
+            let dst = std::slice::from_raw_parts_mut(ptr as *mut glam::Mat4, data.len());
+            dst.copy_from_slice(data);
+            gl::UnmapBuffer(gl::SHADER_STORAGE_BUFFER);
         }
     }
 }
@@ -150,6 +190,16 @@ impl CurveDataSSBO {
             pad1: 0,
             pad2: 0,
             positions,
+        }
+    }
+
+    pub fn empty() -> Self {
+        CurveDataSSBO {
+            points_count: 0,
+            pad0: 0,
+            pad1: 0,
+            pad2: 0,
+            positions: [[0.0; 4]; 1000],
         }
     }
 }
