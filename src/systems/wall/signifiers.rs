@@ -1,5 +1,4 @@
 use bevy_ecs::prelude::*;
-use bevy_input::{mouse::MouseButton, Input};
 use glam::Vec3;
 
 use crate::{
@@ -16,7 +15,6 @@ pub fn signifier_continue_wall(
     mut query: Query<(&SignfierContinueWall, &mut Transform)>,
     wall_manager: Res<WallManager>,
     cursor_ws: Res<CursorRaycast>,
-    mouse_button_input: Res<Input<MouseButton>>,
 ) {
     let cursor_ws = cursor_ws.0;
 
