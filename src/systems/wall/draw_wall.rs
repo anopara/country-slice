@@ -9,6 +9,8 @@ use crate::{
     CursorRaycast,
 };
 
+pub const CONTINUE_CURVE_DIST_THRESHOLD: f32 = 0.2;
+
 pub fn draw_wall(
     _mode: Res<BrushMode>,
 
@@ -30,8 +32,6 @@ pub fn draw_wall(
     // If LMB was just pressed, start a new curve
     if mouse_button_input.just_pressed(MouseButton::Left) {
         // Check if we started next to existing curve, then just continue that curve!
-        const CONTINUE_CURVE_DIST_THRESHOLD: f32 = 0.2;
-
         let mut continue_curve = None;
         for (idx, curve) in wall_manager.walls.iter().map(|(i, w)| (i, &w.curve)) {
             if let Some(last_pt) = curve.points.last() {

@@ -37,6 +37,14 @@ impl Transform {
             ..Default::default()
         }
     }
+
+    pub fn from_translation_scale(translation: Vec3, scale: Vec3) -> Self {
+        Transform {
+            translation,
+            scale,
+            ..Default::default()
+        }
+    }
 }
 
 impl Default for Transform {

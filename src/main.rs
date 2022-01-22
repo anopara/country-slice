@@ -128,6 +128,7 @@ fn main() {
         .add_system(eraser.system().label("usercurve"))
         .add_system(curve_preview.system().after("usercurve"))
         .add_system(delete_wall.system().label("usercurve"))
+        .add_system(signifier_continue_wall.system())
         .add_system_to_stage(
             "main_singlethread",
             update_curve_ssbo.system().after("usercurve"),

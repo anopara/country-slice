@@ -2,8 +2,8 @@ use bevy_ecs::{component::Component, prelude::*};
 
 use crate::asset_libraries::Handle;
 use crate::components::*;
-use crate::geometry::cube::Cube;
 use crate::systems::brush_preview::BrushPreview;
+use crate::systems::signifiers::SignfierContinueWall;
 use crate::utils::load_json::load_json_as_mesh;
 
 use crate::geometry::plane::Plane;
@@ -22,6 +22,13 @@ pub fn startup(ecs: &mut World) {
     let floor = load_mesh_into_library(load_mesh("meshes/floor.glb"), "floor", ecs);
     let _brick = load_mesh_into_library(load_mesh("meshes/brick.glb"), "brick", ecs);
     let _plane = load_mesh_into_library(Mesh::from(Plane { size: 20.0 }), "plane", ecs);
+    let circle = load_mesh_into_library(
+        load_json_as_mesh("meshes/circle.json") // sphere of 1.0
+            .unwrap()
+            .add_color_self([0.7; 3]),
+        "circle",
+        ecs,
+    );
 
     let mut road_pebbles_mesh = load_json_as_mesh("meshes/road_pebbles.json").unwrap();
     road_pebbles_mesh.add_color([1.0; 3]);
@@ -174,6 +181,18 @@ pub fn startup(ecs: &mut World) {
         .insert(vert_color)
         .insert(BrushPreview::Eraser)
         .insert(FollowMouse);
+
+    // signifiers
+    ecs.spawn()
+        .insert_bundle(DrawableMeshBundle {
+            mesh: circle,
+            shader: vert_color,
+            transform: Transform::from_translation_scale(
+                glam::Vec3::Y * -1.0,
+                glam::Vec3::splat(0.1),
+            ),
+        })
+        .insert(SignfierContinueWall);
 
     log::info!("Finished startup");
 }
