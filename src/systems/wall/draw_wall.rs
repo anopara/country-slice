@@ -70,7 +70,14 @@ pub fn draw_wall(
         let intersection = cursor_ws;
 
         let active_curve_pt = match draw_mode {
-            AddPointsTo::End => active_curve.points.len() - 1,
+            AddPointsTo::End => {
+                // check that the curve is non-empty
+                if active_curve.points.is_empty() {
+                    0
+                } else {
+                    active_curve.points.len() - 1
+                }
+            }
             AddPointsTo::Beginning => 0,
         };
 
