@@ -32,7 +32,7 @@ pub fn eraser(
 
     puffin::profile_function!();
 
-    const ERASE_BRUSH_SIZE: f32 = 0.75;
+    const ERASE_BRUSH_SIZE: f32 = 0.75 * 0.9;
     let cursor_ws = cursor_ws.0;
 
     let mut g_cc = Vec::new(); //new curves
