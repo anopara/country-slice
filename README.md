@@ -1,6 +1,6 @@
 # country-slice
 
-My small hobby toy project, written in [Rust language](https://www.rust-lang.org/) with [Bevy](https://github.com/bevyengine/bevy)'s ECS and OpenGL ([gl-rs](https://github.com/brendanzab/gl-rs/tree/master/gl) and [glutin](https://github.com/rust-windowing/glutin)). **Active WIP**!
+My small hobby toy project, written in [Rust language](https://www.rust-lang.org/) with [Bevy](https://github.com/bevyengine/bevy)'s ECS and OpenGL ([gl-rs](https://github.com/brendanzab/gl-rs/tree/master/gl) and [glutin](https://github.com/rust-windowing/glutin)).
 
 ### Build and Run
 
