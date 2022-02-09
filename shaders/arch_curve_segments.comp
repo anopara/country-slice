@@ -61,7 +61,7 @@ void main() {
         return;
     }
 
-    for (int i=0; i<curve_npt-1; i++) {
+    for (int i=0; i<min(curve_npt-1, 1000); i++) {
          // get curve segment positions
         vec3 p1 = curves[idx].positions[i].xyz;
         vec3 p2 = curves[idx].positions[i+1].xyz;
